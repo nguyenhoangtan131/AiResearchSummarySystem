@@ -1,37 +1,54 @@
-// src/pages/ResearchResult.tsx
+
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { researchApi } from '../services/api';
 
-// Thêm tham số 'sources' vào hàm để nó biết đường mà tra cứu số
 const renderContentWithCitations = (content: string, sources: any[]) => {
   if (!content) return null;
 
-  // 1. Tạo "từ điển" để biết ID nào tương ứng với số mấy
-  const sourceMap: Record<string, number> = {};
+  const sourceDataMap: Record<string, any> = {};
   sources.forEach((s, index) => {
-    sourceMap[s.id] = index + 1;
+    sourceDataMap[s.id] = { ...s, num: index + 1 };
   });
 
-  // 2. Cắt bài báo thành từng đoạn dựa trên tag [Source ID: ...]
   const parts = content.split(/(\[Source ID: [a-f0-9-]{36}\])/g);
 
   return parts.map((part, index) => {
     if (part.startsWith("[Source ID:")) {
-      // Tìm cái mã UUID nằm bên trong dấu ngoặc
       const uuid = part.match(/[a-f0-9-]{36}/)?.[0];
-      const num = uuid ? sourceMap[uuid] : null;
+      const s = uuid ? sourceDataMap[uuid] : null;
 
-      // Nếu tìm thấy số thì hiện [1], nhấn vào sẽ nhảy xuống cuối bài
-      return num ? (
-        <a 
-          key={index} 
-          href={`#source-${uuid}`} 
-          className="text-blue-600 font-bold hover:underline mx-1 cursor-pointer"
-        >
-          [{num}]
-        </a>
-      ) : null;
+      if (!s) return null;
+
+      return (
+        <span key={index} className="relative group inline-block">
+          <a 
+            href={`#source-${uuid}`} 
+            className="text-blue-600 font-bold hover:bg-blue-50 px-0.5 rounded transition-colors mx-0.5"
+          >
+            [{s.num}]
+          </a>
+
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 p-4 bg-white border border-slate-200 shadow-xl rounded-xl z-50 pointer-events-none 
+                          opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-left">
+            
+            <div className="text-[10px] text-slate-400 font-sans uppercase tracking-tight mb-1">
+              [{s.num}] {s.publication || "Unknown Publication"}
+            </div>
+            
+            <div className="text-sm font-bold text-slate-800 leading-snug mb-2 font-sans">
+              "{s.title}"
+            </div>
+            
+            <div className="flex justify-between items-center text-[10px] border-t pt-2 border-slate-100">
+              <span className="text-blue-600 font-bold uppercase">Bài gốc • {s.year}</span>
+              <span className="text-slate-400 italic">({s.citation_count} lượt trích dẫn)</span>
+            </div>
+
+            <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-white"></div>
+          </div>
+        </span>
+      );
     }
     return part;
   });

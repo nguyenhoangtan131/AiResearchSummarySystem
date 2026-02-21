@@ -32,5 +32,7 @@ export const researchApi = {
   
   getArticle: (articleId: string) => api.get(`/article/${articleId}`),
 
-  getSources: (articleId: string) => api.get(`/source/${articleId}`)
+  getSources: (articleId: string) => api.get(`/source/${articleId}`),
+
+  getHistory: () => api.get('/articles')
 };
