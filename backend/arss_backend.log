@@ -1,0 +1,280 @@
+2026-02-18 10:46:18,572 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 10:46:39,766 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 10:46:39,776 [ERROR] ARSS: Gemini API Service Error: the JSON object must be str, bytes or bytearray, not GenerateContentResponse
+2026-02-18 10:50:01,392 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 10:50:26,273 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 10:50:26,278 [ERROR] ARSS: Gemini API Service Error: the JSON object must be str, bytes or bytearray, not GenerateContentResponse
+2026-02-18 10:51:00,574 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 10:51:20,649 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 10:51:20,656 [ERROR] ARSS: Gemini API Service Error: the JSON object must be str, bytes or bytearray, not GenerateContentResponse
+2026-02-18 10:53:22,801 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 10:53:45,213 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 10:53:45,217 [INFO] ARSS: this is response 
+{'article_title': 'Công nghệ điện toán di động: Sự tiến hóa và tác động hệ sinh thái của máy tính xách tay', 'stage': 1, 'section': [{'title': 'Chương 1: Bối cảnh và tính cấp thiết của thiết bị điện toán di động trong kỷ nguyên số', 'content': "Sự chuyển dịch từ các hệ thống điện toán cố định sang nền tảng di động đánh dấu một bước ngoặt quan trọng trong lịch sử phát triển của công nghệ thông tin. Trong kỷ nguyên số, khả năng truy cập thông tin 'mọi lúc, mọi nơi' (anywhere at any time) đã trở thành một yêu cầu tiên quyết, thúc đẩy sự tiến hóa mạnh mẽ của kiến trúc máy tính từ các hệ thống lưới (grid computing) và điện toán đám mây (cloud computing) sang các thiết bị cầm tay có tính linh động cao [Source ID: 826df905-dc06-4fdb-949a-5c23bd9351f0]. Thực tế cho thấy, các thiết bị điện toán di động như máy tính xách tay, netpad và điện thoại thông minh không chỉ đơn thuần là công cụ hỗ trợ mà đã trở thành nhân tố thay đổi cấu trúc nền kinh tế toàn cầu, định hình lại phương thức giao tiếp và lối sống của con người [Source ID: 8dea9986-7e80-4e0d-aeb0-bca067a9935f]. Sự chuyển dịch này phản ánh một xu thế tất yếu: con người ưu tiên tính tiện dụng và khả năng kết nối không gián đoạn hơn là sức mạnh tính toán thuần túy tại một địa điểm cố định.\n\nTính cấp thiết của việc nghiên cứu máy tính xách tay nằm ở vai trò cầu nối của nó trong hệ sinh thái dữ liệu. Hiện nay, khối lượng dữ liệu di động trên toàn thế giới đang tăng trưởng với tốc độ phi mã, trong đó máy tính xách tay đóng đóng góp một phần trọng yếu bên cạnh các thiết bị smartphone hiện đại [Source ID: d4eb6fd0-c30d-4fdd-98c2-b2c8924c2e90]. Sự phát triển này đòi hỏi một hệ thống kiến trúc mạng và thiết bị tinh vi hơn, nơi các khái niệm như Mạng thông minh (Intelligent Network - IN) và các thiết bị tích hợp đa năng (all-inclusive devices) trở thành tiêu chuẩn [Source ID: f47d7746-d2e0-4c60-96a4-3ad6fa4d3ebf]. Máy tính xách tay, với lợi thế về hiệu suất xử lý vượt trội so với điện thoại nhưng vẫn đảm bảo tính di động, đã trở thành công cụ tối ưu để triển khai các mô hình làm việc hiện đại, từ giáo dục trực tuyến đến thương mại điện tử dựa trên thiết bị di động [Source ID: a47a6269-886b-422f-821d-da6370078953], [Source ID: a808255c-d08b-4e56-b94b-c21c76b7183b].\n\nTuy nhiên, sự bùng nổ của điện toán di động cũng đặt ra những thách thức đáng kể về mặt bền vững và tài nguyên. Mặc dù các công nghệ mới như Internet vạn vật (IoT) và điện toán đám mây đang cung cấp các giải pháp cho những thách thức kinh tế - xã hội, chúng đồng thời làm gia tăng mức tiêu thụ điện năng trong lĩnh vực công nghệ thông tin và truyền thông (ICT) [Source ID: ceea7c9f-50df-489a-b219-95db5151b57e], [Source ID: 46aecc76-d07a-48f1-832a-5caa486a7c70]. Việc tối ưu hóa hiệu năng máy tính xách tay trong khi vẫn phải duy trì sự cân bằng với tác động sinh thái là một bài toán phức tạp đòi hỏi các nghiên cứu sâu rộng về phần cứng và thiết kế [Source ID: 378d033b-8b91-426f-bb9f-5f9a25901920]. Trong bối cảnh đó, máy tính xách tay không chỉ được nhìn nhận như một thiết bị đơn lẻ mà là một mắt xích quan trọng trong hệ sinh thái từ Cloud đến Edge, có khả năng tích hợp linh hoạt để hỗ trợ các lĩnh vực từ phát triển nông nghiệp đến quản trị doanh nghiệp [Source ID: 2886dffb-9299-4fe4-b0c4-67d73e3eaff2]. Chương này thiết lập cơ sở lý luận rằng sự tiến hóa của máy tính xách tay là kết quả của sự hội tụ giữa nhu cầu xã hội về tính linh động và sự đột phá trong kiến trúc hạ tầng kỹ thuật số."}]}
+2026-02-18 10:53:45,218 [ERROR] ARSS: Gemini API Service Error: 12 validation errors for CreateCachedContentConfig
+contents.Content.article_title
+  Extra inputs are not permitted [type=extra_forbidden, input_value='Công nghệ điện to...a máy tính xách tay', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.12/v/extra_forbidden
+contents.Content.stage
+  Extra inputs are not permitted [type=extra_forbidden, input_value=1, input_type=int]
+    For further information visit https://errors.pydantic.dev/2.12/v/extra_forbidden
+contents.Content.section
+  Extra inputs are not permitted [type=extra_forbidden, input_value=[{'title': 'Chương 1: B...ng kỹ thuật số."}], input_type=list]
+    For further information visit https://errors.pydantic.dev/2.12/v/extra_forbidden
+contents.str
+  Input should be a valid string [type=string_type, input_value={'article_title': 'Công ...g kỹ thuật số."}]}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/string_type
+contents.File.article_title
+  Extra inputs are not permitted [type=extra_forbidden, input_value='Công nghệ điện to...a máy tính xách tay', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.12/v/extra_forbidden
+contents.File.stage
+  Extra inputs are not permitted [type=extra_forbidden, input_value=1, input_type=int]
+    For further information visit https://errors.pydantic.dev/2.12/v/extra_forbidden
+contents.File.section
+  Extra inputs are not permitted [type=extra_forbidden, input_value=[{'title': 'Chương 1: B...ng kỹ thuật số."}], input_type=list]
+    For further information visit https://errors.pydantic.dev/2.12/v/extra_forbidden
+contents.Part.article_title
+  Extra inputs are not permitted [type=extra_forbidden, input_value='Công nghệ điện to...a máy tính xách tay', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.12/v/extra_forbidden
+contents.Part.stage
+  Extra inputs are not permitted [type=extra_forbidden, input_value=1, input_type=int]
+    For further information visit https://errors.pydantic.dev/2.12/v/extra_forbidden
+contents.Part.section
+  Extra inputs are not permitted [type=extra_forbidden, input_value=[{'title': 'Chương 1: B...ng kỹ thuật số."}], input_type=list]
+    For further information visit https://errors.pydantic.dev/2.12/v/extra_forbidden
+contents.list[union[str,File,Part]]
+  Input should be a valid list [type=list_type, input_value={'article_title': 'Công ...g kỹ thuật số."}]}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/list_type
+contents.list[union[Content,str,File,Part,list[union[str,File,Part]]]]
+  Input should be a valid list [type=list_type, input_value={'article_title': 'Công ...g kỹ thuật số."}]}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/list_type
+2026-02-18 10:55:41,121 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 10:56:21,617 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 10:56:21,620 [INFO] ARSS: ----------------------------
+this is response 
+"{\n  \"article_title\": \"C\u00f4ng ngh\u1ec7 \u0111i\u1ec7n to\u00e1n di \u0111\u1ed9ng: S\u1ef1 ti\u1ebfn h\u00f3a v\u00e0 t\u00e1c \u0111\u1ed9ng h\u1ec7 sinh th\u00e1i c\u1ee7a m\u00e1y t\u00ednh x\u00e1ch tay\",\n  \"stage\": 1,\n  \"section\": [\n    {\n      \"title\": \"GIAI \u0110O\u1ea0N 1 - Ch\u01b0\u01a1ng 1: B\u1ed1i c\u1ea3nh v\u00e0 t\u00ednh c\u1ea5p thi\u1ebft c\u1ee7a thi\u1ebft b\u1ecb \u0111i\u1ec7n to\u00e1n di \u0111\u1ed9ng trong k\u1ef7 nguy\u00ean s\u1ed1\",\n      \"content\": \"S\u1ef1 chuy\u1ec3n d\u1ecbch m\u00f4 h\u00ecnh \u0111i\u1ec7n to\u00e1n t\u1eeb c\u00e1c h\u1ec7 th\u1ed1ng c\u1ed1 \u0111\u1ecbnh (Fixed Computing) sang c\u00e1c n\u1ec1n t\u1ea3ng di \u0111\u1ed9ng (Mobile Computing) \u0111\u1ea1i di\u1ec7n cho m\u1ed9t b\u01b0\u1edbc ngo\u1eb7t mang t\u00ednh c\u1ea5u tr\u00fac trong l\u1ecbch s\u1eed c\u00f4ng ngh\u1ec7 th\u00f4ng tin. Trong k\u1ef7 nguy\u00ean s\u1ed1, m\u00e1y t\u00ednh x\u00e1ch tay kh\u00f4ng c\u00f2n \u0111\u01a1n thu\u1ea7n l\u00e0 m\u1ed9t thi\u1ebft b\u1ecb ph\u1ea7n c\u1ee9ng \u0111\u1ed9c l\u1eadp m\u00e0 \u0111\u00e3 tr\u1edf th\u00e0nh m\u1ed9t th\u00e0nh ph\u1ea7n c\u1ed1t l\u00f5i trong h\u1ec7 sinh th\u00e1i k\u1ebft n\u1ed1i v\u1ea1n v\u1eadt, cho ph\u00e9p th\u1ef1c thi c\u00e1c t\u00e1c v\u1ee5 t\u1ea1i b\u1ea5t c\u1ee9 \u0111\u00e2u v\u00e0 v\u00e0o b\u1ea5t k\u1ef3 th\u1eddi \u0111i\u1ec3m n\u00e0o [Source ID: 826df905-dc06-4fdb-949a-5c23bd9351f0]. S\u1ef1 ti\u1ebfn h\u00f3a n\u00e0y kh\u00f4ng ch\u1ec9 gi\u1edbi h\u1ea1n \u1edf vi\u1ec7c thu nh\u1ecf k\u00edch th\u01b0\u1edbc v\u1eadt l\u00fd m\u00e0 c\u00f2n n\u1eb1m \u1edf s\u1ef1 thay \u0111\u1ed5i s\u00e2u s\u1eafc trong ki\u1ebfn tr\u00fac h\u1ec7 th\u1ed1ng, t\u1eeb \u0111i\u1ec7n to\u00e1n l\u01b0\u1edbi (Grid computing) \u0111\u1ebfn \u0111i\u1ec7n to\u00e1n \u0111\u00e1m m\u00e2y (Cloud computing), t\u1ea1o \u0111i\u1ec1u ki\u1ec7n cho vi\u1ec7c t\u1ed1i \u01b0u h\u00f3a hi\u1ec7u su\u1ea5t l\u00e0m vi\u1ec7c trong c\u00e1c b\u1ed1i c\u1ea3nh \u0111a d\u1ea1ng [Source ID: 826df905-dc06-4fdb-949a-5c23bd9351f0], [Source ID: ceea7c9f-50df-489a-b219-95db5151b57e].\\n\\nT\u00ednh c\u1ea5p thi\u1ebft c\u1ee7a vi\u1ec7c nghi\u00ean c\u1ee9u h\u1ec7 sinh th\u00e1i m\u00e1y t\u00ednh x\u00e1ch tay n\u1ea3y sinh t\u1eeb t\u00e1c \u0111\u1ed9ng \u0111a chi\u1ec1u c\u1ee7a n\u00f3 \u0111\u1ed1i v\u1edbi c\u00e1c c\u1ea5u tr\u00fac kinh t\u1ebf - x\u00e3 h\u1ed9i to\u00e0n c\u1ea7u. S\u1ef1 ph\u1ed5 bi\u1ebfn c\u1ee7a c\u00e1c thi\u1ebft b\u1ecb di \u0111\u1ed9ng nh\u01b0 m\u00e1y t\u00ednh x\u00e1ch tay, netpad v\u00e0 \u0111i\u1ec7n tho\u1ea1i th\u00f4ng minh \u0111\u00e3 thay \u0111\u1ed5i c\u0103n b\u1ea3n ph\u01b0\u01a1ng th\u1ee9c giao ti\u1ebfp v\u00e0 l\u1ed1i s\u1ed1ng c\u1ee7a con ng\u01b0\u1eddi, th\u00fac \u0111\u1ea9y xu h\u01b0\u1edbng khu\u1ebfch t\u00e1n c\u00f4ng ngh\u1ec7 b\u0103ng r\u1ed9ng di \u0111\u1ed9ng tr\u00ean di\u1ec7n r\u1ed9ng [Source ID: 8dea9986-7e80-4e0d-aeb0-bca067a9935f]. \u0110\u1eb7c bi\u1ec7t, s\u1ef1 h\u1ed9i t\u1ee5 c\u1ee7a c\u00e1c thi\u1ebft b\u1ecb ng\u00e0y c\u00e0ng nh\u1ecf h\u01a1n, nhanh h\u01a1n v\u00e0 t\u00edch h\u1ee3p \u0111a n\u0103ng \u0111\u00e3 t\u1ea1o ra m\u1ed9t n\u1ec1n t\u1ea3ng cho c\u00e1c h\u1ec7 th\u1ed1ng d\u1eef li\u1ec7u di \u0111\u1ed9ng m\u1edbi, n\u01a1i c\u00e1c ranh gi\u1edbi gi\u1eefa l\u00e0m vi\u1ec7c, h\u1ecdc t\u1eadp v\u00e0 gi\u1ea3i tr\u00ed b\u1ecb x\u00f3a nh\u00f2a [Source ID: f47d7746-d2e0-4c60-96a4-3ad6fa4d3ebf]. Ph\u00e2n t\u00edch t\u1eeb g\u00f3c \u0111\u1ed9 kinh t\u1ebf v\u00e0 sinh th\u00e1i cho th\u1ea5y, l\u1ea7n \u0111\u1ea7u ti\u00ean trong l\u1ecbch s\u1eed, l\u01b0u l\u01b0\u1ee3ng d\u1eef li\u1ec7u di \u0111\u1ed9ng to\u00e0n c\u1ea7u \u0111\u1ea1t m\u1ee9c k\u1ef7 l\u1ee5c, kh\u1eb3ng \u0111\u1ecbnh vai tr\u00f2 kh\u00f4ng th\u1ec3 thay th\u1ebf c\u1ee7a m\u00e1y t\u00ednh x\u00e1ch tay trong vi\u1ec7c duy tr\u00ec c\u00e1c t\u01b0\u01a1ng t\u00e1c kinh t\u1ebf - x\u00e3 h\u1ed9i hi\u1ec7n \u0111\u1ea1i [Source ID: d4eb6fd0-c30d-4fdd-98c2-b2c8924c2e90].\\n\\nM\u00e1y t\u00ednh x\u00e1ch tay hi\u1ec7n nay \u0111\u00f3ng vai tr\u00f2 nh\u01b0 m\u1ed9t tr\u1ea1m trung chuy\u1ec3n (portable hub) quan tr\u1ecdng, h\u1ed7 tr\u1ee3 k\u1ebft n\u1ed1i \u0111a thi\u1ebft b\u1ecb th\u00f4ng qua c\u00e1c giao th\u1ee9c kh\u00f4ng d\u00e2y v\u00e0 n\u1ec1n t\u1ea3ng \u0111\u00e1m m\u00e2y [Source ID: 2886dffb-9299-4fe4-b0c4-67d73e3eaff2]. S\u1ef1 ph\u1ee5 thu\u1ed9c ng\u00e0y c\u00e0ng t\u0103ng v\u00e0o c\u00e1c d\u1ecbch v\u1ee5 th\u01b0\u01a1ng m\u1ea1i \u0111i\u1ec7n t\u1eed v\u00e0 gi\u00e1o d\u1ee5c tr\u1ef1c tuy\u1ebfn d\u1ef1a tr\u00ean thi\u1ebft b\u1ecb di \u0111\u1ed9ng \u0111\u00e3 ch\u1ee9ng minh ti\u1ec1m n\u0103ng to l\u1edbn trong vi\u1ec7c gi\u1ea3i quy\u1ebft c\u00e1c th\u00e1ch th\u1ee9c kinh t\u1ebf-x\u00e3 h\u1ed9i t\u1ea1i c\u1ea3 c\u00e1c qu\u1ed1c gia ph\u00e1t tri\u1ec3n v\u00e0 \u0111ang ph\u00e1t tri\u1ec3n [Source ID: a808255c-d08b-4e56-b94b-c21c76b7183b], [Source ID: a47a6269-886b-422f-821d-da6370078953]. Tuy nhi\u00ean, s\u1ef1 gia t\u0103ng v\u1ec1 s\u1ed1 l\u01b0\u1ee3ng thi\u1ebft b\u1ecb c\u0169ng \u0111\u1eb7t ra nh\u1eefng v\u1ea5n \u0111\u1ec1 nghi\u00eam tr\u1ecdng v\u1ec1 ti\u00eau th\u1ee5 n\u0103ng l\u01b0\u1ee3ng v\u00e0 t\u00e1c \u0111\u1ed9ng m\u00f4i tr\u01b0\u1eddng c\u1ee7a ng\u00e0nh ICT, \u0111\u00f2i h\u1ecfi nh\u1eefng nghi\u00ean c\u1ee9u s\u00e2u s\u1eafc v\u1ec1 hi\u1ec7u su\u1ea5t s\u1eed d\u1ee5ng \u0111i\u1ec7n n\u0103ng trong ki\u1ebfn tr\u00fac m\u00e1y t\u00ednh di \u0111\u1ed9ng [Source ID: 46aecc76-d07a-48f1-832a-5caa486a7c70].\\n\\nM\u1ee5c ti\u00eau c\u1ee7a ch\u01b0\u01a1ng n\u00e0y l\u00e0 thi\u1ebft l\u1eadp m\u1ed9t n\u1ec1n t\u1ea3ng l\u00fd lu\u1eadn v\u1ec1 s\u1ef1 chuy\u1ec3n d\u1ecbch sang \u0111i\u1ec7n to\u00e1n di \u0111\u1ed9ng, t\u1eeb \u0111\u00f3 x\u00e1c \u0111\u1ecbnh r\u00f5 vai tr\u00f2 c\u1ee7a m\u00e1y t\u00ednh x\u00e1ch tay trong vi\u1ec7c ki\u1ebfn t\u1ea1o m\u1ed9t m\u00f4i tr\u01b0\u1eddng l\u00e0m vi\u1ec7c th\u00f4ng minh (Smart environment). Vi\u1ec7c t\u00edch h\u1ee3p c\u00e1c c\u00f4ng ngh\u1ec7 m\u1edbi nh\u01b0 tr\u00ed tu\u1ec7 nh\u00e2n t\u1ea1o (AI) v\u00e0 ki\u1ebfn tr\u00fac \u0111i\u1ec7n to\u00e1n bi\u00ean (Edge computing) v\u00e0o thi\u1ebft k\u1ebf ph\u1ea7n c\u1ee9ng di \u0111\u1ed9ng \u0111ang t\u1ea1o ra nh\u1eefng xu h\u01b0\u1edbng m\u1edbi, bu\u1ed9c c\u00e1c nh\u00e0 nghi\u00ean c\u1ee9u v\u00e0 s\u1ea3n xu\u1ea5t ph\u1ea3i t\u00e1i \u0111\u1ecbnh ngh\u0129a l\u1ea1i kh\u00e1i ni\u1ec7m v\u1ec1 t\u00ednh di \u0111\u1ed9ng v\u00e0 hi\u1ec7u n\u0103ng [Source ID: 378d033b-8b91-426f-bb9f-5f9a25901920]. Nghi\u00ean c\u1ee9u n\u00e0y h\u01b0\u1edbng t\u1edbi vi\u1ec7c cung c\u1ea5p m\u1ed9t c\u00e1i nh\u00ecn t\u1ed5ng th\u1ec3 v\u1ec1 s\u1ef1 ti\u1ebfn h\u00f3a c\u1ee7a m\u00e1y t\u00ednh x\u00e1ch tay, kh\u00f4ng ch\u1ec9 nh\u01b0 m\u1ed9t c\u00f4ng c\u1ee5 k\u1ef9 thu\u1eadt m\u00e0 c\u00f2n nh\u01b0 m\u1ed9t th\u1ef1c th\u1ec3 x\u00e3 h\u1ed9i th\u00fac \u0111\u1ea9y s\u1ef1 ph\u00e1t tri\u1ec3n b\u1ec1n v\u1eefng trong k\u1ef7 nguy\u00ean k\u1ebft n\u1ed1i.\"\n    }\n  ]\n}"
+2026-02-18 10:56:22,584 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 429 Too Many Requests"
+2026-02-18 10:56:22,586 [ERROR] ARSS: Gemini API Service Error: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'TotalCachedContentStorageTokensPerModelFreeTier limit exceeded for model gemini-3-flash: limit=0, requested=7678', 'status': 'RESOURCE_EXHAUSTED'}}
+2026-02-18 11:03:06,824 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 11:03:27,520 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 11:03:27,530 [INFO] ARSS: ----------------------------
+this is response 
+"{\n  \"article_title\": \"C\u00f4ng ngh\u1ec7 \u0111i\u1ec7n to\u00e1n di \u0111\u1ed9ng: S\u1ef1 ti\u1ebfn h\u00f3a v\u00e0 t\u00e1c \u0111\u1ed9ng h\u1ec7 sinh th\u00e1i c\u1ee7a m\u00e1y t\u00ednh x\u00e1ch tay\",\n  \"stage\": 1,\n  \"section\": [\n    {\n      \"title\": \"Ch\u01b0\u01a1ng 1: B\u1ed1i c\u1ea3nh v\u00e0 t\u00ednh c\u1ea5p thi\u1ebft c\u1ee7a thi\u1ebft b\u1ecb \u0111i\u1ec7n to\u00e1n di \u0111\u1ed9ng trong k\u1ef7 nguy\u00ean s\u1ed1\",\n      \"content\": \"S\u1ef1 chuy\u1ec3n d\u1ecbch t\u1eeb c\u00e1c h\u1ec7 th\u1ed1ng \u0111i\u1ec7n to\u00e1n c\u1ed1 \u0111\u1ecbnh sang m\u00f4 h\u00ecnh \u0111i\u1ec7n to\u00e1n di \u0111\u1ed9ng \u0111\u1ea1i di\u1ec7n cho m\u1ed9t b\u01b0\u1edbc ngo\u1eb7t mang t\u00ednh c\u1ea5u tr\u00fac trong k\u1ef7 nguy\u00ean s\u1ed1, \u0111\u1ecbnh h\u00ecnh l\u1ea1i c\u00e1ch th\u1ee9c con ng\u01b0\u1eddi t\u01b0\u01a1ng t\u00e1c v\u1edbi th\u00f4ng tin v\u00e0 duy tr\u00ec hi\u1ec7u su\u1ea5t c\u00f4ng vi\u1ec7c. Trong b\u1ed1i c\u1ea3nh h\u1ea1 t\u1ea7ng m\u1ea1ng to\u00e0n c\u1ea7u \u0111ang ti\u1ebfn t\u1edbi s\u1ef1 ho\u00e0n thi\u1ec7n, kh\u00e1i ni\u1ec7m \u0111i\u1ec7n to\u00e1n m\u1ecdi l\u00fac, m\u1ecdi n\u01a1i (ubiquitous computing) kh\u00f4ng c\u00f2n l\u00e0 m\u1ed9t gi\u1ea3 thuy\u1ebft l\u00fd thuy\u1ebft m\u00e0 \u0111\u00e3 tr\u1edf th\u00e0nh m\u1ed9t y\u00eau c\u1ea7u th\u1ef1c ti\u1ec5n \u0111\u1ed1i v\u1edbi m\u1ecdi th\u1ef1c th\u1ec3 kinh t\u1ebf [Source ID: 826df905-dc06-4fdb-949a-5c23bd9351f0]. M\u00e1y t\u00ednh x\u00e1ch tay, v\u1edbi vai tr\u00f2 l\u00e0 h\u1ea1t nh\u00e2n c\u1ee7a s\u1ef1 chuy\u1ec3n d\u1ecbch n\u00e0y, \u0111\u00e3 v\u01b0\u1ee3t qua gi\u1edbi h\u1ea1n c\u1ee7a m\u1ed9t thi\u1ebft b\u1ecb \u0111i\u1ec7n t\u1eed thu\u1ea7n t\u00fay \u0111\u1ec3 tr\u1edf th\u00e0nh m\u1ed9t m\u1eaft x\u00edch thi\u1ebft y\u1ebfu trong vi\u1ec7c t\u1ed1i \u01b0u h\u00f3a chu\u1ed7i gi\u00e1 tr\u1ecb v\u00e0 th\u00fac \u0111\u1ea9y s\u1ef1 khu\u1ebfch t\u00e1n c\u00f4ng ngh\u1ec7 b\u0103ng th\u00f4ng r\u1ed9ng tr\u00ean quy m\u00f4 to\u00e0n c\u1ea7u [Source ID: 8dea9986-7e80-4e0d-aeb0-bca067a9935f].\\n\\nT\u00ednh c\u1ea5p thi\u1ebft c\u1ee7a vi\u1ec7c nghi\u00ean c\u1ee9u m\u00e1y t\u00ednh x\u00e1ch tay trong h\u1ec7 sinh th\u00e1i \u0111i\u1ec7n to\u00e1n hi\u1ec7n \u0111\u1ea1i b\u1eaft ngu\u1ed3n t\u1eeb s\u1ef1 h\u1ed9i t\u1ee5 c\u1ee7a ba y\u1ebfu t\u1ed1 then ch\u1ed1t: s\u1ef1 b\u00f9ng n\u1ed5 c\u1ee7a l\u01b0u l\u01b0\u1ee3ng d\u1eef li\u1ec7u, s\u1ef1 ti\u1ebfn h\u00f3a c\u1ee7a ki\u1ebfn tr\u00fac m\u1ea1ng th\u00f4ng minh v\u00e0 y\u00eau c\u1ea7u v\u1ec1 t\u00ednh b\u1ec1n v\u1eefng. Th\u1ef1c t\u1ebf cho th\u1ea5y, l\u01b0u l\u01b0\u1ee3ng d\u1eef li\u1ec7u di \u0111\u1ed9ng to\u00e0n c\u1ea7u \u0111\u00e3 \u0111\u1ea1t t\u1edbi nh\u1eefng c\u1ed9t m\u1ed1c ch\u01b0a t\u1eebng c\u00f3 trong l\u1ecbch s\u1eed, \u0111\u1eb7t ra \u00e1p l\u1ef1c l\u00ean kh\u1ea3 n\u0103ng x\u1eed l\u00fd t\u1ea1i ch\u1ed7 c\u1ee7a c\u00e1c thi\u1ebft b\u1ecb \u0111\u1ea7u cu\u1ed1i nh\u01b0 m\u00e1y t\u00ednh x\u00e1ch tay v\u00e0 \u0111i\u1ec7n tho\u1ea1i th\u00f4ng minh [Source ID: d4eb6fd0-c30d-4fdd-98c2-b2c8924c2e90]. Song song \u0111\u00f3, c\u00e1c kh\u00e1i ni\u1ec7m v\u1ec1 m\u1ea1ng th\u00f4ng minh (Intelligent Networks - IN) \u0111ang th\u00fac \u0111\u1ea9y s\u1ef1 ra \u0111\u1eddi c\u1ee7a c\u00e1c thi\u1ebft b\u1ecb nh\u1ecf g\u1ecdn h\u01a1n, t\u1ed1c \u0111\u1ed9 cao h\u01a1n v\u00e0 t\u00edch h\u1ee3p \u0111a ch\u1ee9c n\u0103ng, cho ph\u00e9p ng\u01b0\u1eddi d\u00f9ng th\u1ef1c thi c\u00e1c t\u00e1c v\u1ee5 ph\u1ee9c t\u1ea1p m\u00e0 tr\u01b0\u1edbc \u0111\u00e2y ch\u1ec9 d\u00e0nh cho m\u00e1y tr\u1ea1m c\u1ed1 \u0111\u1ecbnh [Source ID: f47d7746-d2e0-4c60-96a4-3ad6fa4d3ebf]. \u0110i\u1ec1u n\u00e0y \u0111\u1eb7t ra m\u1ed9t gi\u1ea3 thuy\u1ebft v\u1ec1 vi\u1ec7c li\u1ec7u ranh gi\u1edbi gi\u1eefa t\u00ednh linh \u0111\u1ed9ng v\u00e0 hi\u1ec7u n\u0103ng ph\u1ea7n c\u1ee9ng c\u00f3 th\u1ec3 \u0111\u01b0\u1ee3c x\u00f3a nh\u00f2a ho\u00e0n to\u00e0n th\u00f4ng qua c\u00e1c ti\u1ebfn b\u1ed9 ki\u1ebfn tr\u00fac m\u1edbi hay kh\u00f4ng.\\n\\nH\u01a1n n\u1eefa, s\u1ef1 t\u00edch h\u1ee3p gi\u1eefa m\u00e1y t\u00ednh x\u00e1ch tay v\u00e0 c\u00e1c n\u1ec1n t\u1ea3ng \u0111i\u1ec7n to\u00e1n \u0111\u00e1m m\u00e2y (Cloud Computing) \u0111\u00e3 thay \u0111\u1ed5i ho\u00e0n to\u00e0n ph\u01b0\u01a1ng th\u1ee9c qu\u1ea3n tr\u1ecb ngu\u1ed3n l\u1ef1c. M\u00e1y t\u00ednh x\u00e1ch tay hi\u1ec7n nay \u0111\u00f3ng vai tr\u00f2 nh\u01b0 m\u1ed9t tr\u1ea1m trung chuy\u1ec3n (portable hub), k\u1ebft n\u1ed1i c\u00e1c thi\u1ebft b\u1ecb ngo\u1ea1i vi v\u00e0 truy c\u1eadp tr\u1ef1c ti\u1ebfp v\u00e0o c\u00e1c t\u00e0i nguy\u00ean t\u00ednh to\u00e1n kh\u1ed5ng l\u1ed3 tr\u00ean \u0111\u00e1m m\u00e2y, t\u1eeb \u0111\u00f3 gi\u1ea3i quy\u1ebft c\u00e1c th\u00e1ch th\u1ee9c v\u1ec1 kinh t\u1ebf - x\u00e3 h\u1ed9i trong c\u00e1c l\u0129nh v\u1ef1c t\u1eeb gi\u00e1o d\u1ee5c \u0111\u1ebfn ph\u00e1t tri\u1ec3n n\u00f4ng nghi\u1ec7p [Source ID: 2886dffb-9299-4fe4-b0c4-67d73e3eaff2] [Source ID: a47a6269-886b-422f-821d-da6370078953]. Tuy nhi\u00ean, s\u1ef1 ph\u1ee5 thu\u1ed9c n\u00e0y c\u0169ng d\u1eabn \u0111\u1ebfn nh\u1eefng v\u1ea5n \u0111\u1ec1 v\u1ec1 ti\u00eau th\u1ee5 n\u0103ng l\u01b0\u1ee3ng v\u00e0 t\u00e1c \u0111\u1ed9ng m\u00f4i tr\u01b0\u1eddng c\u1ee7a ng\u00e0nh C\u00f4ng ngh\u1ec7 th\u00f4ng tin v\u00e0 Truy\u1ec1n th\u00f4ng (ICT), \u0111\u00f2i h\u1ecfi nh\u1eefng nghi\u00ean c\u1ee9u s\u00e2u s\u1eafc v\u1ec1 hi\u1ec7u qu\u1ea3 s\u1eed d\u1ee5ng \u0111i\u1ec7n n\u0103ng tr\u00ean c\u00e1c d\u00f2ng m\u00e1y t\u00ednh di \u0111\u1ed9ng [Source ID: 46aecc76-d07a-48f1-832a-5caa486a7c70].\\n\\nM\u1ee5c ti\u00eau c\u1ee7a nghi\u00ean c\u1ee9u n\u00e0y kh\u00f4ng ch\u1ec9 d\u1eebng l\u1ea1i \u1edf vi\u1ec7c h\u1ec7 th\u1ed1ng h\u00f3a c\u00e1c giai \u0111o\u1ea1n ph\u00e1t tri\u1ec3n ph\u1ea7n c\u1ee9ng, m\u00e0 c\u00f2n t\u1eadp trung ph\u00e2n t\u00edch c\u00e1ch th\u1ee9c m\u00e1y t\u00ednh x\u00e1ch tay t\u01b0\u01a1ng t\u00e1c v\u1edbi c\u00e1c xu h\u01b0\u1edbng c\u00f4ng ngh\u1ec7 m\u1edbi n\u1ed5i nh\u01b0 Internet v\u1ea1n v\u1eadt (IoT) v\u00e0 \u0111i\u1ec7n to\u00e1n bi\u00ean (Edge Computing) [Source ID: ceea7c9f-50df-489a-b219-95db5151b57e] [Source ID: 378d033b-8b91-426f-bb9f-5f9a25901920]. Vi\u1ec7c x\u00e1c \u0111\u1ecbnh vai tr\u00f2 c\u1ee7a m\u00e1y t\u00ednh x\u00e1ch tay trong m\u1ed9t ki\u1ebfn tr\u00fac h\u1ec7 th\u1ed1ng ph\u00e2n t\u00e1n s\u1ebd cung c\u1ea5p c\u00e1i nh\u00ecn to\u00e0n di\u1ec7n v\u1ec1 t\u01b0\u01a1ng lai c\u1ee7a c\u00f4ng vi\u1ec7c t\u1eeb xa v\u00e0 c\u00e1c m\u00f4 h\u00ecnh kinh doanh d\u1ef1a tr\u00ean s\u1ef1 linh ho\u1ea1t. Th\u00f4ng qua ph\u01b0\u01a1ng ph\u00e1p ph\u00e2n t\u00edch \u0111a chi\u1ec1u, ch\u01b0\u01a1ng ti\u1ebfp theo s\u1ebd \u0111i s\u00e2u v\u00e0o ti\u1ebfn tr\u00ecnh l\u1ecbch s\u1eed \u0111\u1ec3 l\u00e0m r\u00f5 c\u00e1c ti\u1ec1n \u0111\u1ec1 k\u1ef9 thu\u1eadt \u0111\u00e3 cho ph\u00e9p m\u00e1y t\u00ednh x\u00e1ch tay \u0111\u1ea1t \u0111\u01b0\u1ee3c v\u1ecb th\u1ebf th\u1ed1ng tr\u1ecb nh\u01b0 hi\u1ec7n nay.\"\n    }\n  ]\n}"
+2026-02-18 11:03:37,213 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-18 11:03:37,216 [INFO] ARSS: Successfully created cache: cachedContents/rinvufwwr2zn53lmj3irhw2oufhr76u7g5e0gpdy
+2026-02-18 11:03:37,218 [ERROR] ARSS: ERROR: Fail to save article to database: 'CachedContent' object has no attribute 'get'
+2026-02-18 13:04:28,223 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 13:04:51,795 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 13:04:52,110 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 400 Bad Request"
+2026-02-18 13:04:52,114 [ERROR] ARSS: Gemini API Service Error: 400 INVALID_ARGUMENT. {'error': {'code': 400, 'message': '* CreateCachedContentRequest.cached_content.display_name: field predicate failed: len($) <= 128\n', 'status': 'INVALID_ARGUMENT'}}
+2026-02-18 13:13:39,676 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 13:13:58,269 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 13:14:00,826 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-18 13:14:00,830 [INFO] ARSS: Successfully created cache: cachedContents/dindrfq6mcz1fevdf7i6vqrwa09q5pwmm8pev5jp
+2026-02-18 13:14:00,831 [ERROR] ARSS: ERROR: Fail to save article to database: 'NoneType' object has no attribute 'get'
+2026-02-18 13:18:12,952 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 13:18:28,370 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 13:18:31,370 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-18 13:18:31,373 [INFO] ARSS: Successfully created cache: cachedContents/gbkq5ih02veovndlbe36mfjauwrmo20x53kql7jt
+2026-02-18 13:18:31,376 [ERROR] ARSS: ERROR: Fail to save article to database: 'NoneType' object has no attribute 'get'
+2026-02-18 13:21:07,838 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 13:21:27,093 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 13:21:27,109 [INFO] ARSS: 
+ -----------------------------------------------------
+this is raw response sdk_http_response=HttpResponse(
+  headers=<dict len=11>
+) candidates=[Candidate(
+  content=Content(
+    parts=[
+      Part(
+        text="""{
+  "article_title": "Công nghệ điện toán di động: Sự tiến hóa và tác động hệ sinh thái của máy tính xách tay",
+  "stage": 1,
+  "section": [
+    {
+      "title": "Chương 1: Bối cảnh và tính cấp thiết của thiết bị điện toán di động trong kỷ nguyên số",
+      "content": "Sự chuyển dịch từ các mô hình điện toán cố định (fixed computing) sang các nền tảng di động không chỉ là một sự thay đổi về mặt thiết kế vật lý mà còn là một cuộc cách mạng trong kiến trúc hệ thống và phương thức tương tác của con người với dữ liệu. Trong bối cảnh kỷ nguyên số, khái niệm 'truy cập mọi lúc, mọi nơi' đã trở thành một tiêu chuẩn bắt buộc, thúc đẩy bởi sự hội tụ của công nghệ mạng và sự tiến hóa của kiến trúc máy tính [Source ID: 826df905-dc06-4fdb-949a-5c23bd9351f0]. Thực tế cho thấy, sự gia tăng đột biến của lưu lượng dữ liệu di động trên toàn cầu—lần đầu tiên trong lịch sử vượt qua các ranh giới truyền thống—đã khẳng định vai trò không thể thay thế của các thiết bị đầu cuối di động, trong đó máy tính xách tay đóng vai trò là cầu nối giữa hiệu suất xử lý cao và tính linh hoạt tuyệt đối [Source ID: d4eb6fd0-c30d-4fdd-98c2-b2c8924c2e90]. \n\nTính cấp thiết của nghiên cứu này bắt nguồn từ sự thay đổi sâu sắc trong cấu trúc kinh tế toàn cầu và lối sống xã hội. Các thiết bị như máy tính xách tay, điện thoại thông minh và các thiết bị hỗ trợ cá nhân (PDA) đã không còn đơn thuần là công cụ giải trí mà trở thành hạ tầng thiết yếu cho giao tiếp và thương mại [Source ID: 8dea9986-7e80-4e0d-aeb0-bca067a9935f]. Sự phát triển này đòi hỏi một cái nhìn đa chiều về cách thức mà các hệ thống tính toán nhỏ gọn, tích hợp toàn diện có thể thay đổi cục diện sản xuất và tiêu dùng [Source ID: f47d7746-d2e0-4c60-96a4-3ad6fa4d3ebf]. \n\nMột trong những luận điểm quan trọng nhất trong giai đoạn hiện nay là sự tích hợp giữa thiết kế phần cứng di động và hạ tầng điện toán đám mây. Điện toán đám mây không chỉ là một khối xây dựng cho Internet tương lai mà còn là động lực chính cho phép các thiết bị di động vượt qua các giới hạn về tài nguyên nội tại, hướng tới các giải pháp công nghệ thông tin xanh và bền vững [Source ID: ceea7c9f-50df-489a-b219-95db5151b57e]. Sự kết hợp này tạo ra một hệ sinh thái nơi máy tính xách tay không còn hoạt động độc lập mà là một phần của mạng lưới điện toán biên (edge computing) phức tạp, nơi trí tuệ nhân tạo bắt đầu len lỏi vào từng tiến trình xử lý [Source ID: 378d033b-8b91-426f-bb9f-5f9a25901920]. \n\nTrong lĩnh vực chuyên môn và giáo dục, tác động của công nghệ di động mang tính chất thay đổi mô hình (paradigm shift). Việc phổ biến các nền tảng di động đã mở ra những khả năng mới trong việc tiếp cận tri thức và tối ưu hóa quy trình làm việc từ xa, đồng thời đặt ra những câu hỏi về sự thích nghi của các cấu trúc kinh tế - xã hội hiện hữu [Source ID: a47a6269-886b-422f-821d-da6370078953]. Đặc biệt, trong các ngành đặc thù như nông nghiệp hay quản lý hạ tầng, máy tính xách tay đóng vai trò như những 'trung tâm di động' (portable hubs) hỗ trợ kết nối đa thiết bị, từ đó thúc đẩy sự phát triển của các khu vực vốn gặp hạn chế về hạ tầng cố định [Source ID: 2886dffb-9299-4fe4-b0c4-67d73e3eaff2]. \n\nTuy nhiên, sự bùng nổ này cũng dẫn đến những thách thức về tiêu thụ năng lượng và tác động môi trường. Xu hướng tiêu thụ điện năng trong lĩnh vực ICT, đặc biệt là sự phát triển của các dịch vụ video/âm thanh trực tuyến trên các nền tảng di động, đòi hỏi các nhà sản xuất phải không ngừng cải tiến hiệu suất năng lượng của linh kiện [Source ID: 46aecc76-d07a-48f1-832a-5caa486a7c70]. Do đó, việc nghiên cứu về sự tiến hóa của máy tính xách tay không chỉ dừng lại ở các thông số kỹ thuật mà còn phải xem xét đến tính bền vững của hệ sinh thái công nghệ di động nói chung [Source ID: a808255c-d08b-4e56-b94b-c21c76b7183b]. \n\nTổng kết lại, chương này xác định mục tiêu nghiên cứu là hệ thống hóa các giai đoạn phát triển của máy tính xách tay trong tương quan với sự thay đổi của nhu cầu xã hội và sự tiến bộ của khoa học vật liệu. Việc phân tích bối cảnh này nhằm thiết lập nền tảng lý luận vững chắc để đánh giá cách mà các thiết bị này đã tái định nghĩa khái niệm 'năng suất' trong thế kỷ 21. Nghiên cứu sẽ tập trung vào việc làm rõ vai trò của máy tính xách tay trong việc tối ưu hóa hiệu suất làm việc hiện đại, đồng thời dự báo các rào cản kỹ thuật cần vượt qua để đạt được sự đồng nhất hoàn hảo giữa tính di động và sức mạnh xử lý."
+    }
+  ]
+}""",
+        thought_signature=b'\x12\x9e+\n\x9b+\x01\xbe>\xf6\xfb\xc5\x8d|=\xb1\x9d\x1bI\xbf-X\x86\xbeu\xcfv\xf7\x9c\xc2\xc3u]\x11\xc2D\xf1\x05\x8cY\xcf\xe8x\xefA\xbdP\xd4\x96\xeb!\xe7[w\x01q\xb5\xfe\xfb\xaf\rt@\x03$\tS\x15g{O\xa5\xc8B\x08\xc2+\x85\xe8z#A\xd8\xc2u\xbe\x89\xb1\xffb\xa9\xed\x07\xcf\xbf\xd7\x14...'
+      ),
+    ],
+    role='model'
+  ),
+  finish_reason=<FinishReason.STOP: 'STOP'>,
+  index=0
+)] create_time=None model_version='gemini-3-flash-preview' prompt_feedback=None response_id='ZlqVacPyKciljuMP14KIuAg' usage_metadata=GenerateContentResponseUsageMetadata(
+  candidates_token_count=1373,
+  prompt_token_count=2620,
+  prompt_tokens_details=[
+    ModalityTokenCount(
+      modality=<MediaModality.TEXT: 'TEXT'>,
+      token_count=2620
+    ),
+  ],
+  thoughts_token_count=1708,
+  total_token_count=5701
+) automatic_function_calling_history=[] parsed=None
+2026-02-18 13:21:29,344 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-18 13:21:29,349 [INFO] ARSS: Successfully created cache: cachedContents/7ha4v387p00kswhwdubxjioneoljy1p9auez16yk
+2026-02-18 13:21:29,351 [ERROR] ARSS: ERROR: Fail to save article to database: 'NoneType' object has no attribute 'get'
+2026-02-18 14:37:42,591 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 14:38:01,917 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 14:38:01,921 [ERROR] ARSS: Gemini API Service Error: 'UUID' object has no attribute 'replace'
+2026-02-18 14:40:08,660 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 14:40:32,565 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 14:40:34,619 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-18 14:40:34,621 [INFO] ARSS: Successfully created cache: cachedContents/b5941qx0yy529dnj4pxgbi1fwxwfssiyscp8aj2w
+2026-02-18 14:40:34,621 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 14:40:54,114 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 14:40:54,125 [ERROR] ARSS: ERROR: UNEXCEPTED ERROR: Caches.delete() takes 1 positional argument but 2 were given
+2026-02-18 14:40:54,153 [ERROR] ARSS: ERROR: Fail to save article to database: type object 'ResearchSource' has no attribute 'where'
+2026-02-18 15:11:23,418 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 15:11:40,835 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 15:11:42,865 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-18 15:11:42,868 [INFO] ARSS: Successfully created cache: cachedContents/fcws6hikrlshczemcivis5yrxekjn7mtbfjv2zcp
+2026-02-18 15:11:42,870 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 15:12:06,035 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 15:12:06,047 [ERROR] ARSS: ERROR: UNEXCEPTED ERROR: Caches.delete() takes 1 positional argument but 2 were given
+2026-02-18 15:15:56,764 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 15:16:12,556 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 15:16:14,351 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-18 15:16:14,353 [INFO] ARSS: Successfully created cache: cachedContents/h0zgojwqa9citr4qpnqv2gqd1zkqj8bx3f4l3wqg
+2026-02-18 15:16:14,354 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 15:16:30,970 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 15:16:30,976 [ERROR] ARSS: ERROR: UNEXCEPTED ERROR: Caches.delete() takes 1 positional argument but 2 were given
+2026-02-18 15:16:30,977 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 15:16:49,043 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 15:16:49,046 [ERROR] ARSS: ERROR: UNEXCEPTED ERROR: Caches.delete() takes 1 positional argument but 2 were given
+2026-02-18 15:16:49,047 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 15:17:12,593 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 15:17:12,605 [ERROR] ARSS: ERROR: UNEXCEPTED ERROR: Caches.delete() takes 1 positional argument but 2 were given
+2026-02-18 15:17:12,606 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 15:18:00,483 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 15:18:00,507 [ERROR] ARSS: ERROR: UNEXCEPTED ERROR: Caches.delete() takes 1 positional argument but 2 were given
+2026-02-18 15:27:44,001 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 15:28:04,245 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 15:28:06,296 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-18 15:28:06,297 [INFO] ARSS: Successfully created cache: cachedContents/9qyyji6f0olhwehfvgawlituqnc7l957kcd85cpj
+2026-02-18 15:28:06,297 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 15:28:26,072 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 15:28:27,855 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-18 15:28:28,876 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/9qyyji6f0olhwehfvgawlituqnc7l957kcd85cpj "HTTP/1.1 200 OK"
+2026-02-18 15:28:28,877 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 15:28:46,737 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 15:28:48,740 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-18 15:28:49,796 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/rrlsjrkesu9ludozouimsodqmdpaj5gcfy3y4mdw "HTTP/1.1 200 OK"
+2026-02-18 15:28:49,797 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 15:29:08,765 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 15:29:16,502 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-18 15:29:17,530 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/louelf6k945cb5g2xbu3wp8twrhniu6qettohnmv "HTTP/1.1 200 OK"
+2026-02-18 15:29:17,531 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 15:29:37,089 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 15:29:38,939 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-18 15:29:40,004 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/7k7ae4os1wthnj5qu99s013qt8aptzll1kk9slrb "HTTP/1.1 200 OK"
+2026-02-18 17:23:13,162 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 17:23:24,659 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 17:24:05,576 [INFO] httpx: HTTP Request: POST https://google.serper.dev/scholar "HTTP/1.1 200 OK"
+2026-02-18 17:24:17,859 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 17:24:35,465 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 17:24:37,267 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-18 17:24:37,269 [INFO] ARSS: Successfully created cache: cachedContents/jlqr3lksn7jyibz1jlzopkxr32b7061bqds419ka
+2026-02-18 17:24:37,270 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 17:24:54,122 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 17:24:55,759 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-18 17:24:56,676 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/jlqr3lksn7jyibz1jlzopkxr32b7061bqds419ka "HTTP/1.1 200 OK"
+2026-02-18 17:24:56,679 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 17:25:14,312 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 17:25:15,817 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-18 17:25:16,708 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/ibi7nn88id5qhmcnkghiu5ciwv1z9vg7robk69x7 "HTTP/1.1 200 OK"
+2026-02-18 17:25:16,711 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 17:25:35,137 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 17:25:36,798 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-18 17:25:37,726 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/jd7kh302ss16wbdxdf8qz43jx3a6gan4lq5w6kaa "HTTP/1.1 200 OK"
+2026-02-18 17:25:37,736 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 17:25:56,828 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 17:25:58,539 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-18 17:25:59,437 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/iavn28pemgzmquu6thh062sihhf7d9a1ni0s3dz9 "HTTP/1.1 200 OK"
+2026-02-18 17:39:01,183 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 17:39:23,385 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 17:39:25,162 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-18 17:39:25,164 [INFO] ARSS: Successfully created cache: cachedContents/sncnwofdt5ylk34loxtt9r9oexm970oku0mdfekt
+2026-02-18 17:39:25,165 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 17:39:43,958 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 17:39:45,772 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-18 17:39:46,841 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/sncnwofdt5ylk34loxtt9r9oexm970oku0mdfekt "HTTP/1.1 200 OK"
+2026-02-18 17:39:46,854 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 17:40:02,641 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 17:40:04,391 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-18 17:40:05,451 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/g87jz0djk325d1pupqfnw8qywbk3tbtz7s3zpk1m "HTTP/1.1 200 OK"
+2026-02-18 17:40:05,454 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 17:40:24,193 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 17:40:26,196 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-18 17:40:27,324 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/wvhth05aigaa3nb3xqpqvt12jcbuu1y4ae0ueidw "HTTP/1.1 200 OK"
+2026-02-18 17:40:27,328 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 17:40:45,857 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 17:40:47,905 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-18 17:40:49,018 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/06z2on3f8wy4rzti5687quuue20sk9m7dspescud "HTTP/1.1 200 OK"
+2026-02-18 18:31:52,878 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 18:32:12,602 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 18:32:14,333 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-18 18:32:14,337 [INFO] ARSS: Successfully created cache: cachedContents/ikcg8x0kpj208khv7bnxueyr4tjde9gvg235t62o
+2026-02-18 18:32:14,338 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 18:32:37,115 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 18:32:39,085 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-18 18:32:40,125 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/ikcg8x0kpj208khv7bnxueyr4tjde9gvg235t62o "HTTP/1.1 200 OK"
+2026-02-18 18:32:40,127 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 18:32:59,667 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 18:33:01,483 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-18 18:33:02,516 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/9f7415urgxvbjm4zkl78yyfxwgdqmiff0fsu18r0 "HTTP/1.1 200 OK"
+2026-02-18 18:33:02,520 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 18:33:26,906 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 18:33:28,569 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-18 18:33:29,663 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/uzxez8c8o3wixcqu3vehwdmq206zxeb9ot27mbu5 "HTTP/1.1 200 OK"
+2026-02-18 18:33:29,665 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 18:33:44,107 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 18:33:45,905 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-18 18:33:46,977 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/uffhnye1vb8kh1ltjuijjd771jd7y75z60fb1zql "HTTP/1.1 200 OK"
+2026-02-18 18:53:46,968 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 18:54:07,937 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 18:54:10,641 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-18 18:54:10,643 [INFO] ARSS: Successfully created cache: cachedContents/2ufw25tdxgrsggpvco8r3w8v3a51cujr922ewrm5
+2026-02-18 18:54:10,644 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 18:54:28,770 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 18:54:30,606 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-18 18:54:31,669 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/2ufw25tdxgrsggpvco8r3w8v3a51cujr922ewrm5 "HTTP/1.1 200 OK"
+2026-02-18 18:54:31,671 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 18:54:48,924 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 18:54:50,744 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-18 18:54:51,810 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/qaxlqmk14czgaltdtvfa0dpt4pyyrqsrc5zqfrv5 "HTTP/1.1 200 OK"
+2026-02-18 18:54:51,813 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 18:55:07,265 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 18:55:09,230 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-18 18:55:10,328 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/i6ua96x1ywgn98bav9kyb4fm6n8e0gdt6qn6bp7r "HTTP/1.1 200 OK"
+2026-02-18 18:55:10,330 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-18 18:55:24,848 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-18 18:55:26,719 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-18 18:55:27,788 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/l8z0d5jonijb59pp1c1iwdbv8be1ggnrk8bwmpqz "HTTP/1.1 200 OK"
+2026-02-19 14:50:52,589 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-19 14:51:05,596 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-19 14:51:07,986 [INFO] httpx: HTTP Request: POST https://google.serper.dev/scholar "HTTP/1.1 200 OK"
+2026-02-19 14:51:09,203 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-19 14:51:29,196 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-19 14:51:30,932 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-19 14:51:30,934 [INFO] ARSS: Successfully created cache: cachedContents/btz6xdcn8pgwkq0bhlsuncsa54a1o48cifhrejkn
+2026-02-19 14:51:30,935 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-19 14:51:52,913 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-19 14:51:54,894 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-19 14:51:55,909 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/btz6xdcn8pgwkq0bhlsuncsa54a1o48cifhrejkn "HTTP/1.1 200 OK"
+2026-02-19 14:51:55,914 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-19 14:52:10,616 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-19 14:52:10,674 [ERROR] ARSS: ERROR: UNEXCEPTED ERROR: Extra data: line 12 column 1 (char 3982)
+2026-02-19 14:52:10,675 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-19 14:52:28,073 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-19 14:52:29,824 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-19 14:52:30,862 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/v7i6bekyx17dhtztfm8tm7xtll95fnu1e723qs7r "HTTP/1.1 200 OK"
+2026-02-19 14:52:30,862 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-19 14:52:48,592 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-19 14:52:50,656 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-19 14:52:51,694 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/knsk9wipsqmrdiout2x7vptz1pc1f0hjsj93mxms "HTTP/1.1 200 OK"
