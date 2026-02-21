@@ -6,12 +6,14 @@ from app.core.database import Base
 class SearchRequest(Base):
     __tablename__ = "search_requests"
     id = Column(UUID(as_uuid=True), default=uuid.uuid4, primary_key=True, index=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"))
     prompt = Column(Text) 
     optimized_query = Column(String(500))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     sources = relationship("ResearchSource", back_populates="search_req")
     article = relationship("ResearchArticle", back_populates="search_origin", uselist=False)
+    owner = relationship("User", back_populates="searches")
 
 class ResearchOutline(Base):
     __tablename__ = "research_outlines"
@@ -39,12 +41,14 @@ class ResearchSource(Base):
 class ResearchArticle(Base):
     __tablename__ = "research_articles"
     id = Column(UUID(as_uuid=True), default=uuid.uuid4, primary_key=True, index=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"))
     search_id = Column(UUID(as_uuid=True), ForeignKey("search_requests.id"))
     title = Column(String(500))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     search_origin = relationship("SearchRequest", back_populates="article")
     sections = relationship("PaperSection", back_populates="article_parent", cascade="all, delete-orphan", order_by="PaperSection.order")
+    owner = relationship("User", back_populates="articles")
 
 class PaperSection(Base):
     __tablename__ = "paper_sections"
