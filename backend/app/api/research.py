@@ -126,3 +126,15 @@ async def get_source(article_id: UUID, db: Session = Depends(get_db)):
         "total_sources": len(final_source_list),
         "sources": final_source_list
     }
+
+@router.get("/articles")
+async def get_all_history(db: Session = Depends(get_db)):
+    stmt = select(ResearchArticle).order_by(ResearchArticle.id.desc())
+    articles = db.execute(stmt).scalars().all()
+    
+    return [
+        {
+            "id": art.id,
+            "title": art.title,
+        } for art in articles
+    ]
