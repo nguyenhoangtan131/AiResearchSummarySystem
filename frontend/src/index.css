@@ -1,0 +1,21 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Inter", serif; 
+}
+
+@keyframes flash-highlight {
+  0% { background-color: transparent; }
+  20% { background-color: #dbeafe; }
+  100% { background-color: transparent; }
+}
+
+.reference-item:target {
+  animation: flash-highlight 1.5s ease-in-out;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  transition: all 0.3s ease;
+  scroll-margin-top: 100px; 
+}
