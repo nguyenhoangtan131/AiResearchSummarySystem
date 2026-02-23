@@ -1,38 +1,18 @@
-// import axios from 'axios';
-
-
-// const api = axios.create({ baseURL: 'http://localhost:8000/api/research' });
-
-// export const researchApi = {
-  
-//   createPrompt: (input: string) => api.post('/prompt', { raw_input: input }),
-  
-//   executeSearch: (searchId: string) => api.post(`/search/${searchId}`),
-  
-  
-//   generateArticle: (searchId: string) => axios.post(`http://localhost:8000/api/research/generate-article/${searchId}`),
-  
-//   getArticle: (articleId: string) => api.get(`/article/${articleId}`)
-// };
-
-
 import axios from 'axios';
 
-
-const api = axios.create({ baseURL: 'http://localhost:8000/api/research' });
+const apiInstance = axios.create({ 
+  baseURL: 'http://localhost:8000/api' 
+});
 
 export const researchApi = {
-  
-  createPrompt: (input: string) => api.post('/prompt', { raw_input: input }),
-  
-  executeSearch: (searchId: string) => api.post(`/search/${searchId}`),
-  
-  
-  generateArticle: (searchId: string) => axios.post(`http://localhost:8000/api/research/generate-article/${searchId}`),
-  
-  getArticle: (articleId: string) => api.get(`/article/${articleId}`),
+  createPrompt: (input: string) => apiInstance.post('/research/prompt', { raw_input: input }),
+  executeSearch: (searchId: string) => apiInstance.post(`/research/search/${searchId}`),
+  generateArticle: (searchId: string) => apiInstance.post(`/research/generate-article/${searchId}`),
+  getArticle: (articleId: string) => apiInstance.get(`/research/article/${articleId}`),
+  getSources: (articleId: string) => apiInstance.get(`/research/source/${articleId}`),
+  getHistory: () => apiInstance.get('/research/articles')
+};
 
-  getSources: (articleId: string) => api.get(`/source/${articleId}`),
-
-  getHistory: () => api.get('/articles')
+export const authApi = {
+  loginWithGoogle: (token: string) => apiInstance.post('/auth/google', { token: token })
 };

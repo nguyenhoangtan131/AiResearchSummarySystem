@@ -8,9 +8,36 @@ from google.auth.transport import requests
 from sqlalchemy import select
 from app.models.user import User
 
-class AuthService:
+
+class JwtService:
+    def __init__(self):
+        self.SECRET_KEY = os.getenv("SECRET_KEY","")
+        self.ALGORITHM = "HS256"
+        self.ACCESS_TOKEN_EXIPRE_MINUTES = 60 * 24
+        self.REFRESH_TOKEN_EXIPRE_DAYS = 30
+    def create_access_token(self, data: dict):
+        to_encode = data.copy()
+        expire = datetime.now(timezone.utc) + timedelta(minutes=self.ACCESS_TOKEN_EXPIRE_MINUTES)
+        to_encode.update({"exp": expire})
+        return jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
+    def create_refresh_token(self, data: dict):
+        to_encode = data.copy()
+        expire = datetime.now(timezone.utc) + timedelta(days=self.REFRESH_TOKEN_EXIPRE_DAYS)
+        to_encode.update({"exp": expire})
+        return jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
+    def decode_token(self, token: str):
+        try:
+            payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
+            return payload
+        except jwt.ExpiredSignatureError:
+            return None
+        except jwt.InvalidTokenError:
+            return None
+
+class AuthService(JwtService):
     def __init__(self, db:Session):
         self.db = db
+        super().__init__()
         self.client_id = os.getenv("GOOGLE_CLIENT_ID")
     def get_google_user_id(self, token: str):
         try:
@@ -42,23 +69,9 @@ class AuthService:
         user = self.get_user_by_google_id(google_id)
         if not user:
             user = self.create_new_google_user(user_info)
-        return user
-
-class JwtService:
-    def __init__(self):
-        self.SECRET_KEY = os.getenv("SECRECT_KEY","")
-        self.ALGORITHM = "HS256"
-        self.ACCESS_TOKEN_EXIPRE_MINUTES = 60 * 24
-    def create_access_token(self, data: dict):
-        to_encode = data.copy()
-        expire = datetime.now(timezone.utc) + timedelta(minutes=self.ACCESS_TOKEN_EXPIRE_MINUTES)
-        to_encode.update({"exp": expire})
-        return jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
-    def decode_token(self, token: str):
-        try:
-            payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
-            return payload
-        except jwt.ExpiredSignatureError:
-            return None
-        except jwt.InvalidTokenError:
-            return None
+            data = {"user_id": user.id}
+        access_token = JwtService.create_access_token(data)
+        refresh_token = JwtService.create_refresh_token(data)
+        return {"user": user,
+                "access_token": access_token,
+                "refresh_token": refresh_token}
