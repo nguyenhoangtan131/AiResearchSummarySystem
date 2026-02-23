@@ -116,20 +116,6 @@ class ResearchService:
            to ensure the WritingService cites verifiable sources.
         2. Metadata Persistence: Saves links, years, and citation counts to 
            build a robust bibliography for the final research article.
-            
-        Returns:
-            List dictionart articles.
-            Format:
-            [
-                {
-                    "title": "Deep Learning in Backend Systems",
-                    "link": "https://scholar.example.edu/paper1",
-                    "snippet": "This study explores the integration of neural networks...",
-                    "publication": "Nature Machine Intelligence",
-                    "year": "2024",
-                    "citation_count": 124
-                }
-            ]
         """
         
         search_req = self.db.query(SearchRequest).filter(SearchRequest.id == search_id).first()

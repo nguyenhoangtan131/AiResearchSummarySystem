@@ -1,5 +1,7 @@
+from datetime import datetime, timedelta, timezone
 import os
 from typing import Any, Dict, Optional
+import jwt
 from requests import Session
 from google.oauth2 import id_token
 from google.auth.transport import requests
@@ -41,3 +43,22 @@ class AuthService:
         if not user:
             user = self.create_new_google_user(user_info)
         return user
+
+class JwtService:
+    def __init__(self):
+        self.SECRET_KEY = os.getenv("SECRECT_KEY","")
+        self.ALGORITHM = "HS256"
+        self.ACCESS_TOKEN_EXIPRE_MINUTES = 60 * 24
+    def create_access_token(self, data: dict):
+        to_encode = data.copy()
+        expire = datetime.now(timezone.utc) + timedelta(minutes=self.ACCESS_TOKEN_EXPIRE_MINUTES)
+        to_encode.update({"exp": expire})
+        return jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
+    def decode_token(self, token: str):
+        try:
+            payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
+            return payload
+        except jwt.ExpiredSignatureError:
+            return None
+        except jwt.InvalidTokenError:
+            return None

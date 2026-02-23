@@ -2,8 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.database import Base  
 from app.core.database import engine
-from app.models import research as model
-from app.api import research
+from app.api import research, auth
 Base.metadata.create_all(bind=engine)
 
 app=FastAPI(
@@ -24,4 +23,10 @@ app.include_router(
     research.router,
     prefix="/api/research",
     tags=["Research"]
+)
+
+app.include_router(
+    auth.router,
+    prefix="/api/auth",
+    tags=["Auth"]
 )

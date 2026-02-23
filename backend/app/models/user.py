@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, UUID, String
+from sqlalchemy import Boolean, Column, UUID, String
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 class User(Base):
@@ -8,5 +8,6 @@ class User(Base):
     google_id = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True)
     full_name = Column(String)
+    is_admin = Column(Boolean, default=False)
     articles = relationship("ResearchArticle", back_populates="owner")
     searches = relationship("SearchRequest", back_populates="owner")

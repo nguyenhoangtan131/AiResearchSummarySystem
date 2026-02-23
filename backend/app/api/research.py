@@ -7,7 +7,7 @@ from app.core.database import get_db
 from app.services.research_service import PromptService, ResearchService
 from pydantic import BaseModel, Field
 from app.services.writing_service import WritingService
-from app.models.research import PaperSection, ResearchArticle, ResearchSource
+from app.models.research import ResearchArticle, ResearchSource
 from sqlalchemy.orm import selectinload
 import re
 router = APIRouter()
@@ -61,7 +61,6 @@ async def get_article(article_id: UUID, db: Session = Depends(get_db)):
 
     return {
         "title": article.title,
-        # "created_at": article.created_at,
         "sections": [
             {
                 "title": section.section_title,
