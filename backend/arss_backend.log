@@ -278,3 +278,100 @@ this is raw response sdk_http_response=HttpResponse(
 2026-02-19 14:52:48,592 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
 2026-02-19 14:52:50,656 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
 2026-02-19 14:52:51,694 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/knsk9wipsqmrdiout2x7vptz1pc1f0hjsj93mxms "HTTP/1.1 200 OK"
+2026-02-27 08:40:12,108 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-27 08:40:12,545 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 403 Forbidden"
+2026-02-27 08:47:41,767 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-27 08:47:42,174 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 400 Bad Request"
+2026-02-27 08:50:00,428 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-27 08:50:12,900 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-27 08:50:14,869 [INFO] httpx: HTTP Request: POST https://google.serper.dev/scholar "HTTP/1.1 200 OK"
+2026-02-27 08:50:16,164 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-27 08:50:33,819 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-27 08:50:35,382 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-27 08:50:35,384 [INFO] ARSS: Successfully created cache: cachedContents/tma3fihtqr6f6zak1vyahnnefnogw0qllbv92my6
+2026-02-27 08:50:35,385 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-27 08:50:51,496 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-27 08:50:52,926 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-27 08:50:53,996 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/tma3fihtqr6f6zak1vyahnnefnogw0qllbv92my6 "HTTP/1.1 200 OK"
+2026-02-27 08:50:53,998 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-27 08:51:13,125 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-27 08:51:14,673 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-27 08:51:15,686 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/bvaxzkuqvlkr30pguonm4su1z0wlij14qg57t3rz "HTTP/1.1 200 OK"
+2026-02-27 08:51:15,692 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-27 08:51:32,145 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-27 08:51:33,608 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-27 08:51:34,626 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/2b0ugsdf3lr8y3i3gx700ygpvszkan72fthoxgkz "HTTP/1.1 200 OK"
+2026-02-27 08:51:34,627 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-27 08:51:49,578 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-27 08:51:51,136 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-27 08:51:52,164 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/s9fcaetsdjn008vsr39kk2qj5sixk5hga4smnbqf "HTTP/1.1 200 OK"
+2026-02-27 08:51:52,168 [ERROR] ARSS: ERROR: Fail to save article to database: (psycopg2.ProgrammingError) can't adapt type 'UUID'
+[SQL: INSERT INTO research_articles (id, user_id, search_id, title) VALUES (%(id)s::UUID, %(user_id)s::UUID, %(search_id)s::UUID, %(title)s) RETURNING research_articles.created_at]
+[parameters: {'id': UUID('883f5cee-7927-4f00-9060-8eeee8a7e692'), 'user_id': UUID(as_uuid='c740b75b-90c4-4414-a0f2-07d75deccdcc'), 'search_id': UUID('408dc046-22a6-4425-beec-cbc5689ec163'), 'title': 'Tác động của nền tảng video ngắn (TikTok) đến sự phát triển thần kinh và hành vi của trẻ em: Từ cơ chế gây nghiện đến chiến lược can thiệp của gia đình'}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2026-02-27 14:31:27,061 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-27 14:31:40,049 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-27 14:31:42,160 [INFO] httpx: HTTP Request: POST https://google.serper.dev/scholar "HTTP/1.1 200 OK"
+2026-02-27 14:31:43,443 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-27 14:32:03,085 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-27 14:32:04,860 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-27 14:32:04,862 [INFO] ARSS: Successfully created cache: cachedContents/6cqkenoqwdffodqsxo3k7d1ghzznrrk9c9r9qqhv
+2026-02-27 14:32:04,863 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-27 14:32:27,941 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-27 14:32:29,593 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-27 14:32:30,627 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/6cqkenoqwdffodqsxo3k7d1ghzznrrk9c9r9qqhv "HTTP/1.1 200 OK"
+2026-02-27 14:32:30,630 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-27 14:32:48,363 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-27 14:32:50,027 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-27 14:32:51,149 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/4ymvh51reqgm2zblyd6zwv9elw7l9urr70n3u837 "HTTP/1.1 200 OK"
+2026-02-27 14:32:51,152 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-27 14:33:06,713 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-27 14:33:08,352 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-27 14:33:09,476 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/wn6pyh80o8hdrb96fj0bp302e7cd1qmnb3fa6lvy "HTTP/1.1 200 OK"
+2026-02-27 14:33:09,480 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-27 14:33:27,201 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-27 14:33:29,241 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-27 14:33:30,492 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/5o6owtz7ogxfx164w1l8lnb1qbavd7tfkdnnocnn "HTTP/1.1 200 OK"
+2026-02-27 14:33:30,509 [ERROR] ARSS: ERROR: Fail to save article to database: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type uuid: "UUID"
+LINE 1: ...e18a8ab-29fe-403a-9893-fb0ea2220b4a'::uuid::UUID, 'UUID'::UU...
+                                                             ^
+
+[SQL: INSERT INTO research_articles (id, user_id, search_id, title) VALUES (%(id)s::UUID, %(user_id)s::UUID, %(search_id)s::UUID, %(title)s) RETURNING research_articles.created_at]
+[parameters: {'id': UUID('ce18a8ab-29fe-403a-9893-fb0ea2220b4a'), 'user_id': 'UUID', 'search_id': UUID('c432caf7-fe2a-42d0-a294-e834cc3c99ef'), 'title': 'Mối liên hệ nhân quả giữa rối loạn giấc ngủ, bệnh lý cao huyết áp và chiến lược dự phòng đột quỵ ở người cao tuổi'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+2026-02-27 14:40:09,883 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-27 14:40:22,644 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-27 14:41:00,944 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-27 14:41:13,119 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-27 14:41:15,480 [INFO] httpx: HTTP Request: POST https://google.serper.dev/scholar "HTTP/1.1 200 OK"
+2026-02-27 14:41:16,142 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-27 14:41:30,740 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-27 14:41:32,561 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-27 14:41:32,562 [INFO] ARSS: Successfully created cache: cachedContents/r98sfc5js196nfp6dkhardob6puddd8k3ukn5e84
+2026-02-27 14:41:32,562 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-27 14:41:50,646 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-27 14:41:50,649 [ERROR] ARSS: ERROR: UNEXCEPTED ERROR: Expecting value: line 1 column 1 (char 0)
+2026-02-27 14:41:50,649 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-27 14:42:08,217 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-27 14:42:08,219 [ERROR] ARSS: ERROR: UNEXCEPTED ERROR: Expecting value: line 1 column 1 (char 0)
+2026-02-27 14:42:08,219 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-27 14:42:23,058 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-27 14:42:23,060 [ERROR] ARSS: ERROR: UNEXCEPTED ERROR: Expecting value: line 1 column 1 (char 0)
+2026-02-27 14:42:23,061 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-27 14:42:37,913 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-27 14:42:40,268 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-27 14:42:41,394 [INFO] httpx: HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/cachedContents/r98sfc5js196nfp6dkhardob6puddd8k3ukn5e84 "HTTP/1.1 200 OK"
+2026-02-27 15:53:36,539 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-27 15:53:48,661 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-27 15:53:50,910 [INFO] httpx: HTTP Request: POST https://google.serper.dev/scholar "HTTP/1.1 200 OK"
+2026-02-27 15:53:51,755 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-27 15:54:08,972 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-27 15:54:10,660 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-27 15:54:10,668 [INFO] ARSS: Successfully created cache: cachedContents/3u6iz4e7ges0zsnnwo0f2tmvtk4sd9je4wwvemgb
+2026-02-27 15:59:41,042 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-27 15:59:54,763 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-27 15:59:57,261 [INFO] httpx: HTTP Request: POST https://google.serper.dev/scholar "HTTP/1.1 200 OK"
+2026-02-27 15:59:58,538 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-02-27 16:00:16,444 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-02-27 16:00:18,068 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/cachedContents "HTTP/1.1 200 OK"
+2026-02-27 16:00:18,075 [INFO] ARSS: Successfully created cache: cachedContents/srdjd67twu6xsu82qrb2gesgpjotz94ri5533ai2

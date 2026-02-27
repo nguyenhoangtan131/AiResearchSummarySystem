@@ -19,6 +19,7 @@ WHY THIS ARCHITECTURE?
 
 import json
 import os
+from uuid import UUID
 from google import genai
 import httpx
 from sqlalchemy.orm import Session
@@ -30,7 +31,8 @@ class PromptService:
     Docstring for PromptService
     Orchestrates the 'Architectural' phase of the research project.
     """
-    def __init__(self, db: Session):
+    def __init__(self, db: Session, user_id: str):
+        self.user_id = UUID(user_id)
         self.db = db
         self.client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
         self.model_name = 'gemini-3-flash-preview'
@@ -73,7 +75,8 @@ class PromptService:
             data = json.loads(clean_json)
             new_search = SearchRequest(
                 prompt=data.get('extracted_topic', raw_input), 
-                optimized_query=data.get('optimized_search_query')
+                optimized_query=data.get('optimized_search_query'),
+                user_id = self.user_id
             )
             self.db.add(new_search)
             self.db.flush()

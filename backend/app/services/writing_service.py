@@ -9,9 +9,15 @@ import re
 from google.genai import types
 from requests import Session
 from google import genai
-from sqlalchemy import UUID, update
-from app.core.writing import (CRITICAL_LAW, ELUCIDATION_LAW, OUTPUT_LAW,PARAPHRASE_LAW, IDENTITY_LAW, STRUCTURAL_LAW
-)
+from uuid import UUID
+from sqlalchemy import update
+from app.core.writing import (CRITICAL_LAW,
+                              ELUCIDATION_LAW,
+                              OUTPUT_LAW,
+                              PARAPHRASE_LAW,
+                              IDENTITY_LAW,
+                              STRUCTURAL_LAW,
+                              LINGUISTIC_NATURALNESS_LAW)
 from app.models.research import PaperSection, ResearchArticle, ResearchOutline, ResearchSource, SearchRequest
 from app.core.logging import logger
 from app.core.database import SessionLocal
@@ -23,14 +29,16 @@ class WritingService:
     - Using dictionary to protect data in case of having gemini vendor error,
       easily backup without prompting all over again
     """
-    def __init__(self, db: Session, search_id: UUID):
+    def __init__(self, db: Session, search_id: UUID, user_id: str):
         self.db = db
+        self.user_id = UUID(user_id)
         self.client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
         self.model_name = "gemini-3-flash-preview"
         self.master_prompt = ""
         self.article_data = []
         self.cache_name = ""
         self.search_id = search_id
+        self.outlines = self.get_research_context()["outlines"]
     def get_research_context(self):
         search_req = self.db.query(SearchRequest).filter(SearchRequest.id == self.search_id).first()
         outlines = self.db.query(ResearchOutline).filter(
@@ -63,7 +71,8 @@ class WritingService:
             IDENTITY_LAW,
             STRUCTURAL_LAW,
             CRITICAL_LAW,
-            ELUCIDATION_LAW
+            ELUCIDATION_LAW,
+            LINGUISTIC_NATURALNESS_LAW
         ]
         
         full_laws_block = "\n".join(writing_laws)
@@ -110,7 +119,9 @@ class WritingService:
         --- CHỈ THỊ CUỐI CÙNG ---
         - Ngôn ngữ: TIẾNG VIỆT.
         - Bạn phải thực hiện việc Diễn giải (Paraphrase) và Phản biện (Critique) dựa trên dữ liệu nguồn.
+        - Hãy tự phản biện lại chính văn phong của mình: Nếu đọc lên thấy giống văn dịch, hãy viết lại đoạn đó theo phong cách của báo Scholarly Việt Nam.
         - Đảm bảo đầu ra chỉ là JSON thô, không chứa văn bản bao quanh.
+        
         """
         return
 
@@ -129,7 +140,7 @@ class WritingService:
                 contents=self.master_prompt
             )
             if not response or not response.text:
-                logger.error(f"ERROR, Can't not get response from gemini to create cache to save article: {e}")
+                logger.error(f"ERROR, Can't not get response from gemini to create cache to save article")
                 raise Exception("Lỗi xảy ra khi đang khởi tạo bài viết, xin vui lòng thử lại sau.")
 
             clean_json_str = response.text.strip()
@@ -157,27 +168,36 @@ class WritingService:
         except Exception as e:
             logger.error(f"Gemini API Service Error: {e}")
             raise Exception("Đã xảy ra lỗi trong quá trình kết nối với dịch vụ Gemini 3 Pro.")
-
-
+    
     def _writting_other_chapters(self):
         """
         Docstring for _writting_other_chapters
         
         Why this logic:
-        - writting each chapter seperately unsure highest quaility for each chapter
-        - using gemini context caching lowers token's usage
+        - get context from db and loop to write each chapter seperately unsure highest quaility for each 
+        chapter and prevent Ai from hallucination
+        - using gemini context caching (stored all rules writting) to lower token's usage
         """
-        for stage in range(2,6):
+        for chapter in self.outlines[1:]:
+            current_stage = chapter.stage
+            current_title = chapter.title
+            current_guideline = chapter.writing_guideline
+
+            prompt = (f"Viết tiếp chương: {current_stage}.\n"
+                      f"Tiêu đề chương là: {current_title}.\n"
+                      f"Hướng dẫn: {current_guideline}.\n"
+                      "Hãy tuân thủ tuyệt đối các luật viết và trích dẫn mã [Source ID: <uuid>] từ các nguồn đã cung cấp.")
+
             try:
                 raw_response = self.client.models.generate_content(
                     model=self.model_name,
-                    contents=f"Dựa vào lịch sử đã viết ở Stage n-1, hãy sử dụng cấu trúc câu hoàn toàn khác biệt ở Stage n để tránh lặp lại nhịp điệu văn bản (textual rhythm).",
+                    contents=prompt,
                     config=types.GenerateContentConfig(cached_content=self.cache_name)
                     )
 
                 if not raw_response:
-                    logger.error(f"ERROR: Probems when writting chapter: {stage}, error: {e} ")
-                    raise Exception(f"Có lỗi xảy ra khi đang viết chapter: {stage}")
+                    logger.error(f"ERROR: Probems when writting chapter: {current_stage}")
+                    raise Exception(f"Có lỗi xảy ra khi đang viết chapter: {current_stage}")
 
                 clean_json_str = raw_response.text.strip()
                 if "```json" in clean_json_str:
@@ -226,7 +246,8 @@ class WritingService:
         try:
             new_article = ResearchArticle(
                 search_id=self.search_id,
-                title=self.article_data[0].get('article_title', 'Research Article')
+                title=self.article_data[0].get('article_title', 'Research Article'),
+                user_id = self.user_id
             )
             self.db.add(new_article)
             self.db.flush()
@@ -271,20 +292,19 @@ class WritingService:
         await self._init_gemini_cache()
         self._writting_other_chapters()
         article_id = self._save_article_with_auto_citation()
-        
         return article_id
     
 
-if __name__ == "__main__":
-    import asyncio
+# if __name__ == "__main__":
+#     import asyncio
 
-    async def quick_test():
-        db = SessionLocal()
-        test_id = "09384559-659c-473c-83ad-b1a784685120" 
+#     async def quick_test():
+#         db = SessionLocal()
+#         test_id = "09384559-659c-473c-83ad-b1a784685120" 
         
-        service = WritingService(db, test_id)
+#         service = WritingService(db, test_id)
 
-        res = await service.write_full_research_article_pipline()
-        print(f"Kết quả test: {res}")
+#         res = await service.write_full_research_article_pipline()
+#         print(f"Kết quả test: {res}")
 
-    asyncio.run(quick_test())
+#     asyncio.run(quick_test())

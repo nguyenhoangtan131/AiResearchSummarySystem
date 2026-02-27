@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 import os
 from typing import Any, Dict, Optional
 import jwt
-from requests import Session
+from sqlalchemy.orm import Session
 from google.oauth2 import id_token
 from google.auth.transport import requests
 from sqlalchemy import select
@@ -13,8 +13,8 @@ class JwtService:
     def __init__(self):
         self.SECRET_KEY = os.getenv("SECRET_KEY","")
         self.ALGORITHM = "HS256"
-        self.ACCESS_TOKEN_EXIPRE_MINUTES = 60 * 24
-        self.REFRESH_TOKEN_EXIPRE_DAYS = 30
+        self.ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
+        self.REFRESH_TOKEN_EXPIRE_DAYS = 30
     def create_access_token(self, data: dict):
         to_encode = data.copy()
         expire = datetime.now(timezone.utc) + timedelta(minutes=self.ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -22,7 +22,7 @@ class JwtService:
         return jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
     def create_refresh_token(self, data: dict):
         to_encode = data.copy()
-        expire = datetime.now(timezone.utc) + timedelta(days=self.REFRESH_TOKEN_EXIPRE_DAYS)
+        expire = datetime.now(timezone.utc) + timedelta(days=self.REFRESH_TOKEN_EXPIRE_DAYS)
         to_encode.update({"exp": expire})
         return jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
     def decode_token(self, token: str):
@@ -35,9 +35,18 @@ class JwtService:
             return None
 
 class AuthService(JwtService):
+    """
+    Why auth inheritance jwt:
+    - Directly access token generation methods (create_access_token, create_refresh_token) via 'self' 
+    to keep code concise.
+    - Since Authentication (Auth) and Session Management (JWT) are functionally interdependent, grouping 
+    them simplifies the logic for issuing and verifying credentials.
+    - Stateless Consistency: Ensures all auth-related tasks follow the same stateless 
+    principles and shared security configurations (SECRET_KEY, ALGORITHM) defined in the base class.
+    """
     def __init__(self, db:Session):
-        self.db = db
         super().__init__()
+        self.db = db
         self.client_id = os.getenv("GOOGLE_CLIENT_ID")
     def get_google_user_id(self, token: str):
         try:
@@ -61,7 +70,7 @@ class AuthService(JwtService):
         self.db.refresh(new_user)
         return new_user
     
-    def sign_in_or_register_with_google(self, token: str) -> Optional[User]:
+    def sign_in_or_register_with_google(self, token: str) -> Dict[str, Any]:
         user_info = self.get_google_user_id(token)
         if not user_info:
             return None
@@ -69,9 +78,14 @@ class AuthService(JwtService):
         user = self.get_user_by_google_id(google_id)
         if not user:
             user = self.create_new_google_user(user_info)
-            data = {"user_id": user.id}
-        access_token = JwtService.create_access_token(data)
-        refresh_token = JwtService.create_refresh_token(data)
-        return {"user": user,
-                "access_token": access_token,
-                "refresh_token": refresh_token}
+
+        data = {"user_id": f"{user.id}"}
+        access_token = self.create_access_token(data)
+        refresh_token = self.create_refresh_token(data)
+        return {
+            "user": user,
+            "access_token": access_token,
+            "refresh_token": refresh_token
+        }
+
+

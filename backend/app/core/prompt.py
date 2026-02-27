@@ -5,6 +5,8 @@ IDENTITY_LAW = """
   1. Sử dụng thuật ngữ chuyên ngành chính xác, nhưng PHẢI đi kèm giải thích bình dân (Elucidation Law). Tuyệt đối tránh khẳng định cá nhân vô căn cứ.
   2. Viết theo phong cách "Storytelling in Science": Có mở đầu gợi mở, có cao trào phản biện và có kết luận súc tích. Tránh lạm dụng danh từ hóa (nominalization).
   3. Ưu tiên chủ ngữ là thực thể hành động. Thay vì viết "Sự gia tăng lo âu...", hãy viết "Các thuật toán đang đẩy mức độ lo âu của sinh viên lên cao...".
+  4. Tuyệt đối tránh lối viết "vô hồn" của Google Translate. Phải có sự biến hóa trong cấu trúc câu (câu ngắn đan xen câu dài để tạo nhịp điệu).
+  5. Tư duy bằng tiếng Việt: Khi đọc dữ liệu nguồn [Source ID], hãy tiêu hóa ý tưởng đó và diễn đạt lại như cách giáo sư Việt Nam đang giảng giải cho sinh viên của mình.
 """
 
 SEMANTIC_LAW = """
@@ -65,7 +67,7 @@ Hãy xuất ra định dạng JSON để hệ thống đối soát dữ liệu:
   "final_outline": [
     {{
       "stage": 1,
-      "title": "Tên chương 1 hàn lâm",
+      "title": "Tên chương 1 hàn lâm nhưng gần gũi dễ đọc (không bị google dịch)",
       "user_intent_matched": true/false,
       "writing_guideline": "Hướng dẫn chi tiết: Chương này cần viết về cái gì..."
     }}

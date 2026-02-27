@@ -8,7 +8,7 @@ api_key = os.getenv("GOOGLE_API_KEY")
 
 def list_my_available_models():
     if not api_key:
-        print("❌ LỖI: Kiểm tra lại file .env, chưa thấy GEMINI_API_KEY!")
+        print("LỖI: Kiểm tra lại file .env, chưa thấy GEMINI_API_KEY!")
         return
 
     client = genai.Client(api_key=api_key)

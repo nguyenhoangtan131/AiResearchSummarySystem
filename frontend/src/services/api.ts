@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 const apiInstance = axios.create({ 
-  baseURL: 'http://localhost:8000/api' 
+  baseURL: 'http://localhost:8000/api',
+  withCredentials: true
 });
 
 export const researchApi = {
@@ -14,5 +15,6 @@ export const researchApi = {
 };
 
 export const authApi = {
-  loginWithGoogle: (token: string) => apiInstance.post('/auth/google', { token: token })
+  loginWithGoogle: (token: string) => apiInstance.post('/auth/google', { token: token }),
+  getMe: () => apiInstance.get('/auth/me')
 };
