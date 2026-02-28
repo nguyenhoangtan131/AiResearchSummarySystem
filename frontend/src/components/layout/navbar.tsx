@@ -18,13 +18,11 @@ export default function Navbar() {
       setUser(JSON.parse(savedUser));
     }
   }, []);
-
   const handleLoginSuccess = async (credentialResponse: any) => {
     const token = credentialResponse.credential;
     try {
       const res = await authApi.loginWithGoogle(token);
       const userInfo = res.data.user || res.data; 
-      
       localStorage.setItem('user_info', JSON.stringify(userInfo));
       setUser(userInfo);
       console.log("Đăng nhập thành công", userInfo.full_name);
@@ -32,13 +30,17 @@ export default function Navbar() {
       console.error("Lỗi đăng nhập:", err);
     }
   };
-
-
-  const handleLogout = () => {
-    localStorage.removeItem('user_info');
-    setUser(null);
-    console.log("Đã đăng xuất");
-  };
+  const  handleLogout = async () => {
+    try {
+      await authApi.logout();
+    }catch (err) {
+      console.error("Lỗi xóa session backend", err);
+    } finally {
+      localStorage.removeItem("user_info");
+      setUser(null);
+      window.location.href = "/";
+    }
+  }
 
   return (
     <nav className="bg-blue-900 text-white shadow-md">

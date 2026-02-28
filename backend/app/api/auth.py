@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from app.services.auth_service import AuthService
+from app.services.auth_service import AuthService, JwtService
 from pydantic import BaseModel
 from app.core.database import get_db
 from fastapi import Response
@@ -78,3 +78,20 @@ async def get_me(
         raise HTTPException(status_code=404, detail="Không tìm thấy người dùng")
         
     return CheckMeResponse(user)
+
+@router.post("/logout")
+async def logout(response: Response):
+    response.delete_cookie(
+        key="access_token",
+        httponly=True,
+        samesite="lax",
+        secure=False
+    )
+
+    response.delete_cookie(
+        key="refresh_token",
+        httponly=True,
+        samesite="lax",
+        path="/auth/refresh"
+    )
+    return {"message": "Đăng xuất thành công"}

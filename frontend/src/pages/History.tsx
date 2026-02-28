@@ -5,10 +5,19 @@ import { researchApi } from '../services/api';
 export default function History() {
   const [articles, setArticles] = useState<any[]>([]);
 
-  useEffect(() => {
-    researchApi.getHistory().then(res => setArticles(res.data));
-  }, []);
+useEffect(() => {
+  const fetchHistory = async () => {
+    try {
+      const res = await researchApi.getHistory(); // Gọi thẳng API
+      setArticles(res.data);
+    } catch (err) {
+      console.error("Lỗi lấy lịch sử:", err);
+      setArticles([]);
+    }
+  };
 
+  fetchHistory();
+}, []);
   return (
     <div className="max-w-5xl mx-auto py-12 px-4">
       <h1 className="text-3xl font-bold mb-8 text-slate-800 border-b pb-4">Lịch sử nghiên cứu</h1>

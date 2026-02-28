@@ -293,18 +293,3 @@ class WritingService:
         self._writting_other_chapters()
         article_id = self._save_article_with_auto_citation()
         return article_id
-    
-
-# if __name__ == "__main__":
-#     import asyncio
-
-#     async def quick_test():
-#         db = SessionLocal()
-#         test_id = "09384559-659c-473c-83ad-b1a784685120" 
-        
-#         service = WritingService(db, test_id)
-
-#         res = await service.write_full_research_article_pipline()
-#         print(f"Kết quả test: {res}")
-
-#     asyncio.run(quick_test())

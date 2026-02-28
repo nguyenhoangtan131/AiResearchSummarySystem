@@ -1,8 +1,6 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { researchApi } from '../services/api';
-
 const renderContentWithCitations = (content: string, sources: any[]) => {
   if (!content) return null;
 
@@ -54,10 +52,44 @@ const renderContentWithCitations = (content: string, sources: any[]) => {
   });
 };
 
+
 export default function ResearchResult() {
   const { id } = useParams();
   const [article, setArticle] = useState<any>(null);
   const [sources, setSources] = useState<any[]>([]);
+  const [isExporting, setIsExporting] = useState(false);
+  const handleExport = async () => {
+    if (isExporting || !id) return; // Kiểm tra id tồn tại trước khi chạy
+    
+    setIsExporting(true); // Sửa True -> true
+    try {
+        // Sử dụng biến 'id' lấy từ useParams
+        const response = await researchApi.exportPdf(id); 
+        
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.href = url;
+        
+        // Sửa articleId -> id
+        link.setAttribute('download', `AI_Research_Paper_${id}.pdf`); 
+        
+        document.body.appendChild(link);
+        link.click();
+        
+        link.remove();
+        window.URL.revokeObjectURL(url);
+        
+    } catch (err) {
+        console.error("Lỗi xuất PDF:", err);
+        alert("Không thể xuất file PDF. Vui lòng kiểm tra lại kết nối!");
+    } finally {
+        setIsExporting(false); // Sửa False -> false
+    }
+};
+
+
   useEffect(() => {
   if (id) {
     researchApi.getArticle(id).then(res => setArticle(res.data));
@@ -69,12 +101,26 @@ export default function ResearchResult() {
 
   return (
     <div className="bg-slate-100 min-h-screen py-10">
+      <div className="max-w-5xl mx-auto relative px-4">
+      <div className="absolute -right-16 top-0 h-full hidden lg:block">
+        <div className="sticky top-28">
+            <button 
+                onClick={handleExport}
+                className="bg-red-600 hover:bg-red-700 text-white w-12 h-12 rounded-full shadow-2xl flex items-center justify-center transition-all group"
+                title="Xuất PDF"
+            >
+                <span className="text-xl group-hover:scale-110 transition-transform">📄</span>
+                <div className="absolute top-12 text-[10px] font-bold text-red-600 opacity-0 group-hover:opacity-100 uppercase transition-opacity">PDF</div>
+            </button>
+        </div>
+    </div>
+
       <div className="max-w-4xl mx-auto bg-white p-12 shadow-sm border border-slate-200">
 
         <h1 className="text-4xl font-sans font-bold text-slate-900 border-b pb-8 mb-12 uppercase text-center leading-tight">
           {article.title}
         </h1>
-        
+
         <div className="space-y-16">
           {article.sections.map((section: any) => (
             <section key={section.order}>
@@ -117,5 +163,6 @@ export default function ResearchResult() {
         </div>
       </div>
     </div>
+        </div>
   );
 }

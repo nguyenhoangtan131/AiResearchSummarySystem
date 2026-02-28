@@ -4,26 +4,22 @@ import { useNavigate } from 'react-router-dom';
 
 export default function Home() {
   const [input, setInput] = useState("");
-  const [status, setStatus] = useState(""); // Trạng thái để người dùng biết máy đang làm gì
+  const [status, setStatus] = useState(""); 
   const navigate = useNavigate();
 
   const handleStartResearch = async () => {
     try {
-      // GIAI ĐOẠN 1: Prompting
       setStatus("Đang kiến trúc bản thảo...");
       const step1 = await researchApi.createPrompt(input);
       const searchId = step1.data.search_id;
 
-      // GIAI ĐOẠN 2: Searching
       setStatus("Đang thu thập dữ liệu từ Google Scholar...");
       await researchApi.executeSearch(searchId);
 
-      // GIAI ĐOẠN 3: Writing
       setStatus("AI đang phân tích và viết bài (vui lòng đợi)...");
       const step3 = await researchApi.generateArticle(searchId);
       const articleId = step3.data.article_id;
 
-      // HOÀN TẤT: Chuyển hướng sang trang kết quả
       navigate(`/article/${articleId}`);
     } catch (error) {
       setStatus("Lỗi hệ thống: " + (error as any).message);

@@ -4,6 +4,7 @@ jwt_service = JwtService()
 
 async def get_current_user(request: Request):
     token = request.cookies.get("access_token")
+    print(token)
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
