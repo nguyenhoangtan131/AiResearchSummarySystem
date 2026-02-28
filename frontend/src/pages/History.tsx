@@ -8,7 +8,7 @@ export default function History() {
 useEffect(() => {
   const fetchHistory = async () => {
     try {
-      const res = await researchApi.getHistory(); // Gọi thẳng API
+      const res = await researchApi.getHistory();
       setArticles(res.data);
     } catch (err) {
       console.error("Lỗi lấy lịch sử:", err);

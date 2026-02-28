@@ -8,24 +8,40 @@ export default function Home() {
   const navigate = useNavigate();
 
   const handleStartResearch = async () => {
-    try {
-      setStatus("Đang kiến trúc bản thảo...");
-      const step1 = await researchApi.createPrompt(input);
-      const searchId = step1.data.search_id;
-
-      setStatus("Đang thu thập dữ liệu từ Google Scholar...");
-      await researchApi.executeSearch(searchId);
-
-      setStatus("AI đang phân tích và viết bài (vui lòng đợi)...");
-      const step3 = await researchApi.generateArticle(searchId);
-      const articleId = step3.data.article_id;
-
-      navigate(`/article/${articleId}`);
-    } catch (error) {
-      setStatus("Lỗi hệ thống: " + (error as any).message);
+  const savedUser = localStorage.getItem('user_info');
+  if (!savedUser) {
+    if ((window as any).triggerGoogleLogin) {
+      (window as any).triggerGoogleLogin();
+    } else {
+      alert("Vui lòng đăng nhập!");
     }
-  };
+    return;
+  }
 
+  try {
+    setStatus("Đang kiến trúc bản thảo...");
+    const step1 = await researchApi.createPrompt(input);
+    const searchId = step1.data.search_id;
+
+    setStatus("Đang thu thập dữ liệu từ Google Scholar...");
+    await researchApi.executeSearch(searchId);
+
+    setStatus("AI đang phân tích và viết bài (vui lòng đợi)...");
+    const step3 = await researchApi.generateArticle(searchId);
+    const articleId = step3.data.article_id;
+
+    navigate(`/article/${articleId}`);
+  }catch (error: any) {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('user_info');
+      if ((window as any).triggerGoogleLogin) {
+        (window as any).triggerGoogleLogin();
+      }
+    } else {
+      setStatus("Lỗi: " + error.message);
+    }
+  }
+};
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-slate-50">
       <div className="w-full max-w-2xl bg-white p-8 rounded-xl shadow-lg border border-slate-200">

@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional
 import jwt
 from sqlalchemy.orm import Session
 from google.oauth2 import id_token
-from google.auth.transport import requests
+import requests
 from sqlalchemy import select
 from app.models.user import User
 
@@ -50,11 +50,17 @@ class AuthService(JwtService):
         self.client_id = os.getenv("GOOGLE_CLIENT_ID")
     def get_google_user_id(self, token: str):
         try:
-            id_info = id_token.verify_oauth2_token(token, requests.Request(), self.client_id)
-            return id_info
-        except ValueError:
+            response = requests.get(
+                "https://www.googleapis.com/oauth2/v3/userinfo",
+                headers={"Authorization": f"Bearer {token}"}
+            )
+            if response.status_code == 200:
+                return response.json() 
             return None
-        
+        except Exception as e:
+            print(f"Google auth error when trying to get google_id: {e}")
+            return None
+            
     def get_user_by_google_id(self, google_id: str) -> Optional[User]:
         user_stmt = select(User).where(User.google_id == google_id)
         return self.db.execute(user_stmt).scalar_one_or_none()

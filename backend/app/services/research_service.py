@@ -132,7 +132,7 @@ class ResearchService:
         }
         payload = {
             "q": search_req.optimized_query,
-            "num": 10
+            "num": 20
         }
         async with httpx.AsyncClient() as client:
             response = await client.post(serper_url, headers=headers, json=payload)

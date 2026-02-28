@@ -205,23 +205,6 @@ class WritingService:
 
                 clean_json_data = json.loads(clean_json_str)
                 self.article_data.append(clean_json_data)
-
-                new_cache = self.client.caches.create(
-                    model = self.model_name,
-                    config = types.CreateCachedContentConfig(
-                        display_name = f"cache_{str(self.search_id).replace("-", "")}",
-                        system_instruction = self.master_prompt,
-                        contents=[types.Content(
-                                role="model", 
-                                parts=[types.Part(text=json.dumps(self.article_data, ensure_ascii=False))]
-                            )
-                        ],
-                        ttl="3600s",
-                    ),
-                )
-                old_cache_name = self.cache_name
-                self.cache_name = new_cache.name
-                self.client.caches.delete(name=old_cache_name)
             except Exception as e:
                 logger.error(f"ERROR: UNEXCEPTED ERROR: {e}")
         return

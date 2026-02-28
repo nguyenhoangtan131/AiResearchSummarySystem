@@ -2,8 +2,8 @@ import React from 'react';
 import { useState, useEffect } from 'react';
 import { authApi } from '../../services/api';
 import { Link } from 'react-router-dom';
-import { GoogleLogin } from '@react-oauth/google';
-
+// import { GoogleLogin } from '@react-oauth/google';
+import { useGoogleLogin } from '@react-oauth/google';
 interface User {
   full_name: string;
   email: string;
@@ -18,18 +18,21 @@ export default function Navbar() {
       setUser(JSON.parse(savedUser));
     }
   }, []);
-  const handleLoginSuccess = async (credentialResponse: any) => {
-    const token = credentialResponse.credential;
+  const handleLoginSuccess = async (codeResponse: any) => {
     try {
-      const res = await authApi.loginWithGoogle(token);
+      const res = await authApi.loginWithGoogle(codeResponse.access_token); 
       const userInfo = res.data.user || res.data; 
       localStorage.setItem('user_info', JSON.stringify(userInfo));
       setUser(userInfo);
-      console.log("Đăng nhập thành công", userInfo.full_name);
     } catch (err) {
       console.error("Lỗi đăng nhập:", err);
     }
   };
+  const login = useGoogleLogin({
+    onSuccess: handleLoginSuccess,
+    onError: () => console.log('Login Failed'),
+  });
+  (window as any).triggerGoogleLogin = login;
   const  handleLogout = async () => {
     try {
       await authApi.logout();
@@ -68,12 +71,7 @@ export default function Navbar() {
                 </button>
               </div>
             ) : (
-              <GoogleLogin 
-                onSuccess={handleLoginSuccess} 
-                onError={() => console.log('Login Failed')}
-                theme="outline"
-                shape="pill"
-              />
+              <button onClick={() => login()} className="...">Đăng nhập Google</button>
             )}
           </div>
         </div>
