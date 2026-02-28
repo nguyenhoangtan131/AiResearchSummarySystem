@@ -42,6 +42,7 @@ class ExportService:
             if uid in cited_source_map:
                 self.final_source_list.append(cited_source_map[uid])
         return self.final_source_list
+
     def generate_article_pdf(self, article_title: str):
         pdf = FPDF(unit='mm', format='A4')
         pdf.set_margins(20, 20, 20)
@@ -50,14 +51,14 @@ class ExportService:
         font_path = os.path.join("assets", "fonts", "DejaVuSans.ttf")
         pdf.add_font("DejaVu", "", font_path)
         pdf.add_font("DejaVu", "B", "assets/fonts/DejaVuSans-Bold.ttf")
-        pdf.set_font("DejaVu", "", 22)
-        pdf.set_text_color(20, 50, 100)
         
+        pdf.set_font("DejaVu", "B", 22)
+        pdf.set_text_color(20, 50, 100)
         pdf.multi_cell(0, 12, article_title.upper(), align='C') 
         
         pdf.set_draw_color(20, 50, 100)
-        pdf.set_line_width(0.5)
-        pdf.line(pdf.get_x() + 40, pdf.get_y() + 5, pdf.get_x() + 130, pdf.get_y() + 5)
+        pdf.set_line_width(0.8)
+        pdf.line(60, pdf.get_y() + 5, 150, pdf.get_y() + 5)
         pdf.ln(20)
 
         display_content = self.full_content
@@ -71,29 +72,55 @@ class ExportService:
         if self.final_source_list:
             pdf.add_page()
             pdf.ln(10)
-            pdf.set_font("DejaVu", "", 16)
+            pdf.set_font("DejaVu", "B", 18)
             pdf.set_text_color(20, 50, 100)
             pdf.cell(0, 10, "REFERENCES", ln=True, align='L')
-            pdf.set_draw_color(20, 50, 100)
-            pdf.line(pdf.get_x(), pdf.get_y(), pdf.get_x() + 30, pdf.get_y())
-            pdf.ln(10)
+            pdf.ln(5)
 
-            pdf.set_font("DejaVu", "", 10)
-            pdf.set_text_color(60, 60, 60)
+            margin_l = 20       
+            num_w = 12         
+            content_x = margin_l + num_w  
+            usable_w = pdf.epw - num_w 
+
             for i, source in enumerate(self.final_source_list, start=1):
-                title = source.title if hasattr(source, 'title') else 'Unknown Title'
-                url = source.url if hasattr(source, 'url') else ''
-                
-                pdf.set_x(25)
-                source_text = f"[{i}] {title}"
-                if url: source_text += f"\n    Source: {url}"
-                
-                pdf.multi_cell(0, 6, source_text)
-                pdf.ln(4)
+                pub = source.publication or "Scholar Source"
+                year = source.year or "N/A"
+                title = source.title or "Unknown Title"
+                link = source.link or ""
+                cite_count = source.citation_count or 0
 
-        page_no = f"Trang {pdf.page_no()}"
+                pdf.set_x(margin_l)
+                pdf.set_font("DejaVu", "B", 11)
+                pdf.set_text_color(20, 100, 200)
+                pdf.cell(num_w, 7, f"[{i}]") 
+
+                pdf.set_x(content_x)
+                pdf.set_font("DejaVu", "", 10)
+                pdf.set_text_color(100, 100, 100)
+                pdf.multi_cell(usable_w, 5, f"{pub}, {year}")
+
+                pdf.set_x(content_x)
+                pdf.set_font("DejaVu", "B", 10)
+                pdf.set_text_color(30, 30, 30)
+                pdf.multi_cell(usable_w, 6, f"\"{title}\"")
+
+
+                if link:
+                    pdf.set_x(content_x)
+                    pdf.set_font("DejaVu", "", 8)
+                    pdf.set_text_color(20, 100, 200)
+
+                    pdf.multi_cell(usable_w, 4, link, link=link)
+
+                pdf.set_x(content_x)
+                pdf.set_font("DejaVu", "", 8)
+                pdf.set_text_color(150, 150, 150)
+                pdf.cell(0, 5, f"({cite_count} lượt trích dẫn)")
+                
+                pdf.ln(10)
         pdf.set_y(-15)
         pdf.set_font("DejaVu", "", 8)
-        pdf.cell(0, 10, page_no, align='C')
+        pdf.set_text_color(120, 120, 120)
+        pdf.cell(0, 10, f"Trang {pdf.page_no()}", align='C')
 
         return BytesIO(pdf.output())

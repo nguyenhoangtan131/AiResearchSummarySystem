@@ -182,12 +182,14 @@ class WritingService:
             current_stage = chapter.stage
             current_title = chapter.title
             current_guideline = chapter.writing_guideline
-
-            prompt = (f"Viết tiếp chương: {current_stage}.\n"
+            history_data = self.article_data[-1] 
+            history = json.dumps(history_data, ensure_ascii=False)
+            prompt = (f"Đây là lịch sử các chương: {history}.\n"
+                      f"Viết tiếp chương: {current_stage}.\n"
                       f"Tiêu đề chương là: {current_title}.\n"
                       f"Hướng dẫn: {current_guideline}.\n"
                       "Hãy tuân thủ tuyệt đối các luật viết và trích dẫn mã [Source ID: <uuid>] từ các nguồn đã cung cấp.")
-
+            logger.debug(f"{prompt}\n")
             try:
                 raw_response = self.client.models.generate_content(
                     model=self.model_name,
