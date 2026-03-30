@@ -1,10 +1,7 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite' // Thêm dòng này
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
-  plugins: [
-    react(),
-    tailwindcss(), // Thêm dòng này để Vite tự xử lý Tailwind v4
-  ],
-})
+  plugins: [react(), tailwindcss()],
+});

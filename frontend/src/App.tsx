@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import Home from './pages/Home';
 import ResearchResult from './pages/ResearchResult';
 import History from './pages/History';
+import AdvancedGenerator from './pages/AdvancedGenerator';
 import Navbar from './components/layout/navbar';
 
 function App() {
@@ -12,6 +13,7 @@ function App() {
         <Navbar /> 
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/advanced-generator" element={<AdvancedGenerator />} />
           <Route path="/history" element={<History />} />
           <Route path="/article/:id" element={<ResearchResult />} />
         </Routes>
