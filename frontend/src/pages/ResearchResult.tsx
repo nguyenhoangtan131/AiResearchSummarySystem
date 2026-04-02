@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { researchApi } from '../services/api';
+import { useNavigate, useParams } from 'react-router-dom';
+import { advancedApi, researchApi } from '../services/api';
 const renderContentWithCitations = (content: string, sources: any[]) => {
   if (!content) return null;
 
@@ -55,114 +55,131 @@ const renderContentWithCitations = (content: string, sources: any[]) => {
 
 export default function ResearchResult() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [article, setArticle] = useState<any>(null);
   const [sources, setSources] = useState<any[]>([]);
   const [isExporting, setIsExporting] = useState(false);
-  const handleExport = async () => {
-    if (isExporting || !id) return; // Kiểm tra id tồn tại trước khi chạy
-    
-    setIsExporting(true); // Sửa True -> true
-    try {
-        // Sử dụng biến 'id' lấy từ useParams
-        const response = await researchApi.exportPdf(id); 
-        
-        const blob = new Blob([response.data], { type: 'application/pdf' });
-        const url = window.URL.createObjectURL(blob);
-        
-        const link = document.createElement('a');
-        link.href = url;
-        
-        // Sửa articleId -> id
-        link.setAttribute('download', `AI_Research_Paper_${id}.pdf`); 
-        
-        document.body.appendChild(link);
-        link.click();
-        
-        link.remove();
-        window.URL.revokeObjectURL(url);
-        
-    } catch (err) {
-        console.error("Lỗi xuất PDF:", err);
-        alert("Không thể xuất file PDF. Vui lòng kiểm tra lại kết nối!");
-    } finally {
-        setIsExporting(false); // Sửa False -> false
-    }
-};
-
+  const [exportError, setExportError] = useState('');
 
   useEffect(() => {
   if (id) {
-    researchApi.getArticle(id).then(res => setArticle(res.data));
-    researchApi.getSources(id).then(res => setSources(res.data.sources));
+    advancedApi.getGeneratedArticle(id).then(res => setArticle(res.data));
+    advancedApi.getGeneratedSources(id).then(res => setSources(res.data.sources));
   }
 }, [id]);
+
+  const handleExportPdf = async () => {
+    if (!id || isExporting) return;
+    setIsExporting(true);
+    setExportError('');
+    try {
+      const res = await researchApi.exportPdf(id);
+      const blobUrl = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const anchor = document.createElement('a');
+      anchor.href = blobUrl;
+      anchor.download = `Research_${id}.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('PDF export failed', error);
+      setExportError('Chưa xuất được PDF. Hãy thử lại sau khi backend đã nạp bản cập nhật mới.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   if (!article) return <div className="p-20 text-center italic">Đang tải tri thức...</div>;
 
   return (
     <div className="bg-slate-100 min-h-screen py-10">
-      <div className="max-w-5xl mx-auto relative px-4">
-      <div className="absolute -right-16 top-0 h-full hidden lg:block">
-        <div className="sticky top-28">
-            <button 
-                onClick={handleExport}
-                className="bg-red-600 hover:bg-red-700 text-white w-12 h-12 rounded-full shadow-2xl flex items-center justify-center transition-all group"
-                title="Xuất PDF"
-            >
-                <span className="text-xl group-hover:scale-110 transition-transform">📄</span>
-                <div className="absolute top-12 text-[10px] font-bold text-red-600 opacity-0 group-hover:opacity-100 uppercase transition-opacity">PDF</div>
-            </button>
-        </div>
-    </div>
+      <div className="mx-auto max-w-6xl px-4">
+        <div className="grid gap-6 xl:grid-cols-[1fr_300px]">
+          <div className="bg-white p-12 shadow-sm border border-slate-200">
+            <h1 className="text-4xl font-sans font-bold text-slate-900 border-b pb-8 mb-12 uppercase text-center leading-tight">
+              {article.title}
+            </h1>
 
-      <div className="max-w-4xl mx-auto bg-white p-12 shadow-sm border border-slate-200">
+            <div className="space-y-16">
+              {article.sections.map((section: any) => (
+                <section key={section.order}>
+                  <h2 className="text-2xl font-sans font-bold text-blue-900 mb-6 border-l-4 border-blue-600 pl-4">
+                    {section.order}. {section.title}
+                  </h2>
+                  <div className="prose prose-slate lg:prose-xl max-w-none font-serif text-justify whitespace-pre-wrap text-slate-800">
+                    {renderContentWithCitations(section.content, sources)}
+                  </div>
+                </section>
+              ))}
+            </div>
+            <div className="mt-20 pt-10 border-t-2 border-slate-100">
+              <h3 className="text-xl font-bold mb-8 text-slate-800 uppercase tracking-widest">
+                References
+              </h3>
+              <ul className="space-y-6">
+                {sources.map((source, index) => (
+                  <li key={source.id} id={`source-${source.id}`} className="flex gap-4 items-start reference-item">
+                    <span className="font-bold text-blue-600 min-w-7 text-lg">
+                      [{index + 1}]
+                    </span>
 
-        <h1 className="text-4xl font-sans font-bold text-slate-900 border-b pb-8 mb-12 uppercase text-center leading-tight">
-          {article.title}
-        </h1>
+                    <div className="text-sm text-slate-600 leading-relaxed">
+                      <span className="font-semibold text-slate-800">{source.publication}. </span>
+                      <span className="italic">"{source.title}". </span>
+                      
+                      <a href={source.link} target="_blank" className="text-blue-500 font-medium hover:underline">
+                        Bài gốc
+                      </a>. 
 
-        <div className="space-y-16">
-          {article.sections.map((section: any) => (
-            <section key={section.order}>
-              <h2 className="text-2xl font-sans font-bold text-blue-900 mb-6 border-l-4 border-blue-600 pl-4">
-                {section.title}
-              </h2>
-              <div className="prose prose-slate lg:prose-xl max-w-none font-serif text-justify whitespace-pre-wrap text-slate-800">
-                {renderContentWithCitations(section.content, sources)}
+                      <span className="mx-1">{source.year}. </span>
+                      <span className="text-slate-400">
+                        ({source.citation_count} lượt trích dẫn)
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          <aside className="h-fit xl:sticky xl:top-6">
+            <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Article Actions</p>
+              <h2 className="mt-3 text-xl font-semibold text-slate-900">Xuất và điều hướng</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Xuất file PDF hoặc quay lại lịch sử nghiên cứu từ khung cố định này.
+              </p>
+              <div className="mt-5 space-y-3">
+                <button
+                  type="button"
+                  onClick={() => void handleExportPdf()}
+                  disabled={isExporting}
+                  className={`w-full rounded-full px-4 py-3 text-sm font-semibold transition ${
+                    isExporting
+                      ? 'cursor-not-allowed bg-slate-200 text-slate-400'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
+                >
+                  {isExporting ? 'Đang xuất PDF...' : 'Xuất PDF'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate('/history')}
+                  className="w-full rounded-full border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                >
+                  Lịch sử nghiên cứu
+                </button>
               </div>
-            </section>
-          ))}
-        </div>
-        <div className="mt-20 pt-10 border-t-2 border-slate-100">
-          <h3 className="text-xl font-bold mb-8 text-slate-800 uppercase tracking-widest">
-            References
-          </h3>
-          <ul className="space-y-6">
-            {sources.map((source, index) => (
-              <li key={source.id} id={`source-${source.id}`} className="flex gap-4 items-start reference-item">
-                <span className="font-bold text-blue-600 min-w-7 text-lg">
-                  [{index + 1}]
-                </span>
-
-                <div className="text-sm text-slate-600 leading-relaxed">
-                  <span className="font-semibold text-slate-800">{source.publication}. </span>
-                  <span className="italic">"{source.title}". </span>
-                  
-                  <a href={source.link} target="_blank" className="text-blue-500 font-medium hover:underline">
-                    Bài gốc
-                  </a>. 
-
-                  <span className="mx-1">{source.year}. </span>
-                  <span className="text-slate-400">
-                    ({source.citation_count} lượt trích dẫn)
-                  </span>
-                </div>
-              </li>
-            ))}
-          </ul>
+              {exportError && (
+                <p className="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm leading-6 text-rose-700">
+                  {exportError}
+                </p>
+              )}
+            </div>
+          </aside>
         </div>
       </div>
     </div>
-        </div>
   );
 }

@@ -10,4 +10,3 @@ class User(Base):
     full_name = Column(String)
     is_admin = Column(Boolean, default=False)
     articles = relationship("ResearchArticle", back_populates="owner")
-    searches = relationship("SearchRequest", back_populates="owner")

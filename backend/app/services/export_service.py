@@ -2,10 +2,11 @@ from fpdf import FPDF
 import re
 from io import BytesIO
 import os
+from pathlib import Path
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
-from app.models.research import ResearchSource
+from app.models.research import ArticleChapter, ChapterSource
 
 class ExportService:
     def __init__(self, db:Session):
@@ -15,6 +16,7 @@ class ExportService:
         self.db = db
         self.full_content = ""
         self.final_source_list = []
+        self.numbered_sections = []
     def make_up_citation(self, article):
         """
         why this logic:
@@ -23,16 +25,35 @@ class ExportService:
         avoid N+1 Query Problem
         """
         found_uid_list = []
-        self.full_content = " ".join([section.section_content for section in article.sections])
+        self.final_source_list = []
+        self.numbered_sections = []
+        content_blocks = []
+        ordered_sections = sorted(article.sections, key=lambda section: section.order or 0)
+        for index, section in enumerate(ordered_sections, start=1):
+            section_title = section.section_title or f"Chương {index}"
+            section_content = section.section_content or ""
+            self.numbered_sections.append(
+                {
+                    "number": index,
+                    "title": section_title,
+                    "content": section_content,
+                }
+            )
+            content_blocks.append(f"{index}. {section_title}\n\n{section_content}")
+
+        self.full_content = "\n\n".join(content_blocks)
         found_uuids = re.findall(r"\[Source ID: ([a-f0-9-]{36})\]", self.full_content)
         for uid in found_uuids:
             if uid not in found_uid_list:
                 found_uid_list.append(uid)
         source_stmt = (
-            select(ResearchSource)
-            .where(ResearchSource.search_id == article.search_id,
-                   ResearchSource.is_cited == True,
-                   ResearchSource.id.in_(found_uid_list)))
+            select(ChapterSource)
+            .join(ArticleChapter, ChapterSource.chapter_id == ArticleChapter.id)
+            .where(
+                ArticleChapter.article_id == article.id,
+                ChapterSource.id.in_(found_uid_list),
+            )
+        )
 
         cited_sources = self.db.execute(source_stmt).scalars().all()
 
@@ -48,9 +69,11 @@ class ExportService:
         pdf.set_margins(20, 20, 20)
         pdf.add_page()
         
-        font_path = os.path.join("assets", "fonts", "DejaVuSans.ttf")
-        pdf.add_font("DejaVu", "", font_path)
-        pdf.add_font("DejaVu", "B", "assets/fonts/DejaVuSans-Bold.ttf")
+        backend_root = Path(__file__).resolve().parents[2]
+        font_path = backend_root / "assets" / "fonts" / "DejaVuSans.ttf"
+        bold_font_path = backend_root / "assets" / "fonts" / "DejaVuSans-Bold.ttf"
+        pdf.add_font("DejaVu", "", str(font_path))
+        pdf.add_font("DejaVu", "B", str(bold_font_path))
         
         pdf.set_font("DejaVu", "B", 22)
         pdf.set_text_color(20, 50, 100)
@@ -61,13 +84,22 @@ class ExportService:
         pdf.line(60, pdf.get_y() + 5, 150, pdf.get_y() + 5)
         pdf.ln(20)
 
-        display_content = self.full_content
-        for index, source in enumerate(self.final_source_list, start=1):
-            display_content = display_content.replace(f"[Source ID: {source.id}]", f"[{index}]")
-
         pdf.set_font("DejaVu", "", 12)
         pdf.set_text_color(30, 30, 30)
-        pdf.multi_cell(0, 8, display_content, align='J') 
+        for section in self.numbered_sections:
+            display_title = f"{section['number']}. {section['title']}"
+            display_content = section["content"]
+            for index, source in enumerate(self.final_source_list, start=1):
+                display_content = display_content.replace(f"[Source ID: {source.id}]", f"[{index}]")
+
+            pdf.set_font("DejaVu", "B", 15)
+            pdf.set_text_color(20, 50, 100)
+            pdf.multi_cell(0, 9, display_title)
+            pdf.ln(1)
+            pdf.set_font("DejaVu", "", 12)
+            pdf.set_text_color(30, 30, 30)
+            pdf.multi_cell(0, 8, display_content, align='J')
+            pdf.ln(6)
         
         if self.final_source_list:
             pdf.add_page()
@@ -86,7 +118,7 @@ class ExportService:
                 pub = source.publication or "Scholar Source"
                 year = source.year or "N/A"
                 title = source.title or "Unknown Title"
-                link = source.link or ""
+                link = source.url or ""
                 cite_count = source.citation_count or 0
 
                 pdf.set_x(margin_l)

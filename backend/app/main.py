@@ -2,7 +2,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.database import Base  
 from app.core.database import engine
-from app.api import research, auth
+from app.api import auth
+from app.api import research
+from app.routes import advanced
 Base.metadata.create_all(bind=engine)
 
 app=FastAPI(
@@ -20,13 +22,19 @@ app.add_middleware(
 )
 
 app.include_router(
+    auth.router,
+    prefix="/api/auth",
+    tags=["Auth"]
+)
+
+app.include_router(
     research.router,
     prefix="/api/research",
     tags=["Research"]
 )
 
 app.include_router(
-    auth.router,
-    prefix="/api/auth",
-    tags=["Auth"]
+    advanced.router,
+    prefix="/api/advanced",
+    tags=["Advanced"]
 )

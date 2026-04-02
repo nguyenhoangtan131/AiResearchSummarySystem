@@ -5,13 +5,10 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.services.research_service import PromptService, ResearchService
 from pydantic import BaseModel, Field
-from app.services.writing_service import WritingService
-from app.models.research import ResearchArticle, ResearchSource
+from app.models.research import ResearchArticle
 from sqlalchemy.orm import selectinload
 from app.core.security import get_current_user
-import re
 
 from app.services.export_service import ExportService
 router = APIRouter()
@@ -25,6 +22,8 @@ async def prompt_research(
     user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    from app.services.research_service import PromptService
+
     service = PromptService(db, user_id)
     return await service.architect_research_plan(request.raw_input)
 
@@ -34,6 +33,8 @@ async def execute_research_search(
     user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    from app.services.research_service import ResearchService
+
     service = ResearchService(db)
     try:
         sources_found = await service.fetch_and_save_sources(search_id)
@@ -57,6 +58,8 @@ async def generate_research_article(
     user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    from app.services.writing_service import WritingService
+
     service = WritingService(db, search_id,user_id)
     try:
         article_id = await service.write_full_research_article_pipline()
@@ -127,13 +130,19 @@ async def get_source(
 
 @router.get("/articles")
 async def get_all_history(db: Session = Depends(get_db), user_id: str = Depends(get_current_user)):
-    stmt = select(ResearchArticle).where(ResearchArticle.user_id == UUID(user_id)).order_by(ResearchArticle.id.desc())
+    stmt = (
+        select(ResearchArticle)
+        .where(ResearchArticle.user_id == UUID(user_id))
+        .order_by(ResearchArticle.created_at.desc(), ResearchArticle.id.desc())
+    )
     articles = db.execute(stmt).scalars().all()
     
     return [
         {
             "id": article.id,
             "title": article.title,
+            "created_at": article.created_at,
+            "updated_at": article.updated_at,
         } for article in articles
     ]
 

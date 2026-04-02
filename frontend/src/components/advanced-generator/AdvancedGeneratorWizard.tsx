@@ -1,11 +1,59 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, ChevronDown, ChevronRight, FileText, Lightbulb, Plus, Search, Sparkles } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { Check, ChevronDown, ChevronRight, Lightbulb, Plus, Search, Sparkles } from 'lucide-react';
+import { advancedApi } from '../../services/api';
 
 type PanelMode = 'hidden' | 'count' | 'title' | 'brief' | 'guide' | 'source';
-type SourceItem = { id: string; title: string; snippet: string; provider: string; link: string; year: string };
-type TitleOption = { title: string; description: string };
-type BriefOption = { title: string; description: string };
-type GuideOption = { id: string; title: string; body: string };
+type SourceItem = {
+  id: string;
+  title: string;
+  snippet: string;
+  provider: string;
+  link: string;
+  year: string;
+  citationCount?: number;
+  publication?: string;
+  display_title_vi?: string;
+  display_snippet_vi?: string;
+  display_publication_vi?: string;
+};
+type TitleOption = { title: string; description: string; display_title_vi?: string; display_description_vi?: string };
+type BriefOption = { title: string; description: string; display_title_vi?: string; display_description_vi?: string };
+type GuideOption = { id: string; title: string; body: string; display_title_vi?: string; display_body_vi?: string };
+type StructureBlueprintItem = {
+  chapter_number: number;
+  working_title: string;
+  purpose: string;
+  start_focus: string;
+  end_focus: string;
+  display_working_title_vi?: string;
+  display_purpose_vi?: string;
+};
+type StructureOption = {
+  option_id: string;
+  chapter_count: number;
+  rationale: string;
+  blueprint: StructureBlueprintItem[];
+  display_rationale_vi?: string;
+};
+type SourceRecommendationOption = SourceItem & {
+  citationCount?: number;
+  publication?: string;
+  display_title_vi?: string;
+  display_snippet_vi?: string;
+  display_publication_vi?: string;
+};
+type CachedChapterStepResponse = {
+  found: boolean;
+  step: 'titles' | 'briefs' | 'guides' | 'sources';
+  data?: {
+    context_signature?: string;
+    query?: string;
+    query_candidates?: string[];
+    options?: Array<Record<string, unknown>>;
+  };
+};
 type Chapter = {
   id: string;
   aiTitle: TitleOption | null;
@@ -19,85 +67,239 @@ type Chapter = {
 };
 
 const reportTypes = [
-  'Literature Review',
-  'Systematic Review',
-  'Scoping Review',
-  'Narrative Review',
-  'Meta-analysis',
-  'Research Report',
-  'Policy Report',
-  'Case Study Report',
-  'Technical Report',
-  'Academic Essay',
-  'Conference Paper',
-  'Journal Article',
-  'Thesis Chapter',
-  'Dissertation Proposal',
-  'Grant Proposal',
-];
-const countOptions = [
-  { id: '3', count: 3, label: '3 chapters', note: 'Focused structure with a compact flow.' },
-  { id: '4', count: 4, label: '4 chapters', note: 'Balanced structure for review, analysis, and implications.' },
-  { id: '5', count: 5, label: '5 chapters', note: 'More formal structure for longer reports.' },
-];
+  { value: 'Tổng quan tài liệu', label: 'Tổng quan tài liệu' },
+  { value: 'Tổng quan hệ thống', label: 'Tổng quan hệ thống' },
+  { value: 'Tổng quan phạm vi', label: 'Tổng quan phạm vi' },
+  { value: 'Tổng quan tường thuật', label: 'Tổng quan tường thuật' },
+  { value: 'Phân tích gộp', label: 'Phân tích gộp' },
+  { value: 'Báo cáo nghiên cứu', label: 'Báo cáo nghiên cứu' },
+  { value: 'Báo cáo chính sách', label: 'Báo cáo chính sách' },
+  { value: 'Báo cáo nghiên cứu tình huống', label: 'Báo cáo nghiên cứu tình huống' },
+  { value: 'Báo cáo kỹ thuật', label: 'Báo cáo kỹ thuật' },
+  { value: 'Tiểu luận học thuật', label: 'Tiểu luận học thuật' },
+  { value: 'Bài báo hội thảo', label: 'Bài báo hội thảo' },
+  { value: 'Bài báo tạp chí', label: 'Bài báo tạp chí' },
+  { value: 'Chương luận văn', label: 'Chương luận văn' },
+  { value: 'Đề cương luận án', label: 'Đề cương luận án' },
+  { value: 'Đề xuất xin tài trợ', label: 'Đề xuất xin tài trợ' },
+] as const;
 const titleOptions: Record<string, TitleOption[]> = {
-  'Literature Review': [
-    { title: 'Research context and problem framing', description: 'Define the topic background, explain why the review matters, and position the problem clearly.' },
-    { title: 'Evidence map and thematic synthesis', description: 'Organize prior studies into major themes and show how the evidence clusters connect.' },
-    { title: 'Key findings and future directions', description: 'Summarize the strongest patterns in the literature and surface the next research opportunities.' },
+  'Tổng quan tài liệu': [
+    { title: 'Research context and problem framing', description: 'Define the topic background, explain why the review matters, and position the problem clearly.', display_title_vi: 'Bối cảnh nghiên cứu và định khung vấn đề', display_description_vi: 'Làm rõ bối cảnh chủ đề, giải thích vì sao bài tổng quan quan trọng và đặt lại vấn đề một cách mạch lạc.' },
+    { title: 'Evidence map and thematic synthesis', description: 'Organize prior studies into major themes and show how the evidence clusters connect.', display_title_vi: 'Bản đồ bằng chứng và tổng hợp theo chủ đề', display_description_vi: 'Sắp xếp các nghiên cứu trước theo các chủ đề lớn và chỉ ra mối liên hệ giữa các cụm bằng chứng.' },
+    { title: 'Key findings and future directions', description: 'Summarize the strongest patterns in the literature and surface the next research opportunities.', display_title_vi: 'Phát hiện chính và định hướng tiếp theo', display_description_vi: 'Tóm tắt các xu hướng nổi bật nhất trong tài liệu và gợi mở các hướng nghiên cứu tiếp theo.' },
   ],
-  'Systematic Review': [
-    { title: 'Review scope and selection protocol', description: 'Explain the review boundaries, inclusion logic, and how evidence was filtered.' },
-    { title: 'Comparative evidence synthesis', description: 'Compare included studies and highlight major similarities, tensions, and evidence quality.' },
-    { title: 'Gaps, limitations, and next steps', description: 'Show what the evidence still misses and what future studies should address next.' },
+  'Tổng quan hệ thống': [
+    { title: 'Review scope and selection protocol', description: 'Explain the review boundaries, inclusion logic, and how evidence was filtered.', display_title_vi: 'Phạm vi tổng quan và quy trình chọn lọc', display_description_vi: 'Giải thích ranh giới của tổng quan, logic chọn tài liệu và cách bằng chứng đã được sàng lọc.' },
+    { title: 'Comparative evidence synthesis', description: 'Compare included studies and highlight major similarities, tensions, and evidence quality.', display_title_vi: 'Tổng hợp so sánh bằng chứng', display_description_vi: 'So sánh các nghiên cứu được đưa vào và nhấn mạnh điểm giống, điểm khác cùng chất lượng bằng chứng.' },
+    { title: 'Gaps, limitations, and next steps', description: 'Show what the evidence still misses and what future studies should address next.', display_title_vi: 'Khoảng trống, giới hạn và bước tiếp theo', display_description_vi: 'Chỉ ra nền bằng chứng còn thiếu gì, giới hạn nằm ở đâu và nghiên cứu sau cần đi tiếp thế nào.' },
   ],
-  'Policy Report': [
-    { title: 'Current landscape and policy urgency', description: 'Set up the problem context, policy pressure, and the practical reason this issue needs action.' },
-    { title: 'Cross-source analysis and stakeholder impact', description: 'Compare findings across sources and explain how they affect relevant stakeholder groups.' },
-    { title: 'Practical recommendations and roadmap', description: 'Translate the evidence into concrete recommendations and an implementation path.' },
+  'Báo cáo chính sách': [
+    { title: 'Current landscape and policy urgency', description: 'Set up the problem context, policy pressure, and the practical reason this issue needs action.', display_title_vi: 'Bối cảnh hiện tại và tính cấp thiết chính sách', display_description_vi: 'Dựng bối cảnh vấn đề, áp lực chính sách và lý do thực tiễn khiến chủ đề này cần được hành động.' },
+    { title: 'Cross-source analysis and stakeholder impact', description: 'Compare findings across sources and explain how they affect relevant stakeholder groups.', display_title_vi: 'Phân tích liên nguồn và tác động tới các bên liên quan', display_description_vi: 'Đối chiếu phát hiện giữa các nguồn và giải thích ảnh hưởng của chúng lên các nhóm liên quan.' },
+    { title: 'Practical recommendations and roadmap', description: 'Translate the evidence into concrete recommendations and an implementation path.', display_title_vi: 'Khuyến nghị thực tiễn và lộ trình triển khai', display_description_vi: 'Chuyển hóa bằng chứng thành các khuyến nghị cụ thể cùng một lộ trình triển khai rõ ràng.' },
   ],
   default: [
-    { title: 'Background and scope', description: 'Introduce the topic, define the scope, and set expectations for the chapter.' },
-    { title: 'Core analysis', description: 'Present the main analytical argument and explain how evidence will be used.' },
-    { title: 'Implications and recommendations', description: 'Close the chapter with meaning, implications, and practical next steps.' },
+    { title: 'Background and scope', description: 'Introduce the topic, define the scope, and set expectations for the chapter.', display_title_vi: 'Bối cảnh và phạm vi', display_description_vi: 'Giới thiệu chủ đề, xác định phạm vi và đặt kỳ vọng cho chương.' },
+    { title: 'Core analysis', description: 'Present the main analytical argument and explain how evidence will be used.', display_title_vi: 'Phân tích trọng tâm', display_description_vi: 'Trình bày lập luận phân tích chính và cách bằng chứng sẽ được sử dụng.' },
+    { title: 'Implications and recommendations', description: 'Close the chapter with meaning, implications, and practical next steps.', display_title_vi: 'Hàm ý và khuyến nghị', display_description_vi: 'Khép lại chương bằng ý nghĩa chính, các hàm ý và bước đi thực tiễn tiếp theo.' },
   ],
 };
 const guideOptions: GuideOption[] = [
-  { id: 'g1', title: 'Comparative academic tone', body: 'Compare at least two sources in each subsection and close with a synthesis sentence.' },
-  { id: 'g2', title: 'Methods-aware writing', body: 'State how evidence was collected and connect methods to result quality.' },
-  { id: 'g3', title: 'Action-oriented synthesis', body: 'Keep paragraphs concise and end sections with practical meaning.' },
+  { id: 'g1', title: 'Comparative academic tone', body: 'Compare at least two sources in each subsection and close with a synthesis sentence.', display_title_vi: 'Giọng văn học thuật so sánh', display_body_vi: 'Trong mỗi tiểu mục, đối chiếu ít nhất hai nguồn và kết lại bằng một câu tổng hợp.' },
+  { id: 'g2', title: 'Methods-aware writing', body: 'State how evidence was collected and connect methods to result quality.', display_title_vi: 'Lối viết gắn với phương pháp', display_body_vi: 'Nêu cách bằng chứng được thu thập và liên hệ phương pháp với chất lượng kết quả.' },
+  { id: 'g3', title: 'Action-oriented synthesis', body: 'Keep paragraphs concise and end sections with practical meaning.', display_title_vi: 'Tổng hợp theo hướng hành động', display_body_vi: 'Giữ đoạn văn ngắn gọn và kết mỗi phần bằng ý nghĩa thực tiễn rõ ràng.' },
 ];
 const briefOptions: Record<string, BriefOption[]> = {
-  'Literature Review': [
-    { title: 'Landscape and relevance', description: 'Introduce the research landscape, explain why the topic matters, and define the review scope.' },
-    { title: 'Evidence map framing', description: 'Map the major evidence clusters and explain how this chapter frames the synthesis logic.' },
-    { title: 'Analytical lens setup', description: 'Clarify the analytical lens that will be used to compare prior studies in later sections.' },
+  'Tổng quan tài liệu': [
+    { title: 'Landscape and relevance', description: 'Introduce the research landscape, explain why the topic matters, and define the review scope.', display_title_vi: 'Bức tranh nghiên cứu và mức độ liên quan', display_description_vi: 'Giới thiệu bức tranh nghiên cứu, giải thích vì sao chủ đề quan trọng và xác định phạm vi tổng quan.' },
+    { title: 'Evidence map framing', description: 'Map the major evidence clusters and explain how this chapter frames the synthesis logic.', display_title_vi: 'Định khung bản đồ bằng chứng', display_description_vi: 'Vẽ ra các cụm bằng chứng chính và giải thích chương này định khung logic tổng hợp như thế nào.' },
+    { title: 'Analytical lens setup', description: 'Clarify the analytical lens that will be used to compare prior studies in later sections.', display_title_vi: 'Thiết lập lăng kính phân tích', display_description_vi: 'Làm rõ lăng kính phân tích sẽ được dùng để so sánh các nghiên cứu ở các phần sau.' },
   ],
-  'Systematic Review': [
-    { title: 'Review objective and boundaries', description: 'Define the review objective, inclusion logic, and boundaries of the evidence base.' },
-    { title: 'Evidence comparison scope', description: 'Summarize the review scope and explain how evidence categories will be compared.' },
-    { title: 'Protocol-to-synthesis bridge', description: 'Frame the chapter as the bridge between protocol choices and later synthesis results.' },
+  'Tổng quan hệ thống': [
+    { title: 'Review objective and boundaries', description: 'Define the review objective, inclusion logic, and boundaries of the evidence base.', display_title_vi: 'Mục tiêu tổng quan và ranh giới bằng chứng', display_description_vi: 'Xác định mục tiêu tổng quan, logic chọn lọc và giới hạn của nền bằng chứng.' },
+    { title: 'Evidence comparison scope', description: 'Summarize the review scope and explain how evidence categories will be compared.', display_title_vi: 'Phạm vi so sánh bằng chứng', display_description_vi: 'Tóm tắt phạm vi tổng quan và giải thích cách các nhóm bằng chứng sẽ được đối chiếu.' },
+    { title: 'Protocol-to-synthesis bridge', description: 'Frame the chapter as the bridge between protocol choices and later synthesis results.', display_title_vi: 'Cầu nối giữa quy trình và tổng hợp', display_description_vi: 'Định vị chương như cầu nối giữa lựa chọn phương pháp và kết quả tổng hợp ở các phần sau.' },
   ],
   default: [
-    { title: 'Objective and scope', description: 'Introduce the chapter objective, scope, and expected contribution to the full article.' },
-    { title: 'Analysis angle', description: 'Summarize the main angle of analysis and the evidence this chapter will rely on.' },
-    { title: 'Reader expectations', description: 'Set reader expectations for the structure, claims, and transitions in this chapter.' },
+    { title: 'Objective and scope', description: 'Introduce the chapter objective, scope, and expected contribution to the full article.', display_title_vi: 'Mục tiêu và phạm vi', display_description_vi: 'Giới thiệu mục tiêu chương, phạm vi và đóng góp dự kiến cho toàn bài.' },
+    { title: 'Analysis angle', description: 'Summarize the main angle of analysis and the evidence this chapter will rely on.', display_title_vi: 'Góc độ phân tích', display_description_vi: 'Tóm tắt góc độ phân tích chính và nền bằng chứng mà chương sẽ dựa vào.' },
+    { title: 'Reader expectations', description: 'Set reader expectations for the structure, claims, and transitions in this chapter.', display_title_vi: 'Kỳ vọng của người đọc', display_description_vi: 'Đặt kỳ vọng về cấu trúc, luận điểm và chuyển đoạn trong chương này.' },
   ],
 };
 const sourceOptions = [
-  { id: 's1', title: 'Open-access evidence synthesis in higher education research', snippet: 'Review workflow, source selection, and reporting practices for higher education evidence synthesis.', provider: 'Google Scholar • Studies in Educational Evaluation', link: 'https://example.org/source-1', year: '2024' },
-  { id: 's2', title: 'Systematic review transparency and reproducibility practices', snippet: 'Open-access paper focused on reproducibility, search logs, and evidence reporting standards.', provider: 'Google Scholar • PLOS ONE', link: 'https://example.org/source-2', year: '2023' },
-  { id: 's3', title: 'Open scholarly metadata for review-driven writing workflows', snippet: 'Metadata-driven workflow paper relevant for source discovery and chapter-level evidence mapping.', provider: 'Google Scholar • Scientometrics', link: 'https://example.org/source-3', year: '2025' },
+  { id: 's1', title: 'Open-access evidence synthesis in higher education research', snippet: 'Review workflow, source selection, and reporting practices for higher education evidence synthesis.', provider: 'Google Scholar • Studies in Educational Evaluation', link: 'https://example.org/source-1', year: '2024', display_title_vi: 'Tổng hợp bằng chứng truy cập mở trong nghiên cứu giáo dục đại học', display_snippet_vi: 'Bài viết về quy trình tổng quan, cách chọn nguồn và thực hành báo cáo trong tổng hợp bằng chứng giáo dục đại học.', display_publication_vi: 'Google Scholar • Studies in Educational Evaluation' },
+  { id: 's2', title: 'Systematic review transparency and reproducibility practices', snippet: 'Open-access paper focused on reproducibility, search logs, and evidence reporting standards.', provider: 'Google Scholar • PLOS ONE', link: 'https://example.org/source-2', year: '2023', display_title_vi: 'Thực hành minh bạch và tái lập trong tổng quan hệ thống', display_snippet_vi: 'Bài truy cập mở tập trung vào khả năng tái lập, nhật ký tìm kiếm và chuẩn mực báo cáo bằng chứng.', display_publication_vi: 'Google Scholar • PLOS ONE' },
+  { id: 's3', title: 'Open scholarly metadata for review-driven writing workflows', snippet: 'Metadata-driven workflow paper relevant for source discovery and chapter-level evidence mapping.', provider: 'Google Scholar • Scientometrics', link: 'https://example.org/source-3', year: '2025', display_title_vi: 'Siêu dữ liệu học thuật mở cho quy trình viết dựa trên tổng quan', display_snippet_vi: 'Bài viết về quy trình dựa trên siêu dữ liệu, phù hợp cho tìm nguồn và lập bản đồ bằng chứng theo từng chương.', display_publication_vi: 'Google Scholar • Scientometrics' },
 ];
 const aiCountSummary: Record<string, string> = {
-  'Literature Review': 'AI suggests a medium-length structure with a clear review -> synthesis -> implication flow.',
-  'Systematic Review': 'AI suggests a slightly more formal structure so protocol and synthesis are separated.',
-  'Policy Report': 'AI suggests a structure that moves from context to analysis to recommendations.',
-  'Academic Essay': 'AI suggests a compact argumentative structure with fewer transitions.',
+  'Tổng quan tài liệu': 'AI đề xuất một bố cục trung bình với mạch rõ giữa tổng quan, tổng hợp và hàm ý.',
+  'Tổng quan hệ thống': 'AI đề xuất một bố cục trang trọng hơn để tách riêng quy trình và phần tổng hợp.',
+  'Báo cáo chính sách': 'AI đề xuất một bố cục đi từ bối cảnh, phân tích đến khuyến nghị.',
+  'Tiểu luận học thuật': 'AI đề xuất một bố cục lập luận gọn với ít nhịp chuyển hơn.',
 };
 
 const makeChapter = (n: number): Chapter => ({ id: `chapter-${n}`, aiTitle: null, customTitle: '', aiBrief: null, customBrief: '', selectedGuides: [], customGuide: '', sources: [], done: false });
 const pill = (active: boolean, done: boolean) => done ? 'bg-emerald-500 text-white' : active ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-500';
+const ADVANCED_ARTICLE_STORAGE_KEY = 'advanced-article-id';
+const ADVANCED_SESSION_STORAGE_KEY = 'advanced-session-id';
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (axios.isAxiosError(error)) {
+    const detail = error.response?.data?.detail;
+    if (typeof detail === 'string' && detail.trim()) {
+      return detail;
+    }
+  }
+  return fallback;
+};
+
+const buildContextSignature = async (...parts: Array<string | number | undefined>) => {
+  const raw = parts.map((part) => String(part || '').trim()).join('||');
+  const encoded = new TextEncoder().encode(raw);
+  const digest = await window.crypto.subtle.digest('SHA-256', encoded);
+  return Array.from(new Uint8Array(digest)).map((value) => value.toString(16).padStart(2, '0')).join('');
+};
+
+const normalizeStructureText = (value?: string) =>
+  (value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const dedupeByVietnameseTitle = <T extends { title: string; display_title_vi?: string }>(items: T[]) => {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    const key = normalizeStructureText(item.display_title_vi || item.title);
+    if (!key || seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+};
+
+const detectBlueprintRole = (blueprint?: StructureBlueprintItem) => {
+  const text = normalizeStructureText(
+    `${blueprint?.display_working_title_vi || blueprint?.working_title || ''} ${blueprint?.display_purpose_vi || blueprint?.purpose || ''}`,
+  );
+  if (text.includes('boi canh') || text.includes('pham vi') || text.includes('dinh khung') || text.includes('mo bai')) {
+    return 'context';
+  }
+  if (text.includes('bang chung') || text.includes('phuong phap') || text.includes('tong hop')) {
+    return 'evidence';
+  }
+  if (text.includes('phan tich') || text.includes('so sanh') || text.includes('dien giai')) {
+    return 'analysis';
+  }
+  if (text.includes('ham y') || text.includes('ket luan') || text.includes('khuyen nghi')) {
+    return 'closing';
+  }
+  return 'general';
+};
+
+const buildTitleFallbacks = (
+  reportTypeValue: string,
+  blueprint?: StructureBlueprintItem,
+  chapterIndex = 0,
+): TitleOption[] => {
+  const role = detectBlueprintRole(blueprint);
+  const blueprintOption: TitleOption = {
+    title: blueprint?.working_title || 'Background and scope',
+    description: blueprint?.purpose || 'Introduce the chapter scope and explain why it matters.',
+    display_title_vi: blueprint?.display_working_title_vi || 'Bối cảnh và phạm vi',
+    display_description_vi:
+      blueprint?.display_purpose_vi || 'Giới thiệu phạm vi chương và giải thích vì sao phần này quan trọng.',
+  };
+
+  const roleBanks: Record<string, TitleOption[]> = {
+    context: [
+      blueprintOption,
+      {
+        title: 'Context and framing',
+        description: 'Frame the topic, clarify the scope, and prepare the reader for the analytical flow.',
+        display_title_vi: 'Bối cảnh và định khung',
+        display_description_vi: 'Định khung chủ đề, làm rõ phạm vi và chuẩn bị người đọc cho mạch phân tích tiếp theo.',
+      },
+      {
+        title: 'Problem context and scope',
+        description: 'Present the problem setting, chapter boundary, and why this opening chapter matters.',
+        display_title_vi: 'Bối cảnh vấn đề và phạm vi',
+        display_description_vi: 'Trình bày bối cảnh vấn đề, ranh giới của chương và lý do chương mở đầu này quan trọng.',
+      },
+    ],
+    evidence: [
+      blueprintOption,
+      {
+        title: 'Evidence base and analytical criteria',
+        description: 'Introduce the evidence pool and the criteria used to handle or compare it.',
+        display_title_vi: 'Nền bằng chứng và tiêu chí phân tích',
+        display_description_vi: 'Giới thiệu nền bằng chứng và các tiêu chí dùng để xử lý hoặc đối chiếu chúng.',
+      },
+      {
+        title: 'Evidence framing and comparison basis',
+        description: 'Clarify the evidence landscape and set the basis for later analysis.',
+        display_title_vi: 'Định khung bằng chứng và cơ sở đối chiếu',
+        display_description_vi: 'Làm rõ bức tranh bằng chứng và đặt nền cho phần phân tích tiếp theo.',
+      },
+    ],
+    analysis: [
+      blueprintOption,
+      {
+        title: 'Comparative analysis and interpretation',
+        description: 'Compare the main patterns in the evidence and interpret their meaning.',
+        display_title_vi: 'Phân tích so sánh và diễn giải',
+        display_description_vi: 'Đối chiếu các mẫu hình chính trong bằng chứng và diễn giải ý nghĩa của chúng.',
+      },
+      {
+        title: 'Analytical synthesis of key findings',
+        description: 'Synthesize the strongest findings into a coherent analytical thread.',
+        display_title_vi: 'Tổng hợp phân tích các phát hiện chính',
+        display_description_vi: 'Tổng hợp các phát hiện nổi bật thành một mạch phân tích rõ ràng.',
+      },
+    ],
+    closing: [
+      blueprintOption,
+      {
+        title: 'Implications, recommendations, and conclusion',
+        description: 'Translate the chapter findings into implications, recommendations, and a clear ending.',
+        display_title_vi: 'Hàm ý, khuyến nghị và kết luận',
+        display_description_vi: 'Chuyển các phát hiện của chương thành hàm ý, khuyến nghị và phần kết thúc rõ ràng.',
+      },
+      {
+        title: 'Closing synthesis and next directions',
+        description: 'Synthesize the key meaning of the chapter and point to practical or research next steps.',
+        display_title_vi: 'Tổng hợp kết thúc và định hướng tiếp theo',
+        display_description_vi: 'Tổng hợp ý nghĩa chính của chương và chỉ ra hướng đi thực tiễn hoặc nghiên cứu tiếp theo.',
+      },
+    ],
+    general: [blueprintOption, ...(titleOptions[reportTypeValue] || titleOptions.default).slice(chapterIndex, chapterIndex + 2)],
+  };
+
+  const bank = roleBanks[role] || roleBanks.general;
+  const ordered = [blueprintOption, ...bank];
+  return dedupeByVietnameseTitle(ordered).slice(0, 3);
+};
+
+const buildBriefFallbacks = (
+  reportTypeValue: string,
+  blueprint?: StructureBlueprintItem,
+  chapterIndex = 0,
+): BriefOption[] => {
+  const blueprintOption: BriefOption = {
+    title: blueprint?.working_title || 'Objective and scope',
+    description: blueprint?.purpose || 'Summarize the objective and scope of this chapter.',
+    display_title_vi: blueprint?.display_working_title_vi || 'Mục tiêu và phạm vi',
+    display_description_vi: blueprint?.display_purpose_vi || 'Tóm tắt mục tiêu và phạm vi của chương này.',
+  };
+
+  const bank = briefOptions[reportTypeValue] || briefOptions.default;
+  const ordered = [blueprintOption, ...bank.slice(chapterIndex, chapterIndex + 1), ...bank];
+  return dedupeByVietnameseTitle(ordered).slice(0, 3);
+};
 
 function SelectedCard({
   tone,
@@ -121,9 +323,9 @@ function SelectedCard({
   } as const;
 
   return (
-    <div className={`rounded-[20px] border px-4 py-4 ${tones[tone]}`}>
+    <div className={`break-words overflow-hidden rounded-[20px] border px-4 py-4 ${tones[tone]}`}>
       <div className="flex items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.2em]">{label}</p>
           <p className="mt-2 text-base font-semibold text-slate-900">{title}</p>
           <p className="mt-2 text-sm leading-6 text-slate-700">{description}</p>
@@ -141,25 +343,148 @@ function SelectedCard({
 }
 
 export default function AdvancedGeneratorWizard() {
-  const [articleTitle, setArticleTitle] = useState('AI-assisted evidence synthesis for higher education research');
+  const navigate = useNavigate();
+  const [articleTitle, setArticleTitle] = useState('');
   const [reportType, setReportType] = useState('');
   const [chapterCount, setChapterCount] = useState<number | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
+  const [structureOptions, setStructureOptions] = useState<StructureOption[]>([]);
+  const [structureSessionId, setStructureSessionId] = useState('');
+  const [normalizedArticleTitle, setNormalizedArticleTitle] = useState('');
+  const [selectedStructure, setSelectedStructure] = useState<StructureOption | null>(null);
+  const [isLoadingStructure, setIsLoadingStructure] = useState(false);
+  const [structureError, setStructureError] = useState('');
+  const [articleId, setArticleId] = useState('');
+  const [titleRecommendations, setTitleRecommendations] = useState<TitleOption[]>([]);
+  const [briefRecommendations, setBriefRecommendations] = useState<BriefOption[]>([]);
+  const [guideRecommendations, setGuideRecommendations] = useState<GuideOption[]>([]);
+  const [sourceRecommendations, setSourceRecommendations] = useState<SourceRecommendationOption[]>([]);
+  const [sourceQuery, setSourceQuery] = useState('');
+  const [sourceQueryCandidates, setSourceQueryCandidates] = useState<string[]>([]);
+  const [isLoadingTitleOptions, setIsLoadingTitleOptions] = useState(false);
+  const [isLoadingBriefOptions, setIsLoadingBriefOptions] = useState(false);
+  const [isLoadingGuideOptions, setIsLoadingGuideOptions] = useState(false);
+  const [isLoadingSourceOptions, setIsLoadingSourceOptions] = useState(false);
+  const [isSavingChapter, setIsSavingChapter] = useState(false);
+  const [isGeneratingArticle, setIsGeneratingArticle] = useState(false);
+  const [chapterActionError, setChapterActionError] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const [panelMode, setPanelMode] = useState<PanelMode>('hidden');
   const [isTypeMenuOpen, setIsTypeMenuOpen] = useState(false);
+  const [showBlueprintDetails, setShowBlueprintDetails] = useState(false);
   const typeMenuRef = useRef<HTMLDivElement | null>(null);
 
   const current = chapters[activeIndex];
   const completed = chapters.filter((chapter) => chapter.done).length;
   const finishedAll = chapterCount !== null && completed === chapterCount;
+  const isLastChapter = chapterCount !== null && activeIndex === chapterCount - 1;
   const setupReady = Boolean(articleTitle.trim() && reportType.trim());
-  const suggestedTitles = useMemo(() => titleOptions[reportType] ?? titleOptions.default, [reportType]);
-  const suggestedBriefs = useMemo(() => briefOptions[reportType] ?? briefOptions.default, [reportType]);
+  const suggestedTitles = useMemo(() => titleRecommendations, [titleRecommendations]);
+  const suggestedBriefs = useMemo(() => briefRecommendations, [briefRecommendations]);
+  const suggestedGuides = useMemo(() => guideRecommendations, [guideRecommendations]);
+  const suggestedSources = useMemo(() => sourceRecommendations, [sourceRecommendations]);
+  const reportTypeLabel = useMemo(
+    () => reportTypes.find((item) => item.value === reportType)?.label || reportType,
+    [reportType],
+  );
   const titleReady = Boolean(current?.aiTitle?.title || current?.customTitle?.trim());
   const briefReady = Boolean(current?.aiBrief?.description || current?.customBrief?.trim());
-  const guideReady = Boolean((current?.selectedGuides.length || 0) > 0 || current?.customGuide?.trim());
   const sourcesReady = Boolean((current?.sources.length || 0) > 0);
+  const chapterNumber = activeIndex + 1;
+  const shouldRenderPanel =
+    (panelMode === 'count' && !selectedStructure && (isLoadingStructure || structureOptions.length > 0)) ||
+    (panelMode === 'title' && (isLoadingTitleOptions || suggestedTitles.length > 0)) ||
+    (panelMode === 'brief' && (isLoadingBriefOptions || suggestedBriefs.length > 0)) ||
+    (panelMode === 'guide' && (isLoadingGuideOptions || suggestedGuides.length > 0)) ||
+    (panelMode === 'source' && (isLoadingSourceOptions || suggestedSources.length > 0));
+
+  const mapCachedTitleOptions = (options: Array<Record<string, unknown>>): TitleOption[] =>
+    options.map((item) => ({
+      title: String(item.title || ''),
+      description: String(item.description || ''),
+      display_title_vi: typeof item.display_title_vi === 'string' ? item.display_title_vi : String(item.title || ''),
+      display_description_vi:
+        typeof item.display_description_vi === 'string' ? item.display_description_vi : String(item.description || ''),
+    })).filter((item) => item.title.trim() && item.description.trim());
+
+  const mapCachedBriefOptions = (options: Array<Record<string, unknown>>): BriefOption[] =>
+    options.map((item) => ({
+      title: String(item.title || ''),
+      description: String(item.description || ''),
+      display_title_vi: typeof item.display_title_vi === 'string' ? item.display_title_vi : String(item.title || ''),
+      display_description_vi:
+        typeof item.display_description_vi === 'string' ? item.display_description_vi : String(item.description || ''),
+    })).filter((item) => item.title.trim() && item.description.trim());
+
+  const mapCachedGuideOptions = (options: Array<Record<string, unknown>>): GuideOption[] =>
+    options.map((item, index) => ({
+      id: String(item.id || `guide-${index + 1}`),
+      title: String(item.title || ''),
+      body: String(item.body || ''),
+      display_title_vi: typeof item.display_title_vi === 'string' ? item.display_title_vi : String(item.title || ''),
+      display_body_vi: typeof item.display_body_vi === 'string' ? item.display_body_vi : String(item.body || ''),
+    })).filter((item) => item.title.trim() && item.body.trim());
+
+  const mapCachedSourceOptions = (options: Array<Record<string, unknown>>): SourceRecommendationOption[] =>
+    options.map((item, index) => ({
+      id: String(item.id || `source-${index + 1}`),
+      title: String(item.title || ''),
+      snippet: String(item.snippet || ''),
+      provider: String(item.provider || 'Google Scholar'),
+      link: String(item.link || ''),
+      year: String(item.year || ''),
+      citationCount: Number(item.citation_count || 0),
+      publication: typeof item.publication === 'string' ? item.publication : '',
+      display_title_vi: typeof item.display_title_vi === 'string' ? item.display_title_vi : String(item.title || ''),
+      display_snippet_vi: typeof item.display_snippet_vi === 'string' ? item.display_snippet_vi : String(item.snippet || ''),
+      display_publication_vi:
+        typeof item.display_publication_vi === 'string'
+          ? item.display_publication_vi
+          : (typeof item.publication === 'string' ? item.publication : ''),
+    })).filter((item) => item.title.trim());
+
+  const loadCachedRecommendations = async (
+    step: 'titles' | 'briefs' | 'guides' | 'sources',
+    sessionId: string,
+    nextChapterNumber: number,
+    expectedContextSignature?: string,
+  ) => {
+    const { data } = await advancedApi.getCachedChapterStep(sessionId, nextChapterNumber, step);
+    const cached = data as CachedChapterStepResponse;
+    const options = cached.data?.options || [];
+
+    if (!cached.found || options.length === 0) {
+      return null;
+    }
+
+    if (
+      expectedContextSignature &&
+      cached.data?.context_signature &&
+      cached.data.context_signature !== expectedContextSignature
+    ) {
+      return null;
+    }
+
+    if (step === 'titles') {
+      return mapCachedTitleOptions(options);
+    }
+    if (step === 'briefs') {
+      return mapCachedBriefOptions(options);
+    }
+    if (step === 'guides') {
+      return mapCachedGuideOptions(options);
+    }
+    return mapCachedSourceOptions(options);
+  };
+
+  const isSourceSelected = (source: SourceItem) =>
+    Boolean(
+      current?.sources.some(
+        (item) =>
+          (item.link && source.link && item.link === source.link) ||
+          normalizeStructureText(item.title) === normalizeStructureText(source.title),
+      ),
+    );
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -172,47 +497,443 @@ export default function AdvancedGeneratorWizard() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const buildPlan = (count: number) => {
-    setChapterCount(count);
-    setChapters(Array.from({ length: count }, (_, i) => makeChapter(i + 1)));
+  useEffect(() => {
+    const savedArticleId = window.localStorage.getItem(ADVANCED_ARTICLE_STORAGE_KEY);
+    const savedSessionId = window.localStorage.getItem(ADVANCED_SESSION_STORAGE_KEY);
+
+    if (savedSessionId) {
+      setStructureSessionId(savedSessionId);
+    }
+
+    if (!savedArticleId) {
+      return;
+    }
+
+    let isMounted = true;
+    void advancedApi
+      .getArticle(savedArticleId)
+      .then(({ data }) => {
+        if (!isMounted) {
+          return;
+        }
+
+        setArticleId(data.article_id);
+        setArticleTitle(data.title);
+        setReportType(data.report_type);
+        setChapterCount(data.chapter_count);
+
+        const restoredBlueprint = data.blueprints.map((blueprint: {
+          chapter_number: number;
+          title?: string;
+          purpose?: string;
+          start_focus?: string;
+          end_focus?: string;
+        }) => ({
+          chapter_number: blueprint.chapter_number,
+          working_title: blueprint.title || `Chapter ${blueprint.chapter_number}`,
+          purpose: blueprint.purpose || 'No blueprint purpose saved yet.',
+          start_focus: blueprint.start_focus || 'No start focus saved yet.',
+          end_focus: blueprint.end_focus || 'No end focus saved yet.',
+          display_working_title_vi: blueprint.title || `Chapter ${blueprint.chapter_number}`,
+          display_purpose_vi: blueprint.purpose || 'No blueprint purpose saved yet.',
+        }));
+
+        setSelectedStructure({
+          option_id: 'persisted-structure',
+          chapter_count: data.chapter_count,
+          rationale: 'Restored from saved blueprint.',
+          display_rationale_vi: 'Đã khôi phục từ bố cục đã lưu.',
+          blueprint: restoredBlueprint,
+        });
+
+        setChapters(
+          data.chapters.map((chapter: {
+            id: string;
+            chapter_number: number;
+            chapter_title?: string;
+            chapter_title_description?: string;
+            chapter_brief?: string;
+            guides?: Array<{ id: string; content: string }>;
+            sources?: Array<{ id: string; title: string; snippet?: string; provider?: string; url?: string; year?: number; publication?: string; citation_count?: number }>;
+          }) => ({
+            id: chapter.id,
+            aiTitle: chapter.chapter_title
+              ? {
+                  title: chapter.chapter_title,
+                  description: chapter.chapter_title_description || '',
+                  display_title_vi: chapter.chapter_title,
+                  display_description_vi: chapter.chapter_title_description || '',
+                }
+              : null,
+            customTitle: '',
+            aiBrief: chapter.chapter_brief
+              ? {
+                  title: 'Saved summary',
+                  description: chapter.chapter_brief,
+                  display_title_vi: 'Tóm tắt đã lưu',
+                  display_description_vi: chapter.chapter_brief,
+                }
+              : null,
+            customBrief: '',
+            selectedGuides:
+              chapter.guides?.map((guide, index) => ({
+                id: guide.id || `guide-${chapter.chapter_number}-${index + 1}`,
+                title: 'Saved guide',
+                body: guide.content,
+                display_title_vi: 'Hướng dẫn đã lưu',
+                display_body_vi: guide.content,
+              })) || [],
+            customGuide: '',
+            sources:
+              chapter.sources?.map((source) => ({
+                id: source.id,
+                title: source.title,
+                snippet: source.snippet || '',
+                provider: source.provider || 'Google Scholar',
+                link: source.url || '',
+                year: source.year ? String(source.year) : '',
+                publication: source.publication || '',
+                citationCount: source.citation_count || 0,
+                display_title_vi: source.title,
+                display_snippet_vi: source.snippet || '',
+                display_publication_vi: source.publication || '',
+              })) || [],
+            done: Boolean(chapter.chapter_title && chapter.chapter_brief && (chapter.sources?.length || 0) > 0),
+          })),
+        );
+
+        const firstPendingIndex = data.chapters.findIndex((chapter: { chapter_title?: string; chapter_brief?: string; sources?: Array<unknown> }) => {
+          const hasTitle = Boolean(chapter.chapter_title);
+          const hasBrief = Boolean(chapter.chapter_brief);
+          const hasSources = Boolean((chapter.sources?.length || 0) > 0);
+          return !(hasTitle && hasBrief && hasSources);
+        });
+        setActiveIndex(firstPendingIndex === -1 ? Math.max(data.chapter_count - 1, 0) : firstPendingIndex);
+      })
+      .catch(() => {
+        window.localStorage.removeItem(ADVANCED_ARTICLE_STORAGE_KEY);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const buildPlan = async (structure: StructureOption) => {
+    setSelectedStructure(structure);
+    setChapterCount(structure.chapter_count);
+    setChapters(Array.from({ length: structure.chapter_count }, (_, i) => makeChapter(i + 1)));
     setActiveIndex(0);
+    setStructureOptions([]);
+    setTitleRecommendations([]);
+    setBriefRecommendations([]);
+    setGuideRecommendations([]);
+    setSourceRecommendations([]);
+    setChapterActionError('');
     setPanelMode('title');
+
+    if (!structureSessionId) {
+      return;
+    }
+
+    try {
+      const { data } = await advancedApi.selectStructure({
+        session_id: structureSessionId,
+        selected_option_id: structure.option_id,
+        article_id: articleId || undefined,
+      });
+      setArticleId(data.article_id);
+      window.localStorage.setItem(ADVANCED_ARTICLE_STORAGE_KEY, data.article_id);
+    } catch (error) {
+      setChapterActionError('The selected blueprint could not be saved to the backend yet. You can still review the UI, but chapter persistence will fail until structure saving works.');
+    }
   };
 
-  const handleReportTypeChange = (value: string) => {
+  const loadStructureOptions = async (nextTitle: string, nextType: string) => {
+    if (!nextTitle.trim() || !nextType.trim()) {
+      setStructureOptions([]);
+      setStructureSessionId('');
+      setNormalizedArticleTitle('');
+      setStructureError('');
+      return;
+    }
+
+    setIsLoadingStructure(true);
+    setStructureError('');
+    try {
+      const { data } = await advancedApi.recommendStructure(
+        nextTitle.trim(),
+        nextType.trim(),
+        structureSessionId || undefined,
+      );
+      setStructureOptions(data.options);
+      setStructureSessionId(data.session_id);
+      window.localStorage.setItem(ADVANCED_SESSION_STORAGE_KEY, data.session_id);
+      setNormalizedArticleTitle(data.normalized_article_title_en);
+      setArticleId('');
+      window.localStorage.removeItem(ADVANCED_ARTICLE_STORAGE_KEY);
+    } catch (error) {
+      setStructureOptions([]);
+      setNormalizedArticleTitle('');
+      setStructureError(getErrorMessage(error, 'Không tải được gợi ý bố cục từ AI. Hãy sửa prompt hoặc backend rồi thử lại.'));
+    } finally {
+      setIsLoadingStructure(false);
+      setPanelMode('count');
+    }
+  };
+
+  const ensureLiveStructureContext = async () => {
+    if (!selectedStructure || !articleTitle.trim() || !reportType.trim()) {
+      return null;
+    }
+
+    if (structureSessionId && !selectedStructure.option_id.startsWith('persisted-')) {
+      return {
+        sessionId: structureSessionId,
+        structure: selectedStructure,
+      };
+    }
+
+    const { data } = await advancedApi.recommendStructure(articleTitle.trim(), reportType.trim());
+    const targetTitles = selectedStructure.blueprint.map((item) =>
+      normalizeStructureText(item.display_working_title_vi || item.working_title),
+    );
+
+    const bestMatch =
+      data.options
+        .map((option) => {
+          let score = option.chapter_count === selectedStructure.chapter_count ? 10 : 0;
+          option.blueprint.forEach((item, index) => {
+            const candidate = normalizeStructureText(item.display_working_title_vi || item.working_title);
+            const target = targetTitles[index] || '';
+            if (candidate && target && (candidate.includes(target) || target.includes(candidate))) {
+              score += 3;
+            }
+          });
+          return { option, score };
+        })
+        .sort((a, b) => b.score - a.score)[0]?.option || data.options[0];
+
+    setStructureSessionId(data.session_id);
+    window.localStorage.setItem(ADVANCED_SESSION_STORAGE_KEY, data.session_id);
+    setNormalizedArticleTitle(data.normalized_article_title_en);
+    setSelectedStructure(bestMatch);
+
+    return {
+      sessionId: data.session_id,
+      structure: bestMatch,
+    };
+  };
+
+  const handleReportTypeChange = async (value: string) => {
     setReportType(value);
     setChapterCount(null);
     setChapters([]);
+    setSelectedStructure(null);
     setActiveIndex(0);
-    setPanelMode('count');
+    setStructureOptions([]);
+    setPanelMode(articleTitle.trim() ? 'count' : 'hidden');
     setIsTypeMenuOpen(false);
+    window.localStorage.removeItem(ADVANCED_ARTICLE_STORAGE_KEY);
+    await loadStructureOptions(articleTitle, value);
   };
 
   const updateCurrent = (field: keyof Chapter, value: Chapter[keyof Chapter]) => {
     setChapters((list) => list.map((item, i) => i === activeIndex ? { ...item, [field]: value } : item));
   };
 
-  const addSource = (source: SourceItem) => {
-    setChapters((list) => list.map((item, i) => i === activeIndex && !item.sources.some((x) => x.title === source.title) ? { ...item, sources: [...item.sources, source] } : item));
-    setPanelMode('hidden');
+  const openRecommendationPanel = (mode: Exclude<PanelMode, 'hidden' | 'count'>) => {
+    setPanelMode(mode);
+    setChapterActionError('');
+    if (mode !== 'title') {
+      setTitleRecommendations([]);
+      setIsLoadingTitleOptions(false);
+    }
+    if (mode !== 'brief') {
+      setBriefRecommendations([]);
+      setIsLoadingBriefOptions(false);
+    }
+    if (mode !== 'guide') {
+      setGuideRecommendations([]);
+      setIsLoadingGuideOptions(false);
+    }
+    if (mode !== 'source') {
+      setSourceRecommendations([]);
+      setIsLoadingSourceOptions(false);
+    }
   };
 
-  const completeChapter = () => {
+  const ensurePersistedArticle = async () => {
+    if (articleId) {
+      return articleId;
+    }
+
+    if (!selectedStructure || !structureSessionId) {
+      return '';
+    }
+
+    const { data } = await advancedApi.selectStructure({
+      session_id: structureSessionId,
+      selected_option_id: selectedStructure.option_id,
+    });
+    setArticleId(data.article_id);
+    window.localStorage.setItem(ADVANCED_ARTICLE_STORAGE_KEY, data.article_id);
+    return data.article_id;
+  };
+
+  const addSource = (source: SourceItem) => {
+    setChapters((list) =>
+      list.map((item, i) =>
+        i === activeIndex &&
+        !item.sources.some(
+          (x) =>
+            (x.link && source.link && x.link === source.link) ||
+            normalizeStructureText(x.title) === normalizeStructureText(source.title),
+        )
+          ? { ...item, sources: [...item.sources, source] }
+          : item,
+      ),
+    );
+  };
+
+  const toggleSourceSelection = (source: SourceRecommendationOption) => {
+    if (isSourceSelected(source)) {
+      removeSource(source.id);
+      return;
+    }
+    addSource(source);
+  };
+
+  const completeChapter = async (generateAfterSave = false) => {
+    if (!selectedStructure) {
+      setChapterActionError('Choose and save a blueprint before completing chapters.');
+      return;
+    }
+
+    setIsSavingChapter(true);
+    setChapterActionError('');
+    try {
+      const persistedArticleId = await ensurePersistedArticle();
+      if (!persistedArticleId) {
+        throw new Error('The article structure is not persisted yet. Please choose the blueprint again.');
+      }
+
+      const effectiveSessionId = structureSessionId || `persisted-${persistedArticleId}`;
+      const effectiveOptionId = selectedStructure.option_id || 'persisted-structure';
+
+      const chapterTitle =
+        current?.customTitle.trim() ||
+        current?.aiTitle?.display_title_vi ||
+        current?.aiTitle?.title ||
+        '';
+      const chapterTitleDescription =
+        current?.aiTitle?.display_description_vi ||
+        current?.aiTitle?.description ||
+        selectedStructure.blueprint[activeIndex]?.display_purpose_vi ||
+        selectedStructure.blueprint[activeIndex]?.purpose ||
+        '';
+      const chapterBrief =
+        current?.customBrief.trim() ||
+        current?.aiBrief?.display_description_vi ||
+        current?.aiBrief?.description ||
+        '';
+      const guidePayload = (current?.selectedGuides || []).map((guide, index) => ({
+          content: guide.display_body_vi || guide.body,
+          sort_order: index + 1,
+        }));
+      const sourcePayload = (current?.sources || []).map((source, index) => ({
+          title: (source as SourceRecommendationOption).display_title_vi || source.title,
+          snippet: (source as SourceRecommendationOption).display_snippet_vi || source.snippet,
+          provider: source.provider,
+          url: source.link,
+          year: Number(source.year) || undefined,
+          citation_count: (source as SourceRecommendationOption).citationCount || 0,
+          publication:
+            (source as SourceRecommendationOption).display_publication_vi ||
+            (source as SourceRecommendationOption).publication,
+          sort_order: index + 1,
+        }));
+
+      let savedArticleId = persistedArticleId;
+      if (chapterNumber === 1) {
+        const { data } = await advancedApi.confirmFirstChapter({
+          article_id: persistedArticleId,
+          session_id: effectiveSessionId,
+          selected_option_id: effectiveOptionId,
+          manual_title: current?.customTitle.trim() || undefined,
+          ai_title: current?.aiTitle?.display_title_vi || current?.aiTitle?.title || undefined,
+          ai_title_description: chapterTitleDescription || undefined,
+          manual_brief: current?.customBrief.trim() || undefined,
+          ai_brief: current?.aiBrief?.display_description_vi || current?.aiBrief?.description || undefined,
+          ai_brief_description: current?.aiBrief?.display_title_vi || current?.aiBrief?.title || undefined,
+          manual_guide: current?.customGuide || undefined,
+          selected_guides: guidePayload,
+          selected_sources: sourcePayload,
+        });
+        savedArticleId = data.article_id;
+        setArticleId(data.article_id);
+        window.localStorage.setItem(ADVANCED_ARTICLE_STORAGE_KEY, data.article_id);
+      } else {
+        const { data } = await advancedApi.confirmChapter({
+          article_id: persistedArticleId,
+          session_id: effectiveSessionId,
+          chapter_number: chapterNumber,
+          selected_option_id: effectiveOptionId,
+          chapter_title: chapterTitle || undefined,
+          chapter_title_description: chapterTitleDescription || undefined,
+          chapter_brief: chapterBrief || undefined,
+          manual_guide: current?.customGuide || undefined,
+          selected_guides: guidePayload,
+          selected_sources: sourcePayload,
+        });
+        savedArticleId = data.article_id;
+        setArticleId(data.article_id);
+        window.localStorage.setItem(ADVANCED_ARTICLE_STORAGE_KEY, data.article_id);
+      }
+
+      if (generateAfterSave) {
+        setIsGeneratingArticle(true);
+        await advancedApi.generateArticle(savedArticleId);
+        navigate(`/article/${savedArticleId}`);
+        return;
+      }
+    } catch (error) {
+      setChapterActionError(getErrorMessage(error, `Chapter ${chapterNumber} could not be saved to the backend yet. Please try again.`));
+      setIsSavingChapter(false);
+      setIsGeneratingArticle(false);
+      return;
+    }
+    setIsSavingChapter(false);
+
     setChapters((list) => list.map((item, i) => i === activeIndex ? { ...item, done: true } : item));
     if (activeIndex < chapters.length - 1) {
-      setActiveIndex((n) => n + 1);
+      setActiveIndex(activeIndex + 1);
+      setTitleRecommendations([]);
+      setBriefRecommendations([]);
+      setGuideRecommendations([]);
+      setSourceRecommendations([]);
+      setSourceQuery('');
+      setSourceQueryCandidates([]);
       setPanelMode('title');
     } else {
-      setPanelMode('hidden');
+      setPanelMode('source');
     }
   };
 
   const chooseTitleOption = (value: TitleOption) => {
     updateCurrent('aiTitle', value as never);
-    setPanelMode('hidden');
+    setChapterActionError('');
+    setBriefRecommendations([]);
+    updateCurrent('aiBrief', null);
+    setGuideRecommendations([]);
+    setSourceRecommendations([]);
+    setSourceQuery('');
+    setSourceQueryCandidates([]);
+    setPanelMode('brief');
   };
 
   const chooseGuideOption = (value: GuideOption) => {
+    setChapterActionError('');
     setChapters((list) =>
       list.map((item, i) =>
         i === activeIndex && !item.selectedGuides.some((guide) => guide.id === value.id)
@@ -220,11 +941,19 @@ export default function AdvancedGeneratorWizard() {
           : item
       )
     );
+    setSourceRecommendations([]);
+    setSourceQuery('');
+    setSourceQueryCandidates([]);
   };
 
   const chooseBriefOption = (value: BriefOption) => {
     updateCurrent('aiBrief', value);
-    setPanelMode('hidden');
+    setChapterActionError('');
+    setGuideRecommendations([]);
+    setSourceRecommendations([]);
+    setSourceQuery('');
+    setSourceQueryCandidates([]);
+    setPanelMode('guide');
   };
 
   const removeGuideOption = (value: string) => {
@@ -252,6 +981,302 @@ export default function AdvancedGeneratorWizard() {
     );
   };
 
+  const handleRecommendTitles = async () => {
+    if (!selectedStructure) {
+      setChapterActionError('Choose a blueprint before asking AI for title options.');
+      return;
+    }
+
+    openRecommendationPanel('title');
+    setIsLoadingTitleOptions(true);
+    try {
+      const liveContext = await ensureLiveStructureContext();
+      if (!liveContext) {
+        updateCurrent('aiTitle', null);
+        setTitleRecommendations([]);
+        setPanelMode('hidden');
+        setChapterActionError('Không thể tải gợi ý tiêu đề chương lúc này. Hãy chọn lại bố cục hoặc thử lại sau.');
+        return;
+      }
+      const titleContextSignature = await buildContextSignature(
+        'titles',
+        liveContext.sessionId,
+        liveContext.structure.option_id,
+        chapterNumber,
+      );
+      const cached = await loadCachedRecommendations(
+        'titles',
+        liveContext.sessionId,
+        chapterNumber,
+        titleContextSignature,
+      );
+      if (cached && cached.length > 0) {
+        const cachedOptions = cached as TitleOption[];
+        setTitleRecommendations(cachedOptions);
+        return;
+      }
+      const { data } = await advancedApi.recommendChapterTitles({
+        session_id: liveContext.sessionId,
+        selected_option_id: liveContext.structure.option_id,
+        chapter_number: chapterNumber,
+      });
+      if (data.options.length > 0) {
+        setTitleRecommendations(data.options);
+      } else {
+        updateCurrent('aiTitle', null);
+        setTitleRecommendations([]);
+        setPanelMode('hidden');
+        setChapterActionError('AI chưa tạo được tiêu đề chương phù hợp. Cần chỉnh prompt hoặc bố cục chương.');
+      }
+    } catch (error) {
+      updateCurrent('aiTitle', null);
+      setTitleRecommendations([]);
+      setPanelMode('hidden');
+      setChapterActionError(getErrorMessage(error, 'Không tải được gợi ý tiêu đề chương. Hãy thử lại sau.'));
+    } finally {
+      setIsLoadingTitleOptions(false);
+    }
+  };
+
+  const handleRecommendBriefs = async () => {
+    if (!current || !selectedStructure) {
+      setChapterActionError('Choose a blueprint before asking AI for chapter summaries.');
+      return;
+    }
+
+    const chapterTitle = current.aiTitle?.title || current.customTitle.trim();
+    const chapterTitleDescription =
+      current.aiTitle?.description || selectedStructure.blueprint[activeIndex]?.purpose || '';
+
+    if (!chapterTitle) {
+      setChapterActionError('Choose or write a chapter title before asking AI for a brief.');
+      return;
+    }
+
+    openRecommendationPanel('brief');
+    setIsLoadingBriefOptions(true);
+    try {
+      const liveContext = await ensureLiveStructureContext();
+      if (!liveContext) {
+        updateCurrent('aiBrief', null);
+        setBriefRecommendations([]);
+        setPanelMode('hidden');
+        setChapterActionError('Không thể tải gợi ý tóm tắt chương lúc này. Hãy chọn lại bố cục hoặc thử lại sau.');
+        return;
+      }
+      const briefContextSignature = await buildContextSignature(
+        'briefs',
+        liveContext.sessionId,
+        liveContext.structure.option_id,
+        chapterNumber,
+        chapterTitle,
+        chapterTitleDescription,
+      );
+      const cached = await loadCachedRecommendations(
+        'briefs',
+        liveContext.sessionId,
+        chapterNumber,
+        briefContextSignature,
+      );
+      if (cached && cached.length > 0) {
+        const cachedOptions = cached as BriefOption[];
+        setBriefRecommendations(cachedOptions);
+        return;
+      }
+      const { data } = await advancedApi.recommendChapterBriefs({
+        session_id: liveContext.sessionId,
+        selected_option_id: liveContext.structure.option_id,
+        chapter_number: chapterNumber,
+        chapter_title: chapterTitle,
+        chapter_title_description: chapterTitleDescription,
+      });
+      if (data.options.length > 0) {
+        setBriefRecommendations(data.options);
+      } else {
+        updateCurrent('aiBrief', null);
+        setBriefRecommendations([]);
+        setPanelMode('hidden');
+        setChapterActionError('AI chưa tạo được tóm tắt chương phù hợp. Cần chỉnh lại tiêu đề hoặc prompt.');
+      }
+    } catch (error) {
+      updateCurrent('aiBrief', null);
+      setBriefRecommendations([]);
+      setPanelMode('hidden');
+      setChapterActionError(getErrorMessage(error, 'Không tải được gợi ý tóm tắt chương. Hãy thử lại sau.'));
+    } finally {
+      setIsLoadingBriefOptions(false);
+    }
+  };
+
+  const handleRecommendGuides = async () => {
+    if (!current || !selectedStructure) {
+      setChapterActionError('Choose a blueprint before asking AI for writing guides.');
+      return;
+    }
+
+    const chapterTitle = current.aiTitle?.title || current.customTitle.trim();
+    const chapterBrief = current.aiBrief?.description || current.customBrief.trim();
+
+    if (!chapterTitle || !chapterBrief) {
+      setChapterActionError('Choose a chapter title and brief before asking AI for guides.');
+      return;
+    }
+
+    openRecommendationPanel('guide');
+    setIsLoadingGuideOptions(true);
+    try {
+      const liveContext = await ensureLiveStructureContext();
+      if (!liveContext) {
+        setGuideRecommendations([]);
+        setPanelMode('hidden');
+        setChapterActionError('Không thể tải gợi ý hướng dẫn viết lúc này. Hãy thử lại sau.');
+        return;
+      }
+      const guideContextSignature = await buildContextSignature(
+        'guides',
+        liveContext.sessionId,
+        liveContext.structure.option_id,
+        chapterNumber,
+        chapterTitle,
+        chapterBrief,
+      );
+      const cached = await loadCachedRecommendations(
+        'guides',
+        liveContext.sessionId,
+        chapterNumber,
+        guideContextSignature,
+      );
+      if (cached && cached.length > 0) {
+        setGuideRecommendations(cached as GuideOption[]);
+        return;
+      }
+      const { data } = await advancedApi.recommendChapterGuides({
+        session_id: liveContext.sessionId,
+        selected_option_id: liveContext.structure.option_id,
+        chapter_number: chapterNumber,
+        chapter_title: chapterTitle,
+        chapter_brief: chapterBrief,
+      });
+      if (data.options.length > 0) {
+        setGuideRecommendations(data.options);
+      } else {
+        setGuideRecommendations([]);
+        setPanelMode('hidden');
+        setChapterActionError('AI chưa tạo được hướng dẫn viết phù hợp cho chương này.');
+      }
+    } catch (error) {
+      setGuideRecommendations([]);
+      setPanelMode('hidden');
+      setChapterActionError(getErrorMessage(error, 'Không tải được gợi ý hướng dẫn viết. Hãy thử lại sau.'));
+    } finally {
+      setIsLoadingGuideOptions(false);
+    }
+  };
+
+  const handleRecommendSources = async () => {
+    if (!current || !selectedStructure) {
+      setChapterActionError('Choose a blueprint before asking AI for sources.');
+      return;
+    }
+
+    const chapterTitle = current.aiTitle?.title || current.customTitle.trim();
+    const chapterBrief = current.aiBrief?.description || current.customBrief.trim();
+
+    if (!chapterTitle || !chapterBrief) {
+      setChapterActionError('Choose a chapter title and brief before asking AI for sources.');
+      return;
+    }
+
+      openRecommendationPanel('source');
+      setIsLoadingSourceOptions(true);
+      setSourceQuery('');
+      setSourceQueryCandidates([]);
+      try {
+      const liveContext = await ensureLiveStructureContext();
+      if (!liveContext) {
+        setSourceRecommendations([]);
+        setPanelMode('hidden');
+        setChapterActionError('Không thể tải gợi ý nguồn lúc này. Hãy thử lại sau.');
+        return;
+      }
+      const guideNotes = current.selectedGuides.map((guide) => guide.body).concat(
+        current.customGuide.trim() ? [current.customGuide.trim()] : [],
+      );
+      const sourceContextSignature = await buildContextSignature(
+        'sources',
+        liveContext.sessionId,
+        liveContext.structure.option_id,
+        chapterNumber,
+        chapterTitle,
+        chapterBrief,
+        ...guideNotes,
+      );
+      const cached = await loadCachedRecommendations(
+        'sources',
+        liveContext.sessionId,
+        chapterNumber,
+        sourceContextSignature,
+      );
+      if (cached && cached.length > 0) {
+        setSourceRecommendations(cached as SourceRecommendationOption[]);
+        return;
+      }
+      const { data } = await advancedApi.recommendChapterSources({
+        session_id: liveContext.sessionId,
+        selected_option_id: liveContext.structure.option_id,
+        chapter_number: chapterNumber,
+        chapter_title: chapterTitle,
+        chapter_brief: chapterBrief,
+        guide_notes: guideNotes,
+      });
+      if (data.options.length > 0) {
+        setSourceQuery(typeof data.query === 'string' ? data.query : '');
+        setSourceQueryCandidates(Array.isArray(data.query_candidates) ? data.query_candidates : []);
+        setSourceRecommendations(
+          data.options.map((item: {
+            id: string;
+            title: string;
+            snippet?: string;
+            provider?: string;
+            link?: string;
+            year?: string;
+            citation_count?: number;
+            publication?: string;
+            display_title_vi?: string;
+            display_snippet_vi?: string;
+            display_publication_vi?: string;
+          }) => ({
+            id: item.id,
+            title: item.title,
+            snippet: item.snippet || '',
+            provider: item.provider || 'Google Scholar',
+            link: item.link || '',
+            year: item.year || '',
+            citationCount: item.citation_count || 0,
+            publication: item.publication,
+            display_title_vi: item.display_title_vi,
+            display_snippet_vi: item.display_snippet_vi,
+            display_publication_vi: item.display_publication_vi,
+          })),
+        );
+      } else {
+        setSourceRecommendations([]);
+        setSourceQuery(typeof data.query === 'string' ? data.query : '');
+        setSourceQueryCandidates(Array.isArray(data.query_candidates) ? data.query_candidates : []);
+        setPanelMode('hidden');
+        setChapterActionError('Chưa tìm được nguồn phù hợp cho chương này. Hãy điều chỉnh title, tóm tắt hoặc guide rồi thử lại.');
+      }
+    } catch (error) {
+      setSourceRecommendations([]);
+      setSourceQuery('');
+      setSourceQueryCandidates([]);
+      setPanelMode('hidden');
+      setChapterActionError(getErrorMessage(error, 'Không tải được gợi ý nguồn. Hãy thử lại sau.'));
+    } finally {
+      setIsLoadingSourceOptions(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.16),_transparent_24%),radial-gradient(circle_at_bottom_right,_rgba(250,204,21,0.16),_transparent_22%),linear-gradient(180deg,_#f8fafc_0%,_#eef5ff_100%)]">
       <div className="mx-auto max-w-[1480px] px-4 py-8 lg:px-6">
@@ -260,14 +1285,14 @@ export default function AdvancedGeneratorWizard() {
             <div className="max-w-3xl">
               <p className="text-xs font-semibold uppercase tracking-[0.35em] text-cyan-300">Sequential prototype</p>
               <h1 className="mt-3 text-3xl font-semibold leading-tight lg:text-4xl">Build the article step by step before generation</h1>
-              <p className="mt-4 text-sm leading-7 text-slate-300 lg:text-base">First define the article setup, then choose an AI-generated chapter count, then finish Chapter 1, Chapter 2, and so on. The right-side AI container appears for the current step only.</p>
+              <p className="mt-4 text-sm leading-7 text-slate-300 lg:text-base">First define the article setup, then choose an AI-generated chapter count, then finish Chapter 1, Chapter 2, and so on. The right-side AI container stays available as the fixed recommendation workspace.</p>
             </div>
             <div className="flex flex-wrap gap-3">
               <div className={`rounded-full px-4 py-2 text-sm font-semibold ${pill(setupReady && chapterCount === null, Boolean(chapterCount))}`}>1. Setup</div>
               <div className="pt-2 text-slate-500"><ChevronRight size={16} /></div>
               <div className={`rounded-full px-4 py-2 text-sm font-semibold ${pill(Boolean(chapterCount) && !finishedAll, finishedAll)}`}>2. Chapters</div>
               <div className="pt-2 text-slate-500"><ChevronRight size={16} /></div>
-              <div className={`rounded-full px-4 py-2 text-sm font-semibold ${pill(finishedAll, false)}`}>3. Review</div>
+              <div className={`rounded-full px-4 py-2 text-sm font-semibold ${pill(finishedAll, false)}`}>3. Result</div>
             </div>
           </div>
         </section>
@@ -302,7 +1327,7 @@ export default function AdvancedGeneratorWizard() {
                       }`}
                     >
                       <span className={reportType ? 'text-slate-900' : 'text-slate-400'}>
-                        {reportType || 'Select a report type'}
+                        {reportTypeLabel || 'Select a report type'}
                       </span>
                       <ChevronDown
                         size={18}
@@ -314,17 +1339,17 @@ export default function AdvancedGeneratorWizard() {
                       <div className="absolute top-full right-0 left-0 z-30 mt-[5px] max-h-72 overflow-auto rounded-[24px] border border-slate-200 bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.16)]">
                         {reportTypes.map((option) => (
                           <button
-                            key={option}
+                            key={option.value}
                             type="button"
-                            onClick={() => handleReportTypeChange(option)}
+                            onClick={() => handleReportTypeChange(option.value)}
                             className={`flex w-full cursor-pointer items-center justify-between rounded-[18px] px-4 py-3 text-left text-sm font-medium transition ${
-                              reportType === option
+                              reportType === option.value
                                 ? 'bg-cyan-50 text-cyan-900'
                                 : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
                             }`}
                           >
-                            <span>{option}</span>
-                            {reportType === option ? <Check size={16} className="text-cyan-700" /> : null}
+                            <span>{option.label}</span>
+                            {reportType === option.value ? <Check size={16} className="text-cyan-700" /> : null}
                           </button>
                         ))}
                       </div>
@@ -337,15 +1362,79 @@ export default function AdvancedGeneratorWizard() {
                   Structure selected: {chapterCount} chapters
                 </div>
               )}
+              {normalizedArticleTitle && normalizedArticleTitle !== articleTitle && (
+                <div className="mt-3 rounded-[20px] border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm text-cyan-900">
+                  <span className="font-semibold">AI English working title:</span> {normalizedArticleTitle}
+                </div>
+              )}
+              {selectedStructure && (
+                <div className="mt-6 rounded-[24px] border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">Selected blueprint</p>
+                      <p className="mt-1 text-sm leading-6 text-slate-600">
+                        This is the chapter flow AI will use for title, brief, guide, source, and final writing.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowBlueprintDetails((currentValue) => !currentValue)}
+                      className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:bg-slate-100 hover:shadow-sm"
+                    >
+                      {showBlueprintDetails ? 'Hide chapter logic' : 'Show chapter logic'}
+                    </button>
+                  </div>
+                  <div className="mt-4 grid gap-3 xl:grid-cols-2">
+                    {selectedStructure.blueprint.map((item) => (
+                      <div key={item.chapter_number} className="rounded-[20px] border border-slate-200 bg-white px-4 py-4">
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                          Chapter {item.chapter_number}
+                        </p>
+                        <p className="mt-2 text-base font-semibold text-slate-900">
+                          {item.display_working_title_vi || item.working_title}
+                        </p>
+                        <p className="mt-2 text-sm leading-6 text-slate-600">
+                          {item.display_purpose_vi || item.purpose}
+                        </p>
+                        {showBlueprintDetails && (
+                          <div className="mt-4 space-y-3 rounded-[18px] border border-cyan-100 bg-cyan-50 px-4 py-3">
+                            <div>
+                              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700">
+                                Start focus
+                              </p>
+                              <p className="mt-1 text-sm leading-6 text-slate-700">
+                                {item.display_start_focus_vi || item.start_focus}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700">
+                                End focus
+                              </p>
+                              <p className="mt-1 text-sm leading-6 text-slate-700">
+                                {item.display_end_focus_vi || item.end_focus}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </section>
 
             {chapterCount !== null && current && (
               <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_55px_rgba(15,23,42,0.08)]">
+                {chapterActionError && (
+                  <div className="mb-5 rounded-[20px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
+                    {chapterActionError}
+                  </div>
+                )}
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-700">Step 2</p>
-                    <h2 className="mt-2 text-2xl font-semibold text-slate-900">Chapter {activeIndex + 1} of {chapterCount}</h2>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">Complete the current chapter, then move to the next one.</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-700">Step 2</p>
+                  <h2 className="mt-2 text-2xl font-semibold text-slate-900">Chapter {activeIndex + 1} of {chapterCount}</h2>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">Complete the current chapter, then move to the next one.</p>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {chapters.map((chapter, i) => {
@@ -378,20 +1467,20 @@ export default function AdvancedGeneratorWizard() {
                   <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
-                        <p className="text-sm font-semibold text-slate-900">Chapter title</p>
-                        <p className="mt-1 text-sm leading-6 text-slate-600">Choose from AI recommendations or type it yourself.</p>
+                          <p className="text-sm font-semibold text-slate-900">Chapter title</p>
+                          <p className="mt-1 text-sm leading-6 text-slate-600">Choose from AI recommendations or type it yourself.</p>
                       </div>
-                      <button type="button" onClick={() => setPanelMode('title')} className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-800 transition hover:-translate-y-0.5 hover:bg-emerald-200 hover:shadow-sm"><Sparkles size={16} />Recommend titles</button>
+                      <button type="button" onClick={() => void handleRecommendTitles()} className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-800 transition hover:-translate-y-0.5 hover:bg-emerald-200 hover:shadow-sm"><Sparkles size={16} />{isLoadingTitleOptions ? 'Loading titles...' : 'Recommend titles'}</button>
                     </div>
                     <div className="mt-4 grid gap-4 lg:grid-cols-2">
                       <label className="space-y-2">
                         <span className="text-sm font-semibold text-slate-700">AI-selected title</span>
-                        <div className="min-h-[78px] rounded-[20px] border border-slate-200 bg-white px-4 py-3">
-                          {current.aiTitle ? (
-                            <div>
-                              <p className="text-base font-semibold text-slate-900">{current.aiTitle.title}</p>
-                              <p className="mt-2 text-sm leading-6 text-slate-600">{current.aiTitle.description}</p>
-                            </div>
+                          <div className="min-h-[78px] rounded-[20px] border border-slate-200 bg-white px-4 py-3">
+                            {current.aiTitle ? (
+                              <div>
+                                <p className="text-base font-semibold text-slate-900">{current.aiTitle.display_title_vi || current.aiTitle.title}</p>
+                                <p className="mt-2 text-sm leading-6 text-slate-600">{current.aiTitle.display_description_vi || current.aiTitle.description}</p>
+                              </div>
                           ) : (
                             <p className="text-base text-slate-400">Choose from the right-side panel</p>
                           )}
@@ -404,13 +1493,13 @@ export default function AdvancedGeneratorWizard() {
                     </div>
                     <div className="mt-4 space-y-3">
                       {current.aiTitle && (
-                        <SelectedCard
-                          tone="emerald"
-                          label="AI selected title"
-                          title={current.aiTitle.title}
-                          description={current.aiTitle.description}
-                          onRemove={clearAiTitle}
-                        />
+                          <SelectedCard
+                            tone="emerald"
+                            label="AI selected title"
+                            title={current.aiTitle.display_title_vi || current.aiTitle.title}
+                            description={current.aiTitle.display_description_vi || current.aiTitle.description}
+                            onRemove={clearAiTitle}
+                          />
                       )}
                       {current.customTitle.trim() && (
                         <SelectedCard
@@ -433,21 +1522,21 @@ export default function AdvancedGeneratorWizard() {
                         </div>
                         <button
                           type="button"
-                          onClick={() => setPanelMode('brief')}
+                          onClick={() => void handleRecommendBriefs()}
                           className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-cyan-100 px-4 py-2 text-sm font-semibold text-cyan-800 transition hover:-translate-y-0.5 hover:bg-cyan-200 hover:shadow-sm"
                         >
                           <Sparkles size={16} />
-                          Recommend brief
+                          {isLoadingBriefOptions ? 'Loading briefs...' : 'Recommend brief'}
                         </button>
                       </div>
                       <label className="mt-4 block space-y-2">
                         <span className="text-sm font-semibold text-slate-700">AI-selected brief</span>
-                        <div className="min-h-[120px] rounded-[20px] border border-slate-200 bg-white px-4 py-3">
-                          {current.aiBrief ? (
-                            <div>
-                              <p className="text-base font-semibold text-slate-900">{current.aiBrief.title}</p>
-                              <p className="mt-2 text-sm leading-7 text-slate-600">{current.aiBrief.description}</p>
-                            </div>
+                          <div className="min-h-[120px] rounded-[20px] border border-slate-200 bg-white px-4 py-3">
+                            {current.aiBrief ? (
+                              <div>
+                                <p className="text-base font-semibold text-slate-900">{current.aiBrief.display_title_vi || current.aiBrief.title}</p>
+                                <p className="mt-2 text-sm leading-7 text-slate-600">{current.aiBrief.display_description_vi || current.aiBrief.description}</p>
+                              </div>
                           ) : (
                             <p className="text-base text-slate-400">Choose from AI recommendations</p>
                           )}
@@ -459,13 +1548,13 @@ export default function AdvancedGeneratorWizard() {
                       </label>
                       <div className="mt-4 space-y-3">
                         {current.aiBrief && (
-                          <SelectedCard
-                            tone="cyan"
-                            label="AI selected brief"
-                            title={current.aiBrief.title}
-                            description={current.aiBrief.description}
-                            onRemove={clearAiBrief}
-                          />
+                            <SelectedCard
+                              tone="cyan"
+                              label="AI selected brief"
+                              title={current.aiBrief.display_title_vi || current.aiBrief.title}
+                              description={current.aiBrief.display_description_vi || current.aiBrief.description}
+                              onRemove={clearAiBrief}
+                            />
                         )}
                         {current.customBrief.trim() && (
                           <SelectedCard
@@ -481,14 +1570,14 @@ export default function AdvancedGeneratorWizard() {
                   )}
 
                   {briefReady && (
-                    <div className="grid gap-5 xl:grid-cols-2">
-                    <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
+                    <div className="grid items-start gap-5 xl:grid-cols-2">
+                    <div className="h-fit self-start rounded-[24px] border border-slate-200 bg-slate-50 p-4 xl:sticky xl:top-6">
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
-                          <p className="text-sm font-semibold text-slate-900">Writing guide</p>
-                          <p className="mt-1 text-sm leading-6 text-slate-600">Choose an AI-generated guide or write manual instructions.</p>
+                          <p className="text-sm font-semibold text-slate-900">Writing guide (optional)</p>
+                          <p className="mt-1 text-sm leading-6 text-slate-600">Choose an AI-generated guide or write manual instructions only if you want extra control.</p>
                         </div>
-                        <button type="button" onClick={() => setPanelMode('guide')} className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-800 transition hover:-translate-y-0.5 hover:bg-amber-200 hover:shadow-sm"><Lightbulb size={16} />Recommend guides</button>
+                        <button type="button" onClick={() => void handleRecommendGuides()} className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-800 transition hover:-translate-y-0.5 hover:bg-amber-200 hover:shadow-sm"><Lightbulb size={16} />{isLoadingGuideOptions ? 'Loading guides...' : 'Recommend guides'}</button>
                       </div>
                       <div className="mt-4 space-y-4">
                         <label className="block space-y-2">
@@ -499,8 +1588,8 @@ export default function AdvancedGeneratorWizard() {
                                 {current.selectedGuides.map((guide) => (
                                   <div key={guide.id} className="flex items-start justify-between gap-3 rounded-2xl bg-amber-50 px-3 py-3">
                                     <div>
-                                      <p className="text-sm font-semibold text-slate-900">{guide.title}</p>
-                                      <p className="mt-1 text-sm leading-6 text-slate-700">{guide.body}</p>
+                                      <p className="text-sm font-semibold text-slate-900">{guide.display_title_vi || guide.title}</p>
+                                      <p className="mt-1 text-sm leading-6 text-slate-700">{guide.display_body_vi || guide.body}</p>
                                     </div>
                                     <button
                                       type="button"
@@ -513,7 +1602,7 @@ export default function AdvancedGeneratorWizard() {
                                 ))}
                               </div>
                             ) : (
-                              <p className="pt-1 text-sm text-slate-400">Choose one or more guide options from AI recommendations.</p>
+                              <p className="pt-1 text-sm text-slate-400">Choose one or more AI guide options.</p>
                             )}
                           </div>
                         </label>
@@ -527,8 +1616,8 @@ export default function AdvancedGeneratorWizard() {
                               key={guide.id}
                               tone="amber"
                               label="AI selected guide"
-                              title={guide.title}
-                              description={guide.body}
+                              title={guide.display_title_vi || guide.title}
+                              description={guide.display_body_vi || guide.body}
                               onRemove={() => removeGuideOption(guide.id)}
                             />
                           ))}
@@ -545,32 +1634,48 @@ export default function AdvancedGeneratorWizard() {
                       </div>
                     </div>
 
-                    {guideReady && (
-                    <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
+                    <div className="h-fit self-start rounded-[24px] border border-slate-200 bg-slate-50 p-4 xl:sticky xl:top-6">
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
                           <p className="text-sm font-semibold text-slate-900">Sources</p>
-                          <p className="mt-1 text-sm leading-6 text-slate-600">Add scholar-style sources manually or choose AI-suggested results.</p>
+                          <p className="mt-1 text-sm leading-6 text-slate-600">Add scholar-style sources manually or ask Gemini to plan an English scholarly query before searching Serper Scholar.</p>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                          <button type="button" onClick={() => addSource({ id: crypto.randomUUID(), title: 'Custom source added by user', snippet: 'Manual note, citation text, or scholar result pasted by the user.', provider: 'Manual input', link: 'https://scholar.google.com', year: '2026' })} className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:bg-slate-100 hover:shadow-sm"><Plus size={16} />Add source manually</button>
-                          <button type="button" onClick={() => setPanelMode('source')} className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-violet-100 px-4 py-2 text-sm font-semibold text-violet-800 transition hover:-translate-y-0.5 hover:bg-violet-200 hover:shadow-sm"><Search size={16} />Find sources</button>
+                          <button type="button" onClick={() => addSource({ id: crypto.randomUUID(), title: 'Manual source added by user', snippet: 'Notes, citation fragments, or scholar search results pasted manually by the user.', provider: 'Manual input', link: 'https://scholar.google.com', year: '2026' })} className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:bg-slate-100 hover:shadow-sm"><Plus size={16} />Add source manually</button>
+                          <button type="button" onClick={() => void handleRecommendSources()} className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-violet-100 px-4 py-2 text-sm font-semibold text-violet-800 transition hover:-translate-y-0.5 hover:bg-violet-200 hover:shadow-sm"><Search size={16} />{isLoadingSourceOptions ? 'Loading sources...' : 'Find sources'}</button>
                         </div>
                       </div>
+                      {(sourceQuery || sourceQueryCandidates.length > 0) && (
+                        <div className="mt-4 rounded-[18px] border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-900">
+                          <p className="font-semibold">Gemini-planned English query</p>
+                          {sourceQuery && <p className="mt-2 break-words leading-6">{sourceQuery}</p>}
+                          {sourceQueryCandidates.length > 1 && (
+                            <p className="mt-2 text-xs leading-5 text-violet-700">
+                              {sourceQueryCandidates.length} query variants were prepared and tried as fallback when needed.
+                            </p>
+                          )}
+                        </div>
+                      )}
                       <div className="mt-4 space-y-3">
-                        {current.sources.length > 0 ? current.sources.map((source) => <div key={source.id} className="rounded-[18px] border border-violet-200 bg-white px-4 py-3"><p className="font-semibold text-slate-900">{source.title}</p><p className="mt-2 text-sm leading-6 text-slate-600">{source.snippet}</p><p className="mt-2 text-sm text-slate-500">{source.provider} • {source.year}</p><p className="mt-1 text-xs text-violet-700">{source.link}</p></div>) : <div className="rounded-[18px] border border-dashed border-slate-300 px-4 py-4 text-sm leading-6 text-slate-500">No chapter sources yet.</div>}
-                      </div>
-                      <div className="mt-4 space-y-3">
-                        {current.sources.map((source) => (
-                          <SelectedCard
-                            key={source.id}
-                            tone={source.provider === 'Manual input' ? 'slate' : 'violet'}
-                            label={source.provider === 'Manual input' ? 'Manual source' : 'AI selected source'}
-                            title={source.title}
-                            description={`${source.snippet} ${source.provider} • ${source.year}`}
-                            onRemove={() => removeSource(source.id)}
-                          />
-                        ))}
+                        {current.sources.length > 0 ? current.sources.map((source) => (
+                          <div key={source.id} className="overflow-hidden rounded-[18px] border border-violet-200 bg-white px-4 py-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="break-words font-semibold text-slate-900">{source.display_title_vi || source.title}</p>
+                                <p className="mt-2 break-words text-sm leading-6 text-slate-600">{source.display_snippet_vi || source.snippet}</p>
+                                <p className="mt-2 break-words text-sm text-slate-500">{source.display_publication_vi || source.provider} • {source.year}</p>
+                                <p className="mt-1 break-all text-xs text-violet-700">{source.link}</p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => removeSource(source.id)}
+                                className="cursor-pointer rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-200"
+                              >
+                                X
+                              </button>
+                            </div>
+                          </div>
+                        )) : <div className="rounded-[18px] border border-dashed border-slate-300 px-4 py-4 text-sm leading-6 text-slate-500">No chapter sources yet.</div>}
                       </div>
                       <div className="mt-4 flex justify-end">
                         <div className="rounded-full bg-violet-100 px-4 py-2 text-sm font-semibold text-violet-800">
@@ -578,7 +1683,6 @@ export default function AdvancedGeneratorWizard() {
                         </div>
                       </div>
                     </div>
-                    )}
                   </div>
                   )}
                 </div>
@@ -591,39 +1695,25 @@ export default function AdvancedGeneratorWizard() {
                   </div>
                   <button
                     type="button"
-                    onClick={completeChapter}
-                    disabled={!(titleReady && briefReady && guideReady && sourcesReady)}
+                    onClick={() => void completeChapter(isLastChapter)}
+                    disabled={!(titleReady && briefReady && sourcesReady) || isSavingChapter || isGeneratingArticle}
                     className={`inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition ${
-                      (titleReady && briefReady && guideReady && sourcesReady)
+                      (titleReady && briefReady && sourcesReady) && !isSavingChapter && !isGeneratingArticle
                         ? 'cursor-pointer bg-slate-900 text-white hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-lg'
                         : 'cursor-not-allowed bg-slate-200 text-slate-400'
                     }`}
                   >
-                    Complete Chapter {activeIndex + 1}
+                    {isSavingChapter
+                      ? 'Saving chapter...'
+                      : isGeneratingArticle
+                        ? 'Generating article...'
+                        : isLastChapter
+                          ? 'Tổng kết và sinh bài'
+                          : `Complete Chapter ${activeIndex + 1}`}
                     <ChevronRight size={16} />
                   </button>
                 </div>
                 )}
-              </section>
-            )}
-
-            {finishedAll && (
-              <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_55px_rgba(15,23,42,0.08)]">
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-600">Step 3</p>
-                    <h2 className="mt-2 text-2xl font-semibold text-slate-900">Outline review</h2>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">All chapters are complete. Review the full structure before generation.</p>
-                  </div>
-                  <button type="button" className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-cyan-500 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400"><FileText size={16} />Generate article</button>
-                </div>
-                <div className="mt-6 rounded-[24px] border border-slate-200 bg-slate-50 p-5">
-                  <h3 className="text-2xl font-semibold text-slate-900">{articleTitle || 'Untitled article'}</h3>
-                  <p className="mt-2 text-sm text-slate-600">{reportType} • {chapterCount} chapters</p>
-                  <div className="mt-5 space-y-3">
-                    {chapters.map((chapter, i) => <div key={chapter.id} className="rounded-[18px] border border-slate-200 bg-white px-4 py-4"><p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Chapter {i + 1}</p><p className="mt-2 font-semibold text-slate-900">{chapter.aiTitle?.title || chapter.customTitle || `Chapter ${i + 1}`}</p><p className="mt-2 text-sm leading-6 text-slate-600">{chapter.aiBrief?.description || chapter.customBrief || 'No chapter brief yet.'}</p></div>)}
-                  </div>
-                </div>
               </section>
             )}
           </main>
@@ -632,25 +1722,62 @@ export default function AdvancedGeneratorWizard() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-700">AI recommendation container</p>
-                <h2 className="mt-2 text-xl font-semibold text-slate-900">{panelMode === 'hidden' ? 'Hidden until needed' : 'Visible for the current action'}</h2>
+                <h2 className="mt-2 text-xl font-semibold text-slate-900">Fixed recommendation workspace</h2>
               </div>
-              <button type="button" onClick={() => setPanelMode('hidden')} className="cursor-pointer rounded-full border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">Hide</button>
             </div>
             <div className="mt-5">
-              {panelMode === 'hidden' && <div className="rounded-[22px] border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm leading-6 text-slate-500">Choose a report type or click an AI-assisted action to open this container.</div>}
-              {panelMode === 'count' && (
+              {panelMode === 'count' && !selectedStructure && (
                 <div className="space-y-3">
                   <div className="rounded-[22px] border border-cyan-200 bg-cyan-50 px-4 py-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-700">AI generated</p>
-                    <p className="mt-2 text-sm leading-6 text-slate-700">{aiCountSummary[reportType] ?? aiCountSummary['Academic Essay']}</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-700">
+                      {isLoadingStructure
+                        ? 'Gemini is preparing structure options for this report type.'
+                        : structureError || aiCountSummary[reportType] || aiCountSummary['Tiểu luận học thuật']}
+                    </p>
+                    {normalizedArticleTitle && (
+                      <p className="mt-2 text-sm font-medium text-slate-700">Working title (EN): {normalizedArticleTitle}</p>
+                    )}
                   </div>
-                  {countOptions.map((item) => <button key={item.id} type="button" onClick={() => buildPlan(item.count)} className="w-full cursor-pointer rounded-[22px] border border-slate-200 bg-slate-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-cyan-300 hover:bg-cyan-50 hover:shadow-md"><p className="font-semibold text-slate-900">{item.label}</p><p className="mt-2 text-sm leading-6 text-slate-600">{item.note}</p></button>)}
+                  {isLoadingStructure && (
+                    <div className="rounded-[22px] border border-dashed border-cyan-200 bg-white px-4 py-5 text-sm leading-6 text-slate-500">
+                      Loading structure options from AI...
+                    </div>
+                  )}
+                  {!isLoadingStructure && structureOptions.map((item, index) => (
+                    <button key={item.option_id} type="button" onClick={() => buildPlan(item)} className="w-full cursor-pointer rounded-[22px] border border-slate-200 bg-slate-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-cyan-300 hover:bg-cyan-50 hover:shadow-md">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="font-semibold text-slate-900">{item.chapter_count} chapters</p>
+                        <span className="whitespace-nowrap rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold text-cyan-700">Option {index + 1}</span>
+                      </div>
+                      <p className="mt-2 text-sm leading-6 text-slate-600">{item.display_rationale_vi || item.rationale}</p>
+                      <div className="mt-3 space-y-2">
+                        {item.blueprint.map((chapter) => (
+                          <div key={`${item.option_id}-${chapter.chapter_number}`} className="rounded-[18px] border border-cyan-100 bg-white px-3 py-3">
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700">Chapter {chapter.chapter_number}</p>
+                            <p className="mt-1 text-sm font-semibold text-slate-900">{chapter.display_working_title_vi || chapter.working_title}</p>
+                            <p className="mt-1 text-sm leading-6 text-slate-600">{chapter.display_purpose_vi || chapter.purpose}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </button>
+                  ))}
                 </div>
               )}
-              {panelMode === 'title' && <div className="space-y-3">{suggestedTitles.map((item, index) => <button key={item.title} type="button" onClick={() => chooseTitleOption(item)} className="w-full cursor-pointer rounded-[22px] border border-slate-200 bg-slate-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50 hover:shadow-md"><div className="flex items-center justify-between gap-3"><p className="font-semibold text-slate-900">{item.title}</p><span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">Option {index + 1}</span></div><p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p></button>)}</div>}
-              {panelMode === 'brief' && <div className="space-y-3">{suggestedBriefs.map((item, index) => <button key={item.title} type="button" onClick={() => chooseBriefOption(item)} className="w-full cursor-pointer rounded-[22px] border border-slate-200 bg-slate-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-cyan-300 hover:bg-cyan-50 hover:shadow-md"><div className="flex items-center justify-between gap-3"><p className="font-semibold text-slate-900">{item.title}</p><span className="rounded-full bg-cyan-100 px-2.5 py-1 text-xs font-semibold text-cyan-700">Option {index + 1}</span></div><p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p></button>)}</div>}
-              {panelMode === 'guide' && <div className="space-y-3">{guideOptions.map((item, index) => <button key={item.id} type="button" onClick={() => chooseGuideOption(item)} className="w-full cursor-pointer rounded-[22px] border border-slate-200 bg-slate-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-amber-300 hover:bg-amber-50 hover:shadow-md"><div className="flex items-center justify-between gap-3"><p className="font-semibold text-slate-900">{item.title}</p><span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">Guide {index + 1}</span></div><p className="mt-2 text-sm leading-6 text-slate-600">{item.body}</p></button>)}</div>}
-              {panelMode === 'source' && <div className="space-y-3">{sourceOptions.map((item, index) => <button key={item.id} type="button" onClick={() => addSource(item)} className="w-full cursor-pointer rounded-[22px] border border-slate-200 bg-slate-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-violet-300 hover:bg-violet-50 hover:shadow-md"><div className="flex items-center justify-between gap-3"><p className="font-semibold text-slate-900">{item.title}</p><span className="rounded-full bg-violet-100 px-2.5 py-1 text-xs font-semibold text-violet-700">Source {index + 1}</span></div><p className="mt-2 text-sm leading-6 text-slate-600">{item.snippet}</p><p className="mt-2 text-sm text-slate-500">{item.provider} • {item.year}</p></button>)}</div>}
+              {panelMode === 'hidden' && (
+                <div className="rounded-[22px] border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm leading-6 text-slate-500">
+                  {selectedStructure
+                    ? 'Bố cục đã được chọn. Dùng các nút Recommend titles, Recommend brief, Recommend guides hoặc Find sources ở cột trái để nạp lại dữ liệu cho panel này.'
+                    : 'Chọn article title và report type để AI hiển thị các phương án bố cục tại đây.'}
+                </div>
+              )}
+              {panelMode === 'title' && <div className="space-y-3">{suggestedTitles.map((item, index) => <button key={item.title} type="button" onClick={() => chooseTitleOption(item)} className="w-full cursor-pointer rounded-[22px] border border-slate-200 bg-slate-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50 hover:shadow-md"><div className="flex items-center justify-between gap-3"><p className="font-semibold text-slate-900">{item.display_title_vi || item.title}</p><span className="whitespace-nowrap rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Option {index + 1}</span></div><p className="mt-2 text-sm leading-6 text-slate-600">{item.display_description_vi || item.description}</p></button>)}</div>}
+              {panelMode === 'brief' && <div className="space-y-3">{suggestedBriefs.map((item, index) => <button key={item.title} type="button" onClick={() => chooseBriefOption(item)} className="w-full cursor-pointer rounded-[22px] border border-slate-200 bg-slate-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-cyan-300 hover:bg-cyan-50 hover:shadow-md"><div className="flex items-center justify-between gap-3"><p className="font-semibold text-slate-900">{item.display_title_vi || item.title}</p><span className="whitespace-nowrap rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold text-cyan-700">Option {index + 1}</span></div><p className="mt-2 text-sm leading-6 text-slate-600">{item.display_description_vi || item.description}</p></button>)}</div>}
+              {panelMode === 'guide' && <div className="space-y-3">{suggestedGuides.map((item, index) => <button key={item.id} type="button" onClick={() => chooseGuideOption(item)} className="w-full cursor-pointer rounded-[22px] border border-slate-200 bg-slate-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-amber-300 hover:bg-amber-50 hover:shadow-md"><div className="flex items-center justify-between gap-3"><p className="font-semibold text-slate-900">{item.display_title_vi || item.title}</p><span className="whitespace-nowrap rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">Guide {index + 1}</span></div><p className="mt-2 text-sm leading-6 text-slate-600">{item.display_body_vi || item.body}</p></button>)}</div>}
+              {panelMode === 'source' && <div className="space-y-3">{suggestedSources.map((item, index) => { const selected = isSourceSelected(item); return <button key={item.id} type="button" onClick={() => toggleSourceSelection(item)} className={`w-full cursor-pointer rounded-[22px] border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${selected ? 'border-violet-400 bg-violet-100 shadow-sm' : 'border-slate-200 bg-slate-50 hover:border-violet-300 hover:bg-violet-50'}`}><div className="flex items-center justify-between gap-3"><p className="break-words font-semibold text-slate-900">{item.display_title_vi || item.title}</p><span className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold ${selected ? 'bg-violet-600 text-white' : 'bg-violet-100 text-violet-700'}`}>{selected ? 'Selected' : `Source ${index + 1}`}</span></div><p className="mt-2 break-words text-sm leading-6 text-slate-600">{item.display_snippet_vi || item.snippet}</p><p className="mt-2 text-sm text-slate-500">{item.display_publication_vi || item.provider} • {item.year}</p><p className="mt-1 break-all text-xs text-violet-700">{item.link}</p></button>; })}</div>}
+              {!shouldRenderPanel && panelMode !== 'hidden' && (
+                <div className="min-h-[120px]" />
+              )}
             </div>
           </aside>
         </div>

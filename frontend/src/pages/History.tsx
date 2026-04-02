@@ -5,6 +5,16 @@ import { researchApi } from '../services/api';
 export default function History() {
   const [articles, setArticles] = useState<any[]>([]);
 
+  const formatDateTime = (value?: string) => {
+    if (!value) return 'Không rõ thời gian';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return value;
+    return new Intl.DateTimeFormat('vi-VN', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(parsed);
+  };
+
 useEffect(() => {
   const fetchHistory = async () => {
     try {
@@ -30,7 +40,8 @@ useEffect(() => {
           >
             <div>
               <h3 className="font-bold text-lg text-slate-700 group-hover:text-blue-700">{art.title}</h3>
-              <p className="text-xs text-slate-400 mt-1 uppercase tracking-widest">ID: {art.id}</p>
+              <p className="mt-2 text-sm text-slate-500">Tạo lúc: {formatDateTime(art.created_at)}</p>
+              <p className="text-xs text-slate-400 mt-2 uppercase tracking-widest">ID: {art.id}</p>
             </div>
             <span className="text-blue-500 font-bold">Xem lại →</span>
           </Link>
