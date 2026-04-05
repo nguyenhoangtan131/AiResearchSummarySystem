@@ -14,19 +14,8 @@ class ResearchArticle(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     blueprints = relationship("ArticleBlueprint", back_populates="article_parent", cascade="all, delete-orphan", order_by="ArticleBlueprint.chapter_number")
-    sections = relationship("PaperSection", back_populates="article_parent", cascade="all, delete-orphan", order_by="PaperSection.order")
     chapters = relationship("ArticleChapter", back_populates="article_parent", cascade="all, delete-orphan", order_by="ArticleChapter.chapter_number")
     owner = relationship("User", back_populates="articles")
-
-class PaperSection(Base):
-    __tablename__ = "paper_sections"
-    id = Column(UUID(as_uuid=True), default=uuid.uuid4, primary_key=True, index=True)
-    article_id = Column(UUID(as_uuid=True), ForeignKey("research_articles.id"))
-    section_title = Column(String(255))
-    section_content = Column(Text)
-    order = Column(Integer)
-
-    article_parent = relationship("ResearchArticle", back_populates="sections")
 
 class ArticleBlueprint(Base):
     __tablename__ = "article_blueprints"

@@ -53,7 +53,6 @@ export default function Navbar() {
         
         <div className="flex gap-8 items-center">
           <Link to="/" className="hover:text-blue-200 font-medium transition-colors">Trang chủ</Link>
-          <Link to="/advanced-generator" className="hover:text-blue-200 font-medium transition-colors">Sinh bài nâng cao</Link>
           <Link to="/history" className="hover:text-blue-200 font-medium transition-colors">Lịch sử nghiên cứu</Link>
           
           <div className="ml-4 min-w-37.5 flex justify-end">

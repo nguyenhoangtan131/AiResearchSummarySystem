@@ -26,6 +26,7 @@ from app.schemas.advanced import (
     ConfirmFirstChapterRequest,
     ConfirmFirstChapterResponse,
     GenerateArticleResponse,
+    GenerateChapterResponse,
     SelectStructureRequest,
     SelectStructureResponse,
 )
@@ -159,6 +160,35 @@ async def get_generated_article_sources(
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=f"Failed to load generated sources: {exc}",
+        ) from exc
+
+
+@router.post(
+    "/article/{article_id}/chapter/{chapter_number}/generate",
+    response_model=GenerateChapterResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def generate_chapter(
+    article_id: UUID,
+    chapter_number: int,
+    user_id: str = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> GenerateChapterResponse:
+    try:
+        service = AdvancedGenerationService(db=db, user_id=user_id)
+        payload = service.generate_chapter(article_id=article_id, chapter_number=chapter_number)
+        return GenerateChapterResponse(**payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.exception(
+            "[Advanced] Generate chapter failed for article_id=%s chapter=%s",
+            article_id,
+            chapter_number,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Failed to generate chapter: {exc}",
         ) from exc
 
 

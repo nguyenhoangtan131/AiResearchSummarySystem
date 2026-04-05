@@ -1,0 +1,5 @@
+2026-04-05 13:20:09,451 [INFO] ARSS: [Redis] Cache client initialized with ttl=21600s
+2026-04-05 13:20:09,451 [INFO] ARSS: [Advanced] Recommend structure start session_id=69d1420f-a5a8-41df-b39a-b9bd544183ff report_type=Ti?u lu?n h?c thu?t title=T?c ??ng c?a ??nh gi? tr?c tuy?n ??n uy t?n th??ng hi?u nh? h?ng
+2026-04-05 13:20:09,451 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
+2026-04-05 13:20:09,452 [DEBUG] httpcore.connection: connect_tcp.started host='127.0.0.1' port=9 local_address=None timeout=None socket_options=None
+2026-04-05 13:20:11,479 [DEBUG] httpcore.connection: connect_tcp.failed exception=ConnectError(ConnectionRefusedError(10061, 'No connection could be made because the target machine actively refused it', None, 10061, None))

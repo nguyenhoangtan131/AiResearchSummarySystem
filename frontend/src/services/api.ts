@@ -6,9 +6,6 @@ const apiInstance = axios.create({
 });
 
 export const researchApi = {
-  createPrompt: (input: string) => apiInstance.post('/research/prompt', { raw_input: input }),
-  executeSearch: (searchId: string) => apiInstance.post(`/research/search/${searchId}`),
-  generateArticle: (searchId: string) => apiInstance.post(`/research/generate-article/${searchId}`),
   getArticle: (articleId: string) => apiInstance.get(`/research/article/${articleId}`),
   getSources: (articleId: string) => apiInstance.get(`/research/source/${articleId}`),
   exportPdf: (articleId: string) => 
@@ -45,6 +42,8 @@ export const advancedApi = {
     apiInstance.get(`/advanced/article/${articleId}/result`),
   getGeneratedSources: (articleId: string) =>
     apiInstance.get(`/advanced/article/${articleId}/sources`),
+  generateChapter: (articleId: string, chapterNumber: number) =>
+    apiInstance.post(`/advanced/article/${articleId}/chapter/${chapterNumber}/generate`),
   generateArticle: (articleId: string) =>
     apiInstance.post(`/advanced/article/${articleId}/generate`),
   selectStructure: (payload: {

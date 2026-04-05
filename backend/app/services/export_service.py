@@ -1,12 +1,12 @@
 from fpdf import FPDF
 import re
 from io import BytesIO
-import os
 from pathlib import Path
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 from app.models.research import ArticleChapter, ChapterSource
+from app.services.advanced.article_formatter import AdvancedArticleFormatter
 
 class ExportService:
     def __init__(self, db:Session):
@@ -28,10 +28,12 @@ class ExportService:
         self.final_source_list = []
         self.numbered_sections = []
         content_blocks = []
-        ordered_sections = sorted(article.sections, key=lambda section: section.order or 0)
-        for index, section in enumerate(ordered_sections, start=1):
-            section_title = section.section_title or f"Chương {index}"
-            section_content = section.section_content or ""
+        ordered_sections = sorted(article.chapters, key=lambda chapter: chapter.chapter_number or 0)
+        for index, chapter in enumerate(ordered_sections, start=1):
+            section_title = AdvancedArticleFormatter.normalize_section_title(chapter.chapter_title or f"Phần {index}")
+            section_content = chapter.generated_content or ""
+            if not section_content.strip():
+                continue
             self.numbered_sections.append(
                 {
                     "number": index,
@@ -64,6 +66,7 @@ class ExportService:
                 self.final_source_list.append(cited_source_map[uid])
         return self.final_source_list
 
+
     def generate_article_pdf(self, article_title: str):
         pdf = FPDF(unit='mm', format='A4')
         pdf.set_margins(20, 20, 20)
@@ -77,7 +80,7 @@ class ExportService:
         
         pdf.set_font("DejaVu", "B", 22)
         pdf.set_text_color(20, 50, 100)
-        pdf.multi_cell(0, 12, article_title.upper(), align='C') 
+        pdf.multi_cell(0, 12, article_title, align='C') 
         
         pdf.set_draw_color(20, 50, 100)
         pdf.set_line_width(0.8)
@@ -87,7 +90,7 @@ class ExportService:
         pdf.set_font("DejaVu", "", 12)
         pdf.set_text_color(30, 30, 30)
         for section in self.numbered_sections:
-            display_title = f"{section['number']}. {section['title']}"
+            display_title = section["title"]
             display_content = section["content"]
             for index, source in enumerate(self.final_source_list, start=1):
                 display_content = display_content.replace(f"[Source ID: {source.id}]", f"[{index}]")

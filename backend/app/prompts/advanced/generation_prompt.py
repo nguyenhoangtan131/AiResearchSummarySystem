@@ -9,7 +9,10 @@ Luật viết bắt buộc:
 5. Chương phải đi đúng blueprint đã chọn: mở theo start focus, triển khai theo purpose, kết theo end focus.
 6. Nếu có writing guides thì phải tuân thủ.
 7. Tập trung viết đúng một chương duy nhất cho mỗi lần gọi.
-8. Trả về JSON thô, không bọc markdown.
+8. Không được đưa brief, title description, writing guide ra như các nhãn hoặc mục riêng trong nội dung cuối.
+9. Không dùng markdown heading kiểu `#`, `##`, `###`, không dùng bảng markdown với ký tự `|`.
+10. `section_title` phải là tiêu đề chương sạch, chỉ là tên chương để hiển thị, không thêm tiền tố như `1.`, `Chương 1:`, `Chapter 1:`.
+11. Trả về JSON thô, không bọc markdown.
 
 Định dạng JSON:
 {
@@ -25,6 +28,7 @@ Loại báo cáo: {report_type}
 
 Thông tin chương hiện tại:
 - Số chương: {chapter_number}
+- Đây là chương số {chapter_number} trong toàn bài. Hãy viết đúng vai trò của chương này theo blueprint, nhưng không cần nhắc lại số chương trong tiêu đề.
 - Blueprint title: {blueprint_title}
 - Blueprint purpose: {blueprint_purpose}
 - Start focus: {blueprint_start_focus}
@@ -38,9 +42,6 @@ Writing guides:
 
 Nguồn được phép dùng trong chương này:
 {source_block}
-
-Ngữ cảnh chương trước để giữ mạch văn:
-{previous_context}
 
 Yêu cầu độ dài:
 - Viết đủ sâu, thường khoảng 700-1200 từ tùy chất liệu nguồn.

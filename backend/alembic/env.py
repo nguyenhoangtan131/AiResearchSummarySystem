@@ -14,7 +14,6 @@ from app.models.research import (
     ArticleChapter,
     ChapterGuide,
     ChapterSource,
-    PaperSection,
     ResearchArticle,
 )
 from app.models.user import User

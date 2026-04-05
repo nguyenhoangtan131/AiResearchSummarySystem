@@ -35,11 +35,11 @@ Quy tắc:
   - end_focus
 - Độ dài blueprint phải đúng bằng chapter_count.
 - rationale và blueprint phải viết bằng tiếng Việt.
-- Trường normalized_article_title_en vẫn phải có để tương thích hệ thống, nhưng hãy điền đúng chính tiêu đề đầu vào nếu không thật sự cần chuẩn hóa sang tiếng Anh.
+- Trường normalized_article_title dùng để lưu tiêu đề chuẩn hóa phục vụ nội bộ, nhưng trong hệ thống tiếng Việt hiện tại hãy ưu tiên giữ sát tiêu đề đầu vào.
 
 Trả về đúng JSON theo mẫu này:
 {{
-  "normalized_article_title_en": "Giữ nguyên tiêu đề đầu vào hoặc bản chuẩn hóa tối thiểu",
+  "normalized_article_title": "Giữ nguyên tiêu đề đầu vào hoặc bản chuẩn hóa tối thiểu",
   "recommended_option_id": "option-1",
   "options": [
     {{

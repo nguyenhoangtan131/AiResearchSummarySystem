@@ -5,68 +5,14 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from app.models.research import ResearchArticle
 from sqlalchemy.orm import selectinload
 from app.core.security import get_current_user
 
 from app.services.export_service import ExportService
+from app.services.advanced.article_formatter import AdvancedArticleFormatter
 router = APIRouter()
-
-class ResearchInput(BaseModel):
-    raw_input: str
-
-@router.post("/prompt")
-async def prompt_research(
-    request: ResearchInput,
-    user_id: str = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    from app.services.research_service import PromptService
-
-    service = PromptService(db, user_id)
-    return await service.architect_research_plan(request.raw_input)
-
-@router.post("/search/{search_id}")
-async def execute_research_search(
-    search_id: UUID,
-    user_id: str = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    from app.services.research_service import ResearchService
-
-    service = ResearchService(db)
-    try:
-        sources_found = await service.fetch_and_save_sources(search_id)
-        return {
-            "status": "success",
-            "search_id": search_id,
-            "sources_count": sources_found,
-            "message": f"Đã thu thập thành công {sources_found} nguồn dữ liệu thô."
-        }
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
-    
-
-class WritingResponse(BaseModel):
-    article_id: UUID
-    message: str = Field(default="Bài nghiên cứu đã được tạo và trích dẫn thành công!")
-
-@router.post("/generate-article/{search_id}", response_model= WritingResponse)
-async def generate_research_article(
-    search_id: UUID, 
-    user_id: str = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    from app.services.writing_service import WritingService
-
-    service = WritingService(db, search_id,user_id)
-    try:
-        article_id = await service.write_full_research_article_pipline()
-        return WritingResponse(article_id=article_id)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    
 
 @router.get("/article/{article_id}")
 async def get_article(
@@ -74,19 +20,34 @@ async def get_article(
     user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    article_stmt = select(ResearchArticle).where(ResearchArticle.id == article_id).options(selectinload(ResearchArticle.sections))
+    article_stmt = (
+        select(ResearchArticle)
+        .where(
+            ResearchArticle.id == article_id,
+            ResearchArticle.user_id == UUID(user_id),
+        )
+        .options(selectinload(ResearchArticle.chapters))
+    )
     article = db.execute(article_stmt).scalar_one_or_none()
     if not article:
         raise HTTPException(status_code=404, detail="Không tìm thấy bài báo")
 
+    ordered_chapters = [
+        chapter
+        for chapter in sorted(article.chapters, key=lambda item: item.chapter_number or 0)
+        if (chapter.generated_content or "").strip()
+    ]
     return {
         "title": article.title,
         "sections": [
             {
-                "title": section.section_title,
-                "content": section.section_content,
-                "order": section.order
-            } for section in article.sections
+                "title": AdvancedArticleFormatter.normalize_section_title(
+                    chapter.chapter_title or f"Phần {index}"
+                ),
+                "content": chapter.generated_content,
+                "order": chapter.chapter_number,
+            }
+            for index, chapter in enumerate(ordered_chapters, start=1)
         ]
     }
 
@@ -115,7 +76,7 @@ async def get_source(
 
     article_stmt = select(
         ResearchArticle).where(
-            ResearchArticle.id == article_id,ResearchArticle.user_id==UUID(user_id)).options(selectinload(ResearchArticle.sections))
+            ResearchArticle.id == article_id,ResearchArticle.user_id==UUID(user_id)).options(selectinload(ResearchArticle.chapters))
     article = db.execute(article_stmt).scalar_one_or_none()
     if not article:
         raise HTTPException(status_code=404, detail="Không tìm thấy bài báo")
@@ -155,7 +116,7 @@ async def export_article_pdf(
     article = db.query(ResearchArticle).filter(
         ResearchArticle.id == article_id, 
         ResearchArticle.user_id == user_id
-    ).first()
+    ).options(selectinload(ResearchArticle.chapters)).first()
 
     if not article:
         raise HTTPException(status_code=404, detail="Bài viết không tồn tại!")

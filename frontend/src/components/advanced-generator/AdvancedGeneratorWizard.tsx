@@ -367,6 +367,7 @@ export default function AdvancedGeneratorWizard() {
   const [isLoadingSourceOptions, setIsLoadingSourceOptions] = useState(false);
   const [isSavingChapter, setIsSavingChapter] = useState(false);
   const [isGeneratingArticle, setIsGeneratingArticle] = useState(false);
+  const [isPublishingArticle, setIsPublishingArticle] = useState(false);
   const [chapterActionError, setChapterActionError] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const [panelMode, setPanelMode] = useState<PanelMode>('hidden');
@@ -598,15 +599,12 @@ export default function AdvancedGeneratorWizard() {
                 display_snippet_vi: source.snippet || '',
                 display_publication_vi: source.publication || '',
               })) || [],
-            done: Boolean(chapter.chapter_title && chapter.chapter_brief && (chapter.sources?.length || 0) > 0),
+            done: Boolean(chapter.generated_content?.trim()),
           })),
         );
 
-        const firstPendingIndex = data.chapters.findIndex((chapter: { chapter_title?: string; chapter_brief?: string; sources?: Array<unknown> }) => {
-          const hasTitle = Boolean(chapter.chapter_title);
-          const hasBrief = Boolean(chapter.chapter_brief);
-          const hasSources = Boolean((chapter.sources?.length || 0) > 0);
-          return !(hasTitle && hasBrief && hasSources);
+        const firstPendingIndex = data.chapters.findIndex((chapter: { generated_content?: string }) => {
+          return !Boolean(chapter.generated_content?.trim());
         });
         setActiveIndex(firstPendingIndex === -1 ? Math.max(data.chapter_count - 1, 0) : firstPendingIndex);
       })
@@ -669,7 +667,7 @@ export default function AdvancedGeneratorWizard() {
       setStructureOptions(data.options);
       setStructureSessionId(data.session_id);
       window.localStorage.setItem(ADVANCED_SESSION_STORAGE_KEY, data.session_id);
-      setNormalizedArticleTitle(data.normalized_article_title_en);
+      setNormalizedArticleTitle(data.normalized_article_title || data.normalized_article_title_en || '');
       setArticleId('');
       window.localStorage.removeItem(ADVANCED_ARTICLE_STORAGE_KEY);
     } catch (error) {
@@ -716,7 +714,7 @@ export default function AdvancedGeneratorWizard() {
 
     setStructureSessionId(data.session_id);
     window.localStorage.setItem(ADVANCED_SESSION_STORAGE_KEY, data.session_id);
-    setNormalizedArticleTitle(data.normalized_article_title_en);
+    setNormalizedArticleTitle(data.normalized_article_title || data.normalized_article_title_en || '');
     setSelectedStructure(bestMatch);
 
     return {
@@ -804,7 +802,7 @@ export default function AdvancedGeneratorWizard() {
     addSource(source);
   };
 
-  const completeChapter = async (generateAfterSave = false) => {
+  const completeChapter = async () => {
     if (!selectedStructure) {
       setChapterActionError('Choose and save a blueprint before completing chapters.');
       return;
@@ -891,12 +889,8 @@ export default function AdvancedGeneratorWizard() {
         window.localStorage.setItem(ADVANCED_ARTICLE_STORAGE_KEY, data.article_id);
       }
 
-      if (generateAfterSave) {
-        setIsGeneratingArticle(true);
-        await advancedApi.generateArticle(savedArticleId);
-        navigate(`/article/${savedArticleId}`);
-        return;
-      }
+      setIsGeneratingArticle(true);
+      await advancedApi.generateChapter(savedArticleId, chapterNumber);
     } catch (error) {
       setChapterActionError(getErrorMessage(error, `Chapter ${chapterNumber} could not be saved to the backend yet. Please try again.`));
       setIsSavingChapter(false);
@@ -904,6 +898,7 @@ export default function AdvancedGeneratorWizard() {
       return;
     }
     setIsSavingChapter(false);
+    setIsGeneratingArticle(false);
 
     setChapters((list) => list.map((item, i) => i === activeIndex ? { ...item, done: true } : item));
     if (activeIndex < chapters.length - 1) {
@@ -918,6 +913,25 @@ export default function AdvancedGeneratorWizard() {
     } else {
       setPanelMode('source');
     }
+  };
+
+  const generateFullArticle = async () => {
+    try {
+      const persistedArticleId = await ensurePersistedArticle();
+      if (!persistedArticleId) {
+        throw new Error('The article structure is not persisted yet. Please choose the blueprint again.');
+      }
+
+      setIsPublishingArticle(true);
+      setChapterActionError('');
+      await advancedApi.generateArticle(persistedArticleId);
+      navigate(`/article/${persistedArticleId}`);
+    } catch (error) {
+      setChapterActionError(getErrorMessage(error, 'Không thể sinh bài hoàn chỉnh từ các chương đã lưu. Hãy thử lại.'));
+      setIsPublishingArticle(false);
+      return;
+    }
+    setIsPublishingArticle(false);
   };
 
   const chooseTitleOption = (value: TitleOption) => {
@@ -1285,7 +1299,7 @@ export default function AdvancedGeneratorWizard() {
             <div className="max-w-3xl">
               <p className="text-xs font-semibold uppercase tracking-[0.35em] text-cyan-300">Sequential prototype</p>
               <h1 className="mt-3 text-3xl font-semibold leading-tight lg:text-4xl">Build the article step by step before generation</h1>
-              <p className="mt-4 text-sm leading-7 text-slate-300 lg:text-base">First define the article setup, then choose an AI-generated chapter count, then finish Chapter 1, Chapter 2, and so on. The right-side AI container stays available as the fixed recommendation workspace.</p>
+                <p className="mt-4 text-sm leading-7 text-slate-300 lg:text-base">Trước hết hãy xác định thiết lập bài viết, sau đó chọn bố cục chương do AI gợi ý, rồi hoàn thiện lần lượt từng chương. Khung AI bên phải luôn sẵn sàng để bạn tham chiếu trong suốt quá trình này.</p>
             </div>
             <div className="flex flex-wrap gap-3">
               <div className={`rounded-full px-4 py-2 text-sm font-semibold ${pill(setupReady && chapterCount === null, Boolean(chapterCount))}`}>1. Setup</div>
@@ -1306,7 +1320,7 @@ export default function AdvancedGeneratorWizard() {
                   <h2 className="mt-2 text-2xl font-semibold text-slate-900">Article setup</h2>
                 </div>
                 <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-600">
-                  {reportType ? 'AI chapter options are ready on the right' : 'Choose a report type to open AI chapter options'}
+                  {reportType ? 'Các phương án chương do AI gợi ý đã sẵn ở bên phải' : 'Hãy chọn loại nghiên cứu để mở các phương án chương do AI gợi ý'}
                 </div>
               </div>
               <div className="mt-6 grid gap-4 lg:grid-cols-2">
@@ -1359,21 +1373,21 @@ export default function AdvancedGeneratorWizard() {
               </div>
               {chapterCount !== null && (
                 <div className="mt-6 inline-flex rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700">
-                  Structure selected: {chapterCount} chapters
+                Đã chọn bố cục: {chapterCount} chương
                 </div>
               )}
               {normalizedArticleTitle && normalizedArticleTitle !== articleTitle && (
                 <div className="mt-3 rounded-[20px] border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm text-cyan-900">
-                  <span className="font-semibold">AI English working title:</span> {normalizedArticleTitle}
+                  <span className="font-semibold">Tiêu đề chuẩn hóa AI:</span> {normalizedArticleTitle}
                 </div>
               )}
               {selectedStructure && (
                 <div className="mt-6 rounded-[24px] border border-slate-200 bg-slate-50 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <p className="text-sm font-semibold text-slate-900">Selected blueprint</p>
+                      <p className="text-sm font-semibold text-slate-900">Blueprint đã chọn</p>
                       <p className="mt-1 text-sm leading-6 text-slate-600">
-                        This is the chapter flow AI will use for title, brief, guide, source, and final writing.
+                        Đây là mạch chương mà AI sẽ dùng để gợi ý tiêu đề, tóm tắt, hướng dẫn viết, nguồn tài liệu và sinh bài cuối cùng.
                       </p>
                     </div>
                     <button
@@ -1381,14 +1395,14 @@ export default function AdvancedGeneratorWizard() {
                       onClick={() => setShowBlueprintDetails((currentValue) => !currentValue)}
                       className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:bg-slate-100 hover:shadow-sm"
                     >
-                      {showBlueprintDetails ? 'Hide chapter logic' : 'Show chapter logic'}
+                          {showBlueprintDetails ? 'Ẩn logic chương' : 'Hiện logic chương'}
                     </button>
                   </div>
                   <div className="mt-4 grid gap-3 xl:grid-cols-2">
                     {selectedStructure.blueprint.map((item) => (
                       <div key={item.chapter_number} className="rounded-[20px] border border-slate-200 bg-white px-4 py-4">
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                          Chapter {item.chapter_number}
+                              Chương {item.chapter_number}
                         </p>
                         <p className="mt-2 text-base font-semibold text-slate-900">
                           {item.display_working_title_vi || item.working_title}
@@ -1432,9 +1446,9 @@ export default function AdvancedGeneratorWizard() {
                 )}
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-700">Step 2</p>
-                  <h2 className="mt-2 text-2xl font-semibold text-slate-900">Chapter {activeIndex + 1} of {chapterCount}</h2>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">Complete the current chapter, then move to the next one.</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-700">Bước 2</p>
+                  <h2 className="mt-2 text-2xl font-semibold text-slate-900">Chương {activeIndex + 1} / {chapterCount}</h2>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">Hoàn thiện chương hiện tại rồi chuyển sang chương tiếp theo.</p>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {chapters.map((chapter, i) => {
@@ -1456,7 +1470,7 @@ export default function AdvancedGeneratorWizard() {
                           }`}
                         >
                           {chapter.done ? <Check size={14} className="mr-2 inline" /> : null}
-                          Chapter {i + 1}
+                          Chương {i + 1}
                         </button>
                       );
                     })}
@@ -1467,49 +1481,38 @@ export default function AdvancedGeneratorWizard() {
                   <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
-                          <p className="text-sm font-semibold text-slate-900">Chapter title</p>
-                          <p className="mt-1 text-sm leading-6 text-slate-600">Choose from AI recommendations or type it yourself.</p>
+                          <p className="text-sm font-semibold text-slate-900">Tiêu đề chương</p>
+                          <p className="mt-1 text-sm leading-6 text-slate-600">Chọn từ gợi ý AI hoặc tự nhập theo ý bạn.</p>
                       </div>
-                      <button type="button" onClick={() => void handleRecommendTitles()} className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-800 transition hover:-translate-y-0.5 hover:bg-emerald-200 hover:shadow-sm"><Sparkles size={16} />{isLoadingTitleOptions ? 'Loading titles...' : 'Recommend titles'}</button>
+                      <button type="button" onClick={() => void handleRecommendTitles()} className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-800 transition hover:-translate-y-0.5 hover:bg-emerald-200 hover:shadow-sm"><Sparkles size={16} />{isLoadingTitleOptions ? 'Đang tải tiêu đề...' : 'Gợi ý tiêu đề'}</button>
                     </div>
                     <div className="mt-4 grid gap-4 lg:grid-cols-2">
                       <label className="space-y-2">
-                        <span className="text-sm font-semibold text-slate-700">AI-selected title</span>
-                          <div className="min-h-[78px] rounded-[20px] border border-slate-200 bg-white px-4 py-3">
-                            {current.aiTitle ? (
-                              <div>
+                        <span className="text-sm font-semibold text-slate-700">Tiêu đề AI đã chọn</span>
+                        <div className="min-h-[78px] rounded-[20px] border border-slate-200 bg-white px-4 py-3">
+                          {current.aiTitle ? (
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
                                 <p className="text-base font-semibold text-slate-900">{current.aiTitle.display_title_vi || current.aiTitle.title}</p>
                                 <p className="mt-2 text-sm leading-6 text-slate-600">{current.aiTitle.display_description_vi || current.aiTitle.description}</p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={clearAiTitle}
+                                  className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-500 transition hover:bg-slate-200"
+                                >
+                                  X
+                                </button>
                               </div>
                           ) : (
-                            <p className="text-base text-slate-400">Choose from the right-side panel</p>
+                            <p className="text-base text-slate-400">Hãy chọn từ khung gợi ý bên phải</p>
                           )}
                         </div>
                       </label>
                       <label className="space-y-2">
-                        <span className="text-sm font-semibold text-slate-700">Manual title</span>
-                        <input value={current.customTitle} onChange={(e) => updateCurrent('customTitle', e.target.value)} className="w-full rounded-[20px] border border-slate-200 bg-white px-4 py-3 outline-none transition hover:border-emerald-200 focus:border-emerald-400" placeholder="Or write your own title" />
+                        <span className="text-sm font-semibold text-slate-700">Tự nhập tiêu đề</span>
+                        <input value={current.customTitle} onChange={(e) => updateCurrent('customTitle', e.target.value)} className="w-full rounded-[20px] border border-slate-200 bg-white px-4 py-3 outline-none transition hover:border-emerald-200 focus:border-emerald-400" placeholder="Hoặc tự viết tiêu đề của bạn" />
                       </label>
-                    </div>
-                    <div className="mt-4 space-y-3">
-                      {current.aiTitle && (
-                          <SelectedCard
-                            tone="emerald"
-                            label="AI selected title"
-                            title={current.aiTitle.display_title_vi || current.aiTitle.title}
-                            description={current.aiTitle.display_description_vi || current.aiTitle.description}
-                            onRemove={clearAiTitle}
-                          />
-                      )}
-                      {current.customTitle.trim() && (
-                        <SelectedCard
-                          tone="slate"
-                          label="Manual title"
-                          title={current.customTitle}
-                          description="User-written title."
-                          onRemove={clearManualTitle}
-                        />
-                      )}
                     </div>
                   </div>
 
@@ -1517,8 +1520,8 @@ export default function AdvancedGeneratorWizard() {
                     <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
-                          <p className="text-sm font-semibold text-slate-900">Chapter brief</p>
-                          <p className="mt-1 text-sm leading-6 text-slate-600">Choose an AI-generated brief or write it yourself.</p>
+                          <p className="text-sm font-semibold text-slate-900">Tóm tắt chương</p>
+                          <p className="mt-1 text-sm leading-6 text-slate-600">Chọn tóm tắt do AI gợi ý hoặc tự viết.</p>
                         </div>
                         <button
                           type="button"
@@ -1526,46 +1529,35 @@ export default function AdvancedGeneratorWizard() {
                           className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-cyan-100 px-4 py-2 text-sm font-semibold text-cyan-800 transition hover:-translate-y-0.5 hover:bg-cyan-200 hover:shadow-sm"
                         >
                           <Sparkles size={16} />
-                          {isLoadingBriefOptions ? 'Loading briefs...' : 'Recommend brief'}
+                          {isLoadingBriefOptions ? 'Đang tải tóm tắt...' : 'Gợi ý tóm tắt'}
                         </button>
                       </div>
                       <label className="mt-4 block space-y-2">
-                        <span className="text-sm font-semibold text-slate-700">AI-selected brief</span>
-                          <div className="min-h-[120px] rounded-[20px] border border-slate-200 bg-white px-4 py-3">
-                            {current.aiBrief ? (
-                              <div>
+                        <span className="text-sm font-semibold text-slate-700">Tóm tắt AI đã chọn</span>
+                        <div className="min-h-[120px] rounded-[20px] border border-slate-200 bg-white px-4 py-3">
+                          {current.aiBrief ? (
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
                                 <p className="text-base font-semibold text-slate-900">{current.aiBrief.display_title_vi || current.aiBrief.title}</p>
                                 <p className="mt-2 text-sm leading-7 text-slate-600">{current.aiBrief.display_description_vi || current.aiBrief.description}</p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={clearAiBrief}
+                                  className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-500 transition hover:bg-slate-200"
+                                >
+                                  X
+                                </button>
                               </div>
                           ) : (
-                            <p className="text-base text-slate-400">Choose from AI recommendations</p>
+                            <p className="text-base text-slate-400">Hãy chọn từ các gợi ý AI</p>
                           )}
                         </div>
                       </label>
                       <label className="mt-4 block space-y-2">
-                        <span className="text-sm font-semibold text-slate-700">Manual brief</span>
-                        <textarea rows={4} value={current.customBrief} onChange={(e) => updateCurrent('customBrief', e.target.value)} className="w-full rounded-[20px] border border-slate-200 bg-white px-4 py-3 outline-none transition hover:border-cyan-200 focus:border-cyan-400" placeholder="Or write your own chapter brief" />
+                        <span className="text-sm font-semibold text-slate-700">Tự nhập tóm tắt</span>
+                        <textarea rows={4} value={current.customBrief} onChange={(e) => updateCurrent('customBrief', e.target.value)} className="w-full rounded-[20px] border border-slate-200 bg-white px-4 py-3 outline-none transition hover:border-cyan-200 focus:border-cyan-400" placeholder="Hoặc tự viết tóm tắt chương" />
                       </label>
-                      <div className="mt-4 space-y-3">
-                        {current.aiBrief && (
-                            <SelectedCard
-                              tone="cyan"
-                              label="AI selected brief"
-                              title={current.aiBrief.display_title_vi || current.aiBrief.title}
-                              description={current.aiBrief.display_description_vi || current.aiBrief.description}
-                              onRemove={clearAiBrief}
-                            />
-                        )}
-                        {current.customBrief.trim() && (
-                          <SelectedCard
-                            tone="slate"
-                            label="Manual brief"
-                            title="Manual brief"
-                            description={current.customBrief}
-                            onRemove={clearManualBrief}
-                          />
-                        )}
-                      </div>
                     </div>
                   )}
 
@@ -1574,14 +1566,14 @@ export default function AdvancedGeneratorWizard() {
                     <div className="h-fit self-start rounded-[24px] border border-slate-200 bg-slate-50 p-4 xl:sticky xl:top-6">
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
-                          <p className="text-sm font-semibold text-slate-900">Writing guide (optional)</p>
-                          <p className="mt-1 text-sm leading-6 text-slate-600">Choose an AI-generated guide or write manual instructions only if you want extra control.</p>
+                          <p className="text-sm font-semibold text-slate-900">Hướng dẫn viết (tùy chọn)</p>
+                          <p className="mt-1 text-sm leading-6 text-slate-600">Chọn hướng dẫn do AI gợi ý hoặc tự viết thêm nếu bạn muốn kiểm soát chặt hơn.</p>
                         </div>
-                        <button type="button" onClick={() => void handleRecommendGuides()} className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-800 transition hover:-translate-y-0.5 hover:bg-amber-200 hover:shadow-sm"><Lightbulb size={16} />{isLoadingGuideOptions ? 'Loading guides...' : 'Recommend guides'}</button>
+                        <button type="button" onClick={() => void handleRecommendGuides()} className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-800 transition hover:-translate-y-0.5 hover:bg-amber-200 hover:shadow-sm"><Lightbulb size={16} />{isLoadingGuideOptions ? 'Đang tải hướng dẫn...' : 'Gợi ý hướng dẫn'}</button>
                       </div>
                       <div className="mt-4 space-y-4">
                         <label className="block space-y-2">
-                          <span className="text-sm font-semibold text-slate-700">AI-selected guide</span>
+                          <span className="text-sm font-semibold text-slate-700">Hướng dẫn AI đã chọn</span>
                           <div className="min-h-28 rounded-[20px] border border-slate-200 bg-white px-4 py-3">
                             {current.selectedGuides.length > 0 ? (
                               <div className="space-y-2">
@@ -1596,62 +1588,41 @@ export default function AdvancedGeneratorWizard() {
                                       onClick={() => removeGuideOption(guide.id)}
                                       className="cursor-pointer rounded-full bg-white px-2 py-1 text-xs font-semibold text-amber-700 transition hover:bg-amber-100"
                                     >
-                                      Remove
+                                      Xóa
                                     </button>
                                   </div>
                                 ))}
                               </div>
                             ) : (
-                              <p className="pt-1 text-sm text-slate-400">Choose one or more AI guide options.</p>
+                              <p className="pt-1 text-sm text-slate-400">Hãy chọn một hoặc nhiều hướng dẫn AI.</p>
                             )}
                           </div>
                         </label>
                         <label className="block space-y-2">
-                          <span className="text-sm font-semibold text-slate-700">Manual guide</span>
-                          <textarea rows={3} value={current.customGuide} onChange={(e) => updateCurrent('customGuide', e.target.value)} className="w-full rounded-[20px] border border-slate-200 bg-white px-4 py-3 outline-none transition hover:border-amber-200 focus:border-amber-400" placeholder="Or write your own guide" />
+                          <span className="text-sm font-semibold text-slate-700">Tự nhập hướng dẫn</span>
+                          <textarea rows={3} value={current.customGuide} onChange={(e) => updateCurrent('customGuide', e.target.value)} className="w-full rounded-[20px] border border-slate-200 bg-white px-4 py-3 outline-none transition hover:border-amber-200 focus:border-amber-400" placeholder="Hoặc tự viết hướng dẫn của bạn" />
                         </label>
-                        <div className="space-y-3">
-                          {current.selectedGuides.map((guide) => (
-                            <SelectedCard
-                              key={guide.id}
-                              tone="amber"
-                              label="AI selected guide"
-                              title={guide.display_title_vi || guide.title}
-                              description={guide.display_body_vi || guide.body}
-                              onRemove={() => removeGuideOption(guide.id)}
-                            />
-                          ))}
-                          {current.customGuide.trim() && (
-                            <SelectedCard
-                              tone="slate"
-                              label="Manual guide"
-                              title="Manual guide"
-                              description={current.customGuide}
-                              onRemove={clearManualGuide}
-                            />
-                          )}
-                        </div>
                       </div>
                     </div>
 
                     <div className="h-fit self-start rounded-[24px] border border-slate-200 bg-slate-50 p-4 xl:sticky xl:top-6">
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
-                          <p className="text-sm font-semibold text-slate-900">Sources</p>
-                          <p className="mt-1 text-sm leading-6 text-slate-600">Add scholar-style sources manually or ask Gemini to plan an English scholarly query before searching Serper Scholar.</p>
+                          <p className="text-sm font-semibold text-slate-900">Nguồn tài liệu</p>
+                          <p className="mt-1 text-sm leading-6 text-slate-600">Thêm nguồn thủ công hoặc để Gemini lập truy vấn học thuật rồi tìm qua Serper Scholar.</p>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                          <button type="button" onClick={() => addSource({ id: crypto.randomUUID(), title: 'Manual source added by user', snippet: 'Notes, citation fragments, or scholar search results pasted manually by the user.', provider: 'Manual input', link: 'https://scholar.google.com', year: '2026' })} className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:bg-slate-100 hover:shadow-sm"><Plus size={16} />Add source manually</button>
-                          <button type="button" onClick={() => void handleRecommendSources()} className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-violet-100 px-4 py-2 text-sm font-semibold text-violet-800 transition hover:-translate-y-0.5 hover:bg-violet-200 hover:shadow-sm"><Search size={16} />{isLoadingSourceOptions ? 'Loading sources...' : 'Find sources'}</button>
+                          <button type="button" onClick={() => addSource({ id: crypto.randomUUID(), title: 'Nguồn do người dùng thêm', snippet: 'Ghi chú, trích đoạn trích dẫn hoặc kết quả tìm học thuật do người dùng tự nhập.', provider: 'Nhập thủ công', link: 'https://scholar.google.com', year: '2026' })} className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:bg-slate-100 hover:shadow-sm"><Plus size={16} />Thêm nguồn thủ công</button>
+                          <button type="button" onClick={() => void handleRecommendSources()} className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-violet-100 px-4 py-2 text-sm font-semibold text-violet-800 transition hover:-translate-y-0.5 hover:bg-violet-200 hover:shadow-sm"><Search size={16} />{isLoadingSourceOptions ? 'Đang tải nguồn...' : 'Tìm nguồn'}</button>
                         </div>
                       </div>
                       {(sourceQuery || sourceQueryCandidates.length > 0) && (
                         <div className="mt-4 rounded-[18px] border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-900">
-                          <p className="font-semibold">Gemini-planned English query</p>
+                          <p className="font-semibold">Truy vấn học thuật do Gemini lập</p>
                           {sourceQuery && <p className="mt-2 break-words leading-6">{sourceQuery}</p>}
                           {sourceQueryCandidates.length > 1 && (
                             <p className="mt-2 text-xs leading-5 text-violet-700">
-                              {sourceQueryCandidates.length} query variants were prepared and tried as fallback when needed.
+                              Đã chuẩn bị {sourceQueryCandidates.length} biến thể truy vấn để tự fallback khi cần.
                             </p>
                           )}
                         </div>
@@ -1675,11 +1646,11 @@ export default function AdvancedGeneratorWizard() {
                               </button>
                             </div>
                           </div>
-                        )) : <div className="rounded-[18px] border border-dashed border-slate-300 px-4 py-4 text-sm leading-6 text-slate-500">No chapter sources yet.</div>}
+                        )) : <div className="rounded-[18px] border border-dashed border-slate-300 px-4 py-4 text-sm leading-6 text-slate-500">Chưa có nguồn nào cho chương này.</div>}
                       </div>
                       <div className="mt-4 flex justify-end">
                         <div className="rounded-full bg-violet-100 px-4 py-2 text-sm font-semibold text-violet-800">
-                          {sourcesReady ? `${current.sources.length} sources selected` : 'Choose at least 1 source'}
+                          {sourcesReady ? `Đã chọn ${current.sources.length} nguồn` : 'Hãy chọn ít nhất 1 nguồn'}
                         </div>
                       </div>
                     </div>
@@ -1690,12 +1661,16 @@ export default function AdvancedGeneratorWizard() {
                 {sourcesReady && (
                 <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-slate-200 bg-slate-50 p-4">
                   <div>
-                    <p className="text-sm font-semibold text-slate-900">{current.aiTitle?.title || current.customTitle || `Chapter ${activeIndex + 1}`}</p>
-                    <p className="mt-1 text-sm text-slate-600">When this chapter is ready, click complete and continue to the next chapter.</p>
+                    <p className="text-sm font-semibold text-slate-900">{current.aiTitle?.display_title_vi || current.aiTitle?.title || current.customTitle || `Chương ${activeIndex + 1}`}</p>
+                    <p className="mt-1 text-sm text-slate-600">
+                      {current.done
+                        ? 'Chương này đã có bản viết trong database. Bạn có thể lưu lại để viết đè nội dung chương nếu vừa chỉnh sửa.'
+                        : 'Khi chương đã sẵn sàng, hệ thống sẽ lưu và viết ngầm chương này vào database.'}
+                    </p>
                   </div>
                   <button
                     type="button"
-                    onClick={() => void completeChapter(isLastChapter)}
+                    onClick={() => void completeChapter()}
                     disabled={!(titleReady && briefReady && sourcesReady) || isSavingChapter || isGeneratingArticle}
                     className={`inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition ${
                       (titleReady && briefReady && sourcesReady) && !isSavingChapter && !isGeneratingArticle
@@ -1704,12 +1679,43 @@ export default function AdvancedGeneratorWizard() {
                     }`}
                   >
                     {isSavingChapter
-                      ? 'Saving chapter...'
+                      ? 'Đang lưu chương...'
                       : isGeneratingArticle
-                        ? 'Generating article...'
-                        : isLastChapter
-                          ? 'Tổng kết và sinh bài'
-                          : `Complete Chapter ${activeIndex + 1}`}
+                        ? 'Đang viết chương...'
+                        : current.done
+                          ? `Lưu lại Chương ${activeIndex + 1}`
+                          : `Hoàn tất Chương ${activeIndex + 1}`}
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+                )}
+
+                {current.done && !finishedAll && (
+                <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-emerald-200 bg-emerald-50 p-4">
+                  <div>
+                    <p className="text-sm font-semibold text-emerald-900">Chương {activeIndex + 1} đã được viết và lưu vào database.</p>
+                    <p className="mt-1 text-sm text-emerald-800">Bạn có thể chuyển sang chương tiếp theo hoặc chỉnh lại rồi lưu lại chương này nếu cần.</p>
+                  </div>
+                </div>
+                )}
+
+                {finishedAll && (
+                <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-cyan-200 bg-cyan-50 p-4">
+                  <div>
+                    <p className="text-sm font-semibold text-cyan-900">Tất cả chương đã được viết ngầm và lưu vào database.</p>
+                    <p className="mt-1 text-sm text-cyan-800">Bước cuối cùng sẽ ráp bài hoàn chỉnh, makeup lại phần trình bày và dọn cache Redis tạm thời.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void generateFullArticle()}
+                    disabled={isPublishingArticle}
+                    className={`inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition ${
+                      !isPublishingArticle
+                        ? 'cursor-pointer bg-cyan-700 text-white hover:-translate-y-0.5 hover:bg-cyan-800 hover:shadow-lg'
+                        : 'cursor-not-allowed bg-cyan-200 text-cyan-500'
+                    }`}
+                  >
+                    {isPublishingArticle ? 'Đang sinh bài hoàn chỉnh...' : 'Sinh bài'}
                     <ChevronRight size={16} />
                   </button>
                 </div>
@@ -1721,40 +1727,40 @@ export default function AdvancedGeneratorWizard() {
           <aside className="h-fit self-start rounded-[28px] border border-slate-200 bg-white/92 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur xl:sticky xl:top-6">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-700">AI recommendation container</p>
-                <h2 className="mt-2 text-xl font-semibold text-slate-900">Fixed recommendation workspace</h2>
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-700">Khu gợi ý AI</p>
+                <h2 className="mt-2 text-xl font-semibold text-slate-900">Bảng gợi ý cố định</h2>
               </div>
             </div>
             <div className="mt-5">
               {panelMode === 'count' && !selectedStructure && (
                 <div className="space-y-3">
                   <div className="rounded-[22px] border border-cyan-200 bg-cyan-50 px-4 py-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-700">AI generated</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-700">AI tạo ra</p>
                     <p className="mt-2 text-sm leading-6 text-slate-700">
                       {isLoadingStructure
-                        ? 'Gemini is preparing structure options for this report type.'
+                        ? 'Gemini đang chuẩn bị các phương án bố cục cho loại bài này.'
                         : structureError || aiCountSummary[reportType] || aiCountSummary['Tiểu luận học thuật']}
                     </p>
                     {normalizedArticleTitle && (
-                      <p className="mt-2 text-sm font-medium text-slate-700">Working title (EN): {normalizedArticleTitle}</p>
+                      <p className="mt-2 text-sm font-medium text-slate-700">Tiêu đề chuẩn hóa: {normalizedArticleTitle}</p>
                     )}
                   </div>
                   {isLoadingStructure && (
                     <div className="rounded-[22px] border border-dashed border-cyan-200 bg-white px-4 py-5 text-sm leading-6 text-slate-500">
-                      Loading structure options from AI...
+                      Đang tải các phương án bố cục từ AI...
                     </div>
                   )}
                   {!isLoadingStructure && structureOptions.map((item, index) => (
                     <button key={item.option_id} type="button" onClick={() => buildPlan(item)} className="w-full cursor-pointer rounded-[22px] border border-slate-200 bg-slate-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-cyan-300 hover:bg-cyan-50 hover:shadow-md">
                       <div className="flex items-center justify-between gap-3">
-                        <p className="font-semibold text-slate-900">{item.chapter_count} chapters</p>
-                        <span className="whitespace-nowrap rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold text-cyan-700">Option {index + 1}</span>
+                        <p className="font-semibold text-slate-900">{item.chapter_count} chương</p>
+                        <span className="whitespace-nowrap rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold text-cyan-700">Phương án {index + 1}</span>
                       </div>
                       <p className="mt-2 text-sm leading-6 text-slate-600">{item.display_rationale_vi || item.rationale}</p>
                       <div className="mt-3 space-y-2">
                         {item.blueprint.map((chapter) => (
                           <div key={`${item.option_id}-${chapter.chapter_number}`} className="rounded-[18px] border border-cyan-100 bg-white px-3 py-3">
-                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700">Chapter {chapter.chapter_number}</p>
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700">Chương {chapter.chapter_number}</p>
                             <p className="mt-1 text-sm font-semibold text-slate-900">{chapter.display_working_title_vi || chapter.working_title}</p>
                             <p className="mt-1 text-sm leading-6 text-slate-600">{chapter.display_purpose_vi || chapter.purpose}</p>
                           </div>
@@ -1767,14 +1773,14 @@ export default function AdvancedGeneratorWizard() {
               {panelMode === 'hidden' && (
                 <div className="rounded-[22px] border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm leading-6 text-slate-500">
                   {selectedStructure
-                    ? 'Bố cục đã được chọn. Dùng các nút Recommend titles, Recommend brief, Recommend guides hoặc Find sources ở cột trái để nạp lại dữ liệu cho panel này.'
-                    : 'Chọn article title và report type để AI hiển thị các phương án bố cục tại đây.'}
+                    ? 'Bố cục đã được chọn. Dùng các nút Gợi ý tiêu đề, Gợi ý tóm tắt, Gợi ý hướng dẫn hoặc Tìm nguồn ở cột trái để nạp lại dữ liệu cho khung này.'
+                    : 'Chọn tiêu đề bài và loại nghiên cứu để AI hiển thị các phương án bố cục tại đây.'}
                 </div>
               )}
-              {panelMode === 'title' && <div className="space-y-3">{suggestedTitles.map((item, index) => <button key={item.title} type="button" onClick={() => chooseTitleOption(item)} className="w-full cursor-pointer rounded-[22px] border border-slate-200 bg-slate-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50 hover:shadow-md"><div className="flex items-center justify-between gap-3"><p className="font-semibold text-slate-900">{item.display_title_vi || item.title}</p><span className="whitespace-nowrap rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Option {index + 1}</span></div><p className="mt-2 text-sm leading-6 text-slate-600">{item.display_description_vi || item.description}</p></button>)}</div>}
-              {panelMode === 'brief' && <div className="space-y-3">{suggestedBriefs.map((item, index) => <button key={item.title} type="button" onClick={() => chooseBriefOption(item)} className="w-full cursor-pointer rounded-[22px] border border-slate-200 bg-slate-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-cyan-300 hover:bg-cyan-50 hover:shadow-md"><div className="flex items-center justify-between gap-3"><p className="font-semibold text-slate-900">{item.display_title_vi || item.title}</p><span className="whitespace-nowrap rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold text-cyan-700">Option {index + 1}</span></div><p className="mt-2 text-sm leading-6 text-slate-600">{item.display_description_vi || item.description}</p></button>)}</div>}
+              {panelMode === 'title' && <div className="space-y-3">{suggestedTitles.map((item, index) => <button key={item.title} type="button" onClick={() => chooseTitleOption(item)} className="w-full cursor-pointer rounded-[22px] border border-slate-200 bg-slate-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50 hover:shadow-md"><div className="flex items-center justify-between gap-3"><p className="font-semibold text-slate-900">{item.display_title_vi || item.title}</p><span className="whitespace-nowrap rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Phương án {index + 1}</span></div><p className="mt-2 text-sm leading-6 text-slate-600">{item.display_description_vi || item.description}</p></button>)}</div>}
+              {panelMode === 'brief' && <div className="space-y-3">{suggestedBriefs.map((item, index) => <button key={item.title} type="button" onClick={() => chooseBriefOption(item)} className="w-full cursor-pointer rounded-[22px] border border-slate-200 bg-slate-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-cyan-300 hover:bg-cyan-50 hover:shadow-md"><div className="flex items-center justify-between gap-3"><p className="font-semibold text-slate-900">{item.display_title_vi || item.title}</p><span className="whitespace-nowrap rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold text-cyan-700">Phương án {index + 1}</span></div><p className="mt-2 text-sm leading-6 text-slate-600">{item.display_description_vi || item.description}</p></button>)}</div>}
               {panelMode === 'guide' && <div className="space-y-3">{suggestedGuides.map((item, index) => <button key={item.id} type="button" onClick={() => chooseGuideOption(item)} className="w-full cursor-pointer rounded-[22px] border border-slate-200 bg-slate-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-amber-300 hover:bg-amber-50 hover:shadow-md"><div className="flex items-center justify-between gap-3"><p className="font-semibold text-slate-900">{item.display_title_vi || item.title}</p><span className="whitespace-nowrap rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">Guide {index + 1}</span></div><p className="mt-2 text-sm leading-6 text-slate-600">{item.display_body_vi || item.body}</p></button>)}</div>}
-              {panelMode === 'source' && <div className="space-y-3">{suggestedSources.map((item, index) => { const selected = isSourceSelected(item); return <button key={item.id} type="button" onClick={() => toggleSourceSelection(item)} className={`w-full cursor-pointer rounded-[22px] border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${selected ? 'border-violet-400 bg-violet-100 shadow-sm' : 'border-slate-200 bg-slate-50 hover:border-violet-300 hover:bg-violet-50'}`}><div className="flex items-center justify-between gap-3"><p className="break-words font-semibold text-slate-900">{item.display_title_vi || item.title}</p><span className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold ${selected ? 'bg-violet-600 text-white' : 'bg-violet-100 text-violet-700'}`}>{selected ? 'Selected' : `Source ${index + 1}`}</span></div><p className="mt-2 break-words text-sm leading-6 text-slate-600">{item.display_snippet_vi || item.snippet}</p><p className="mt-2 text-sm text-slate-500">{item.display_publication_vi || item.provider} • {item.year}</p><p className="mt-1 break-all text-xs text-violet-700">{item.link}</p></button>; })}</div>}
+              {panelMode === 'source' && <div className="space-y-3">{suggestedSources.map((item, index) => { const selected = isSourceSelected(item); return <button key={item.id} type="button" onClick={() => toggleSourceSelection(item)} className={`w-full cursor-pointer rounded-[22px] border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${selected ? 'border-violet-400 bg-violet-100 shadow-sm' : 'border-slate-200 bg-slate-50 hover:border-violet-300 hover:bg-violet-50'}`}><div className="flex items-center justify-between gap-3"><p className="break-words font-semibold text-slate-900">{item.display_title_vi || item.title}</p><span className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold ${selected ? 'bg-violet-600 text-white' : 'bg-violet-100 text-violet-700'}`}>{selected ? 'Đã chọn' : `Nguồn ${index + 1}`}</span></div><p className="mt-2 break-words text-sm leading-6 text-slate-600">{item.display_snippet_vi || item.snippet}</p><p className="mt-2 text-sm text-slate-500">{item.display_publication_vi || item.provider} • {item.year}</p><p className="mt-1 break-all text-xs text-violet-700">{item.link}</p></button>; })}</div>}
               {!shouldRenderPanel && panelMode !== 'hidden' && (
                 <div className="min-h-[120px]" />
               )}

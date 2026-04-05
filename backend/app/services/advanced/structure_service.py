@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import uuid
 from typing import Any
 from uuid import UUID
@@ -75,8 +76,14 @@ class AdvancedStructureService:
 
         response = AdvancedStructureResponse(
             article_title=payload.article_title.strip(),
+            normalized_article_title=(
+                parsed.get("normalized_article_title")
+                or parsed.get("normalized_article_title_en")
+                or payload.article_title.strip()
+            ).strip(),
             normalized_article_title_en=(
-                parsed.get("normalized_article_title_en")
+                parsed.get("normalized_article_title")
+                or parsed.get("normalized_article_title_en")
                 or payload.article_title.strip()
             ).strip(),
             display_article_title_vi=payload.article_title.strip(),
@@ -291,11 +298,13 @@ class AdvancedStructureService:
             article.title,
         )
         cached = self.get_cached_structure(payload.session_id)
-        normalized_title_en = (
-            cached.data.normalized_article_title_en
-            if cached.found and cached.data
-            else article.title
-        )
+        normalized_title = article.title
+        if cached.found and cached.data:
+            normalized_title = (
+                cached.data.normalized_article_title
+                or cached.data.normalized_article_title_en
+                or article.title
+            )
         report_type = (
             article.report_type
             or (cached.data.report_type if cached.found and cached.data else None)
@@ -304,7 +313,8 @@ class AdvancedStructureService:
 
         return ConfirmFirstChapterResponse(
             article_id=article.id,
-            normalized_article_title_en=normalized_title_en,
+            normalized_article_title=normalized_title,
+            normalized_article_title_en=normalized_title,
             report_type=report_type,
             chapter_count=article.chapter_count,
             cached_session_id=payload.session_id,
@@ -348,6 +358,8 @@ class AdvancedStructureService:
             raise ValueError("The selected chapter was not found for this article.")
 
         chapter.chapter_title = (payload.chapter_title or "").strip() or chapter.chapter_title
+        if chapter.chapter_title:
+            chapter.chapter_title = self._normalize_chapter_title(chapter.chapter_title)
         chapter.chapter_title_description = (
             (payload.chapter_title_description or "").strip() or chapter.chapter_title_description
         )
@@ -394,6 +406,32 @@ class AdvancedStructureService:
 
         db.commit()
         db.refresh(chapter)
+        self.store.save_chapter_context(
+            str(article.id),
+            payload.chapter_number,
+            {
+                "article_id": str(article.id),
+                "session_id": payload.session_id,
+                "chapter_number": payload.chapter_number,
+                "chapter_title": chapter.chapter_title or "",
+                "chapter_title_description": chapter.chapter_title_description or "",
+                "chapter_brief": (payload.chapter_brief or "").strip(),
+                "guide_notes": [guide.content for guide in guide_rows],
+                "sources": [
+                    {
+                        "title": source.title,
+                        "snippet": source.snippet,
+                        "provider": source.provider,
+                        "url": source.url,
+                        "year": source.year,
+                        "citation_count": source.citation_count,
+                        "publication": source.publication,
+                        "sort_order": index,
+                    }
+                    for index, source in enumerate(payload.selected_sources, start=1)
+                ],
+            },
+        )
         self.store.clear_chapter_recommendations(payload.session_id, payload.chapter_number)
 
         return ConfirmChapterResponse(
@@ -555,6 +593,13 @@ class AdvancedStructureService:
         if lowered.startswith("chapter ") and any(token.isdigit() for token in lowered.split()):
             return True
         return False
+
+    def _normalize_chapter_title(self, value: str) -> str:
+        cleaned = " ".join((value or "").split()).strip()
+        cleaned = re.sub(r"^\d+\.\s*", "", cleaned)
+        cleaned = re.sub(r"^(chương|chapter)\s+\d+\s*[:.-]?\s*", "", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"^#+\s*", "", cleaned)
+        return cleaned.strip()
 
     def _is_generic_purpose(self, value: str) -> bool:
         lowered = value.strip().lower()

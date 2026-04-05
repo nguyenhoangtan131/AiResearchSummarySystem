@@ -78,7 +78,12 @@ class AdvancedChapterRecommendationService:
         parsed = self._generate_json(
             TITLE_RECOMMENDATION_PROMPT.format(
                 report_type=structure.report_type,
-                normalized_article_title_en=structure.normalized_article_title_en,
+                article_title_context=(
+                    structure.display_article_title_vi
+                    or structure.normalized_article_title
+                    or structure.normalized_article_title_en
+                    or structure.article_title
+                ),
                 chapter_number=payload.chapter_number,
                 working_title=blueprint.working_title,
                 purpose=blueprint.purpose,
@@ -137,7 +142,12 @@ class AdvancedChapterRecommendationService:
         parsed = self._generate_json(
             BRIEF_RECOMMENDATION_PROMPT.format(
                 report_type=structure.report_type,
-                normalized_article_title_en=structure.normalized_article_title_en,
+                article_title_context=(
+                    structure.display_article_title_vi
+                    or structure.normalized_article_title
+                    or structure.normalized_article_title_en
+                    or structure.article_title
+                ),
                 chapter_number=payload.chapter_number,
                 chapter_title=payload.chapter_title,
                 chapter_title_description=payload.chapter_title_description or blueprint.purpose,
@@ -187,7 +197,12 @@ class AdvancedChapterRecommendationService:
         parsed = self._generate_json(
             GUIDE_RECOMMENDATION_PROMPT.format(
                 report_type=structure.report_type,
-                normalized_article_title_en=structure.normalized_article_title_en,
+                article_title_context=(
+                    structure.display_article_title_vi
+                    or structure.normalized_article_title
+                    or structure.normalized_article_title_en
+                    or structure.article_title
+                ),
                 chapter_number=payload.chapter_number,
                 chapter_title=payload.chapter_title,
                 chapter_brief=payload.chapter_brief,
@@ -429,7 +444,11 @@ class AdvancedChapterRecommendationService:
             SOURCE_QUERY_PLANNING_PROMPT.format(
                 report_type=structure.report_type.strip(),
                 article_title=(structure.display_article_title_vi or structure.article_title).strip(),
-                normalized_article_title_en=structure.normalized_article_title_en.strip(),
+                scholar_query_title=(
+                    structure.normalized_article_title.strip()
+                    or structure.normalized_article_title_en.strip()
+                    or structure.article_title.strip()
+                ),
                 chapter_number=payload.chapter_number,
                 working_title=(blueprint.display_working_title_vi or blueprint.working_title).strip(),
                 purpose=(blueprint.display_purpose_vi or blueprint.purpose).strip(),
@@ -461,7 +480,11 @@ class AdvancedChapterRecommendationService:
         blueprint: ChapterBlueprintItem,
         payload: ChapterSourceRecommendationRequest,
     ) -> list[str]:
-        article_title = structure.normalized_article_title_en.strip() or structure.article_title.strip()
+        article_title = (
+            structure.normalized_article_title.strip()
+            or structure.normalized_article_title_en.strip()
+            or structure.article_title.strip()
+        )
         chapter_title = payload.chapter_title.strip()
         chapter_brief = payload.chapter_brief.strip()
         purpose = blueprint.purpose.strip()

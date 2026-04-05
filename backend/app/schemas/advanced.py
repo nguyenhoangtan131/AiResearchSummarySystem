@@ -40,6 +40,7 @@ class StructureOption(BaseModel):
 
 class AdvancedStructureResponse(BaseModel):
     article_title: str
+    normalized_article_title: str
     normalized_article_title_en: str
     display_article_title_vi: Optional[str] = None
     report_type: str
@@ -213,6 +214,7 @@ class ConfirmFirstChapterRequest(BaseModel):
 
 class ConfirmFirstChapterResponse(BaseModel):
     article_id: UUID
+    normalized_article_title: str
     normalized_article_title_en: str
     report_type: str
     chapter_count: int
@@ -281,4 +283,11 @@ class AdvancedGeneratedSourceResponse(BaseModel):
 class GenerateArticleResponse(BaseModel):
     article_id: UUID
     section_count: int
+    generated_at: datetime
+
+
+class GenerateChapterResponse(BaseModel):
+    article_id: UUID
+    chapter_number: int
+    section_title: str
     generated_at: datetime
