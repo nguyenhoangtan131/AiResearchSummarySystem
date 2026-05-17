@@ -17,6 +17,7 @@ class GoogleAuthRequest(BaseModel):
 class UserInfo(BaseModel):
     email: str
     full_name: str
+    tier: str
     class Config:
         from_attributes=True
 
@@ -62,6 +63,7 @@ def google_auth(request: GoogleAuthRequest, response: Response, db: Session = De
 class CheckMeResponse(BaseModel):
     email: str
     full_name: str
+    tier: str
 
     class Config:
         from_attributes = True

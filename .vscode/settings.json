@@ -1,3 +1,18 @@
 {
-    "python-envs.pythonProjects": []
+    "python-envs.pythonProjects": [],
+    "task.allowAutomaticTasks": "on",
+    "terminal.integrated.defaultProfile.windows": "PowerShell",
+    "sqltools.useNodeRuntime": true,
+    "sqltools.connections": [
+        {
+            "name": "ARSS Postgres",
+            "driver": "PostgreSQL",
+            "server": "localhost",
+            "port": 5432,
+            "database": "ai_research_db",
+            "username": "postgres",
+            "password": "tantantan@123",
+            "previewLimit": 100
+        }
+    ]
 }

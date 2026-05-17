@@ -107,7 +107,9 @@ export default function ResearchResult() {
     <div className="bg-slate-100 min-h-screen py-10">
       <div className="mx-auto max-w-6xl px-4">
         <div className="grid gap-6 xl:grid-cols-[1fr_300px]">
-          <div className="bg-white p-12 shadow-sm border border-slate-200">
+          <div className="relative overflow-hidden rounded-[32px] border border-slate-200 bg-white p-12 shadow-sm">
+            <div className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent" />
+            <div className="pointer-events-none absolute right-10 top-10 h-24 w-24 rounded-full bg-cyan-100/40 blur-3xl" />
             <h1 className="text-4xl font-sans font-bold text-slate-900 border-b pb-8 mb-12 text-center leading-tight">
               {article.title}
             </h1>
@@ -163,7 +165,7 @@ export default function ResearchResult() {
           </div>
 
           <aside className="h-fit xl:sticky xl:top-6">
-            <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">
                 Tác vụ bài viết
               </p>
@@ -179,10 +181,10 @@ export default function ResearchResult() {
                   type="button"
                   onClick={() => void handleExportPdf()}
                   disabled={isExporting}
-                  className={`w-full rounded-full px-4 py-3 text-sm font-semibold transition ${
+                  className={`w-full rounded-full border px-4 py-3 text-sm font-semibold transition duration-300 ${
                     isExporting
-                      ? "cursor-not-allowed bg-slate-200 text-slate-400"
-                      : "bg-blue-600 text-white hover:bg-blue-700"
+                      ? "cursor-not-allowed border-slate-200 bg-slate-200 text-slate-400"
+                      : "cursor-pointer border-slate-200 bg-white text-slate-900 hover:-translate-y-0.5 hover:border-slate-900 hover:bg-slate-950 hover:text-cyan-300 hover:[text-shadow:0_0_6px_rgba(34,211,238,0.72),0_0_16px_rgba(34,211,238,0.42),0_0_28px_rgba(34,211,238,0.24)] hover:shadow-[rgba(0,0,0,0.3)_0px_19px_38px,rgba(0,0,0,0.22)_0px_15px_12px]"
                   }`}
                 >
                   {isExporting ? "Đang xuất PDF..." : "Xuất PDF"}
@@ -190,7 +192,7 @@ export default function ResearchResult() {
                 <button
                   type="button"
                   onClick={() => navigate("/history")}
-                  className="w-full rounded-full border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  className="w-full cursor-pointer rounded-full border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition duration-300 hover:-translate-y-0.5 hover:border-slate-900 hover:bg-slate-950 hover:text-cyan-300 hover:[text-shadow:0_0_6px_rgba(34,211,238,0.72),0_0_16px_rgba(34,211,238,0.42),0_0_28px_rgba(34,211,238,0.24)] hover:shadow-[rgba(0,0,0,0.3)_0px_19px_38px,rgba(0,0,0,0.22)_0px_15px_12px]"
                 >
                   Lịch sử nghiên cứu
                 </button>

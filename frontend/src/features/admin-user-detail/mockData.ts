@@ -1,0 +1,92 @@
+import type { AdminUserDetail } from './types';
+
+export const adminUserDetailSeed: Record<string, AdminUserDetail> = {
+  user_001: {
+    userId: 'user_001',
+    fullName: 'Nguyen Van A',
+    email: 'user_001@example.com',
+    tier: 'tier 1',
+    totalArticles: 1248,
+    totalTokens: 4200000,
+    totalEstimatedCost: 342.5,
+    totalLlmCalls: 844,
+    growthRate: 12,
+    tokenLevelLabel: 'Level 4',
+    avatarImageUrl:
+      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',
+    articles: [
+      {
+        articleId: 'ART-9921',
+        title: 'Tac dong cua AI trong y te',
+        createdAt: '2024-05-24',
+        llmCalls: 142,
+        totalTokens: 85200,
+        estimatedCost: 12.4,
+      },
+      {
+        articleId: 'ART-9918',
+        title: 'Toi uu hoa logistics bang machine learning',
+        createdAt: '2024-05-22',
+        llmCalls: 89,
+        totalTokens: 54000,
+        estimatedCost: 8.15,
+      },
+      {
+        articleId: 'ART-9915',
+        title: 'Phan tich rui ro tai chinh dinh luong',
+        createdAt: '2024-05-19',
+        llmCalls: 256,
+        totalTokens: 182100,
+        estimatedCost: 24.8,
+      },
+      {
+        articleId: 'ART-9882',
+        title: 'The he pin mat troi moi: Nano-crystal',
+        createdAt: '2024-05-15',
+        llmCalls: 45,
+        totalTokens: 12500,
+        estimatedCost: 2.1,
+      },
+      {
+        articleId: 'ART-9877',
+        title: 'Xu ly ngon ngu tu nhien cho tieng Viet',
+        createdAt: '2024-05-12',
+        llmCalls: 312,
+        totalTokens: 244000,
+        estimatedCost: 38.6,
+      },
+    ],
+  },
+  user_042: {
+    userId: 'user_042',
+    fullName: 'Tran Minh Chau',
+    email: 'user_042@example.com',
+    tier: 'free',
+    totalArticles: 84,
+    totalTokens: 386000,
+    totalEstimatedCost: 28.42,
+    totalLlmCalls: 203,
+    growthRate: 5,
+    tokenLevelLabel: 'Level 2',
+    avatarImageUrl:
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
+    articles: [
+      {
+        articleId: 'ART-8401',
+        title: 'He thong goi y hoc tap du doan',
+        createdAt: '2024-05-27',
+        llmCalls: 48,
+        totalTokens: 19400,
+        estimatedCost: 3.11,
+      },
+      {
+        articleId: 'ART-8388',
+        title: 'Khai pha du lieu giao duc truc tuyen',
+        createdAt: '2024-05-24',
+        llmCalls: 35,
+        totalTokens: 16800,
+        estimatedCost: 2.74,
+      },
+    ],
+  },
+};

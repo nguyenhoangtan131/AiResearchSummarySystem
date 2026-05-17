@@ -4,3 +4,4 @@ backend/env/
 *.py[cod]
 **/node_modules/
 dist/
+.logs/

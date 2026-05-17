@@ -32,6 +32,7 @@ class AdvancedGenerationService:
         self.client = genai.Client(api_key=api_key)
         self.model_name = "gemini-3-flash-preview"
         self.store = AdvancedRedisStore()
+        self._generated_cache_available: bool = True
 
     def generate_article(self, article_id: UUID) -> dict:
         article = self._load_article(article_id)
@@ -129,10 +130,30 @@ class AdvancedGenerationService:
         return AdvancedArticleFormatter.build_section_payloads(
             chapters=article.chapters,
             blueprints=article.blueprints,
-            generated_cache_lookup=lambda chapter_number: self.store.get_generated_chapter(
-                str(article.id), chapter_number
+            generated_cache_lookup=lambda chapter_number: self._get_generated_chapter_cache(
+                article_id=str(article.id),
+                chapter_number=chapter_number,
             ),
         )
+
+    def _get_generated_chapter_cache(
+        self,
+        article_id: str,
+        chapter_number: int,
+    ) -> dict[str, str] | None:
+        if not self._generated_cache_available:
+            return None
+        try:
+            return self.store.get_generated_chapter(article_id, chapter_number)
+        except Exception:
+            self._generated_cache_available = False
+            logger.warning(
+                "[Advanced] Generated chapter cache unavailable for article_id=%s chapter=%s; falling back to database content",
+                article_id,
+                chapter_number,
+                exc_info=True,
+            )
+            return None
 
     def get_generated_article(self, article_id: UUID) -> dict:
         article = (

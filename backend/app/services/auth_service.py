@@ -70,6 +70,7 @@ class AuthService(JwtService):
             google_id=user_info['sub'],
             email=user_info.get('email'),
             full_name=user_info.get('name'),
+            tier='free',
         )
         self.db.add(new_user)
         self.db.commit()

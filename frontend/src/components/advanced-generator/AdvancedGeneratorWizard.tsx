@@ -375,6 +375,31 @@ export default function AdvancedGeneratorWizard() {
   const [showBlueprintDetails, setShowBlueprintDetails] = useState(false);
   const typeMenuRef = useRef<HTMLDivElement | null>(null);
 
+  const resetWizardState = () => {
+    setArticleTitle('');
+    setReportType('');
+    setChapterCount(null);
+    setChapters([]);
+    setStructureOptions([]);
+    setStructureSessionId('');
+    setNormalizedArticleTitle('');
+    setSelectedStructure(null);
+    setStructureError('');
+    setArticleId('');
+    setTitleRecommendations([]);
+    setBriefRecommendations([]);
+    setGuideRecommendations([]);
+    setSourceRecommendations([]);
+    setSourceQuery('');
+    setSourceQueryCandidates([]);
+    setActiveIndex(0);
+    setPanelMode('hidden');
+    setChapterActionError('');
+    setShowBlueprintDetails(false);
+    window.localStorage.removeItem(ADVANCED_ARTICLE_STORAGE_KEY);
+    window.localStorage.removeItem(ADVANCED_SESSION_STORAGE_KEY);
+  };
+
   const current = chapters[activeIndex];
   const completed = chapters.filter((chapter) => chapter.done).length;
   const finishedAll = chapterCount !== null && completed === chapterCount;
@@ -398,6 +423,7 @@ export default function AdvancedGeneratorWizard() {
     (panelMode === 'brief' && (isLoadingBriefOptions || suggestedBriefs.length > 0)) ||
     (panelMode === 'guide' && (isLoadingGuideOptions || suggestedGuides.length > 0)) ||
     (panelMode === 'source' && (isLoadingSourceOptions || suggestedSources.length > 0));
+  const isCompactAiPanel = !shouldRenderPanel;
 
   const mapCachedTitleOptions = (options: Array<Record<string, unknown>>): TitleOption[] =>
     options.map((item) => ({
@@ -804,7 +830,7 @@ export default function AdvancedGeneratorWizard() {
 
   const completeChapter = async () => {
     if (!selectedStructure) {
-      setChapterActionError('Choose and save a blueprint before completing chapters.');
+      setChapterActionError('Hãy chọn và lưu blueprint trước khi hoàn tất các chương.');
       return;
     }
 
@@ -813,7 +839,7 @@ export default function AdvancedGeneratorWizard() {
     try {
       const persistedArticleId = await ensurePersistedArticle();
       if (!persistedArticleId) {
-        throw new Error('The article structure is not persisted yet. Please choose the blueprint again.');
+        throw new Error('Cấu trúc bài viết chưa được lưu. Hãy chọn lại blueprint.');
       }
 
       const effectiveSessionId = structureSessionId || `persisted-${persistedArticleId}`;
@@ -892,7 +918,7 @@ export default function AdvancedGeneratorWizard() {
       setIsGeneratingArticle(true);
       await advancedApi.generateChapter(savedArticleId, chapterNumber);
     } catch (error) {
-      setChapterActionError(getErrorMessage(error, `Chapter ${chapterNumber} could not be saved to the backend yet. Please try again.`));
+      setChapterActionError(getErrorMessage(error, `Chương ${chapterNumber} chưa được lưu vào backend. Hãy thử lại.`));
       setIsSavingChapter(false);
       setIsGeneratingArticle(false);
       return;
@@ -919,12 +945,13 @@ export default function AdvancedGeneratorWizard() {
     try {
       const persistedArticleId = await ensurePersistedArticle();
       if (!persistedArticleId) {
-        throw new Error('The article structure is not persisted yet. Please choose the blueprint again.');
+        throw new Error('Cấu trúc bài viết chưa được lưu. Hãy chọn lại blueprint.');
       }
 
       setIsPublishingArticle(true);
       setChapterActionError('');
       await advancedApi.generateArticle(persistedArticleId);
+      resetWizardState();
       navigate(`/article/${persistedArticleId}`);
     } catch (error) {
       setChapterActionError(getErrorMessage(error, 'Không thể sinh bài hoàn chỉnh từ các chương đã lưu. Hãy thử lại.'));
@@ -997,7 +1024,7 @@ export default function AdvancedGeneratorWizard() {
 
   const handleRecommendTitles = async () => {
     if (!selectedStructure) {
-      setChapterActionError('Choose a blueprint before asking AI for title options.');
+      setChapterActionError('Hãy chọn blueprint trước khi yêu cầu AI gợi ý tiêu đề.');
       return;
     }
 
@@ -1054,7 +1081,7 @@ export default function AdvancedGeneratorWizard() {
 
   const handleRecommendBriefs = async () => {
     if (!current || !selectedStructure) {
-      setChapterActionError('Choose a blueprint before asking AI for chapter summaries.');
+      setChapterActionError('Hãy chọn blueprint trước khi yêu cầu AI gợi ý tóm tắt chương.');
       return;
     }
 
@@ -1063,7 +1090,7 @@ export default function AdvancedGeneratorWizard() {
       current.aiTitle?.description || selectedStructure.blueprint[activeIndex]?.purpose || '';
 
     if (!chapterTitle) {
-      setChapterActionError('Choose or write a chapter title before asking AI for a brief.');
+      setChapterActionError('Hãy chọn hoặc tự nhập tiêu đề chương trước khi yêu cầu AI gợi ý tóm tắt.');
       return;
     }
 
@@ -1124,7 +1151,7 @@ export default function AdvancedGeneratorWizard() {
 
   const handleRecommendGuides = async () => {
     if (!current || !selectedStructure) {
-      setChapterActionError('Choose a blueprint before asking AI for writing guides.');
+      setChapterActionError('Hãy chọn blueprint trước khi yêu cầu AI gợi ý hướng dẫn viết.');
       return;
     }
 
@@ -1132,7 +1159,7 @@ export default function AdvancedGeneratorWizard() {
     const chapterBrief = current.aiBrief?.description || current.customBrief.trim();
 
     if (!chapterTitle || !chapterBrief) {
-      setChapterActionError('Choose a chapter title and brief before asking AI for guides.');
+      setChapterActionError('Hãy chọn tiêu đề chương và tóm tắt trước khi yêu cầu AI gợi ý hướng dẫn.');
       return;
     }
 
@@ -1189,7 +1216,7 @@ export default function AdvancedGeneratorWizard() {
 
   const handleRecommendSources = async () => {
     if (!current || !selectedStructure) {
-      setChapterActionError('Choose a blueprint before asking AI for sources.');
+      setChapterActionError('Hãy chọn blueprint trước khi yêu cầu AI tìm nguồn.');
       return;
     }
 
@@ -1197,7 +1224,7 @@ export default function AdvancedGeneratorWizard() {
     const chapterBrief = current.aiBrief?.description || current.customBrief.trim();
 
     if (!chapterTitle || !chapterBrief) {
-      setChapterActionError('Choose a chapter title and brief before asking AI for sources.');
+      setChapterActionError('Hãy chọn tiêu đề chương và tóm tắt trước khi yêu cầu AI tìm nguồn.');
       return;
     }
 
@@ -1297,27 +1324,27 @@ export default function AdvancedGeneratorWizard() {
         <section className="rounded-[32px] border border-slate-200 bg-slate-950 px-6 py-6 text-white shadow-[0_30px_90px_rgba(15,23,42,0.32)]">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.35em] text-cyan-300">Sequential prototype</p>
-              <h1 className="mt-3 text-3xl font-semibold leading-tight lg:text-4xl">Build the article step by step before generation</h1>
+              <p className="text-xs font-semibold uppercase tracking-[0.35em] text-cyan-300">Quy trình từng bước</p>
+              <h1 className="mt-3 text-3xl font-semibold leading-tight lg:text-4xl">Xây bài theo từng bước trước khi sinh bản hoàn chỉnh</h1>
                 <p className="mt-4 text-sm leading-7 text-slate-300 lg:text-base">Trước hết hãy xác định thiết lập bài viết, sau đó chọn bố cục chương do AI gợi ý, rồi hoàn thiện lần lượt từng chương. Khung AI bên phải luôn sẵn sàng để bạn tham chiếu trong suốt quá trình này.</p>
             </div>
-            <div className="flex flex-wrap gap-3">
-              <div className={`rounded-full px-4 py-2 text-sm font-semibold ${pill(setupReady && chapterCount === null, Boolean(chapterCount))}`}>1. Setup</div>
-              <div className="pt-2 text-slate-500"><ChevronRight size={16} /></div>
-              <div className={`rounded-full px-4 py-2 text-sm font-semibold ${pill(Boolean(chapterCount) && !finishedAll, finishedAll)}`}>2. Chapters</div>
-              <div className="pt-2 text-slate-500"><ChevronRight size={16} /></div>
-              <div className={`rounded-full px-4 py-2 text-sm font-semibold ${pill(finishedAll, false)}`}>3. Result</div>
-            </div>
+              <div className="flex flex-wrap gap-3">
+                <div className={`rounded-full px-4 py-2 text-sm font-semibold transition duration-200 hover:-translate-y-0.5 ${pill(setupReady && chapterCount === null, Boolean(chapterCount))}`}>1. Setup</div>
+                <div className="pt-2 text-slate-500 transition duration-200 hover:translate-x-0.5"><ChevronRight size={16} /></div>
+                <div className={`rounded-full px-4 py-2 text-sm font-semibold transition duration-200 hover:-translate-y-0.5 ${pill(Boolean(chapterCount) && !finishedAll, finishedAll)}`}>2. Chapters</div>
+                <div className="pt-2 text-slate-500 transition duration-200 hover:translate-x-0.5"><ChevronRight size={16} /></div>
+                <div className={`rounded-full px-4 py-2 text-sm font-semibold transition duration-200 hover:-translate-y-0.5 ${pill(finishedAll, false)}`}>3. Result</div>
+              </div>
           </div>
         </section>
 
-        <div className="mt-6 grid gap-6 xl:grid-cols-[1.45fr_0.75fr]">
+        <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.75fr)] xl:items-start">
           <main className="space-y-6">
             <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_55px_rgba(15,23,42,0.08)]">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-700">Step 1</p>
-                  <h2 className="mt-2 text-2xl font-semibold text-slate-900">Article setup</h2>
+                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-700">Bước 1</p>
+                  <h2 className="mt-2 text-2xl font-semibold text-slate-900">Thiết lập bài viết</h2>
                 </div>
                 <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-600">
                   {reportType ? 'Các phương án chương do AI gợi ý đã sẵn ở bên phải' : 'Hãy chọn loại nghiên cứu để mở các phương án chương do AI gợi ý'}
@@ -1325,11 +1352,11 @@ export default function AdvancedGeneratorWizard() {
               </div>
               <div className="mt-6 grid gap-4 lg:grid-cols-2">
                 <label className="space-y-2">
-                  <span className="text-sm font-semibold text-slate-700">Article title</span>
-                  <textarea rows={3} value={articleTitle} onChange={(e) => setArticleTitle(e.target.value)} className="w-full rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-cyan-400 focus:bg-white" placeholder="Enter the article title first" />
+                  <span className="text-sm font-semibold text-slate-700">Tiêu đề bài viết</span>
+                  <textarea rows={3} value={articleTitle} onChange={(e) => setArticleTitle(e.target.value)} className="w-full rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-cyan-400 focus:bg-white" placeholder="Nhập tiêu đề bài viết trước" />
                 </label>
                 <div className="space-y-2" ref={typeMenuRef}>
-                  <span className="text-sm font-semibold text-slate-700">Report type</span>
+                  <span className="text-sm font-semibold text-slate-700">Loại bài viết</span>
                   <div className="relative">
                     <button
                       type="button"
@@ -1341,7 +1368,7 @@ export default function AdvancedGeneratorWizard() {
                       }`}
                     >
                       <span className={reportType ? 'text-slate-900' : 'text-slate-400'}>
-                        {reportTypeLabel || 'Select a report type'}
+                        {reportTypeLabel || 'Chọn loại bài viết'}
                       </span>
                       <ChevronDown
                         size={18}
@@ -1400,21 +1427,26 @@ export default function AdvancedGeneratorWizard() {
                   </div>
                   <div className="mt-4 grid gap-3 xl:grid-cols-2">
                     {selectedStructure.blueprint.map((item) => (
-                      <div key={item.chapter_number} className="rounded-[20px] border border-slate-200 bg-white px-4 py-4">
+                      <div key={item.chapter_number} className="rounded-[18px] border border-slate-200 bg-white px-4 py-3">
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                               Chương {item.chapter_number}
                         </p>
-                        <p className="mt-2 text-base font-semibold text-slate-900">
+                        <p className="mt-1.5 text-[15px] font-semibold leading-7 text-slate-900">
                           {item.display_working_title_vi || item.working_title}
                         </p>
-                        <p className="mt-2 text-sm leading-6 text-slate-600">
-                          {item.display_purpose_vi || item.purpose}
-                        </p>
                         {showBlueprintDetails && (
-                          <div className="mt-4 space-y-3 rounded-[18px] border border-cyan-100 bg-cyan-50 px-4 py-3">
+                          <div className="mt-3 space-y-3 rounded-[16px] border border-cyan-100 bg-cyan-50 px-4 py-3">
                             <div>
                               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700">
-                                Start focus
+                                Vai trò chương
+                              </p>
+                              <p className="mt-1 text-sm leading-6 text-slate-700">
+                                {item.display_purpose_vi || item.purpose}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700">
+                                Mở chương bằng
                               </p>
                               <p className="mt-1 text-sm leading-6 text-slate-700">
                                 {item.display_start_focus_vi || item.start_focus}
@@ -1422,7 +1454,7 @@ export default function AdvancedGeneratorWizard() {
                             </div>
                             <div>
                               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700">
-                                End focus
+                                Kết chương bằng
                               </p>
                               <p className="mt-1 text-sm leading-6 text-slate-700">
                                 {item.display_end_focus_vi || item.end_focus}
@@ -1461,11 +1493,11 @@ export default function AdvancedGeneratorWizard() {
                           onClick={() => unlocked && setActiveIndex(i)}
                           className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
                             i === activeIndex
-                              ? 'bg-slate-900 text-white'
+                              ? 'bg-slate-900 text-white shadow-[0_12px_26px_rgba(15,23,42,0.22)]'
                               : chapter.done
-                                ? 'bg-emerald-100 text-emerald-800'
+                                ? 'bg-emerald-100 text-emerald-800 hover:-translate-y-0.5 hover:bg-emerald-200'
                                 : unlocked
-                                  ? 'cursor-pointer bg-slate-100 text-slate-600 hover:-translate-y-0.5 hover:bg-slate-200 hover:shadow-sm'
+                                  ? 'cursor-pointer bg-slate-100 text-slate-600 hover:-translate-y-0.5 hover:scale-[1.02] hover:bg-slate-200 hover:shadow-sm'
                                   : 'cursor-not-allowed bg-slate-100 text-slate-400 opacity-70'
                           }`}
                         >
@@ -1489,17 +1521,18 @@ export default function AdvancedGeneratorWizard() {
                     <div className="mt-4 grid gap-4 lg:grid-cols-2">
                       <label className="space-y-2">
                         <span className="text-sm font-semibold text-slate-700">Tiêu đề AI đã chọn</span>
-                        <div className="min-h-[78px] rounded-[20px] border border-slate-200 bg-white px-4 py-3">
+                        <div className={`rounded-[20px] border px-4 py-3 transition ${current.aiTitle ? 'border-emerald-200 bg-emerald-50/70' : 'min-h-[78px] border-slate-200 bg-white'}`}>
                           {current.aiTitle ? (
                               <div className="flex items-start justify-between gap-3">
-                                <div>
-                                <p className="text-base font-semibold text-slate-900">{current.aiTitle.display_title_vi || current.aiTitle.title}</p>
-                                <p className="mt-2 text-sm leading-6 text-slate-600">{current.aiTitle.display_description_vi || current.aiTitle.description}</p>
+                                <div className="min-w-0">
+                                <div className="inline-flex rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">Đã chọn</div>
+                                <p className="mt-2 text-base font-semibold leading-7 text-slate-900">{current.aiTitle.display_title_vi || current.aiTitle.title}</p>
+                                <p className="mt-1 text-sm leading-6 text-slate-600">{current.aiTitle.display_description_vi || current.aiTitle.description}</p>
                                 </div>
                                 <button
                                   type="button"
                                   onClick={clearAiTitle}
-                                  className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-500 transition hover:bg-slate-200"
+                                  className="shrink-0 rounded-full bg-white px-2 py-1 text-xs font-semibold text-slate-500 transition hover:bg-slate-100"
                                 >
                                   X
                                 </button>
@@ -1534,17 +1567,18 @@ export default function AdvancedGeneratorWizard() {
                       </div>
                       <label className="mt-4 block space-y-2">
                         <span className="text-sm font-semibold text-slate-700">Tóm tắt AI đã chọn</span>
-                        <div className="min-h-[120px] rounded-[20px] border border-slate-200 bg-white px-4 py-3">
+                        <div className={`rounded-[20px] border px-4 py-3 transition ${current.aiBrief ? 'border-cyan-200 bg-cyan-50/70' : 'min-h-[120px] border-slate-200 bg-white'}`}>
                           {current.aiBrief ? (
                               <div className="flex items-start justify-between gap-3">
-                                <div>
-                                <p className="text-base font-semibold text-slate-900">{current.aiBrief.display_title_vi || current.aiBrief.title}</p>
-                                <p className="mt-2 text-sm leading-7 text-slate-600">{current.aiBrief.display_description_vi || current.aiBrief.description}</p>
+                                <div className="min-w-0">
+                                <div className="inline-flex rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-700">Đã chọn</div>
+                                <p className="mt-2 text-base font-semibold leading-7 text-slate-900">{current.aiBrief.display_title_vi || current.aiBrief.title}</p>
+                                <p className="mt-1 text-sm leading-7 text-slate-600">{current.aiBrief.display_description_vi || current.aiBrief.description}</p>
                                 </div>
                                 <button
                                   type="button"
                                   onClick={clearAiBrief}
-                                  className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-500 transition hover:bg-slate-200"
+                                  className="shrink-0 rounded-full bg-white px-2 py-1 text-xs font-semibold text-slate-500 transition hover:bg-slate-100"
                                 >
                                   X
                                 </button>
@@ -1658,16 +1692,17 @@ export default function AdvancedGeneratorWizard() {
                   )}
                 </div>
 
-                {sourcesReady && (
-                <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-slate-200 bg-slate-50 p-4">
+                {current.done && !finishedAll && (
+                <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-emerald-200 bg-emerald-50 p-4">
                   <div>
-                    <p className="text-sm font-semibold text-slate-900">{current.aiTitle?.display_title_vi || current.aiTitle?.title || current.customTitle || `Chương ${activeIndex + 1}`}</p>
-                    <p className="mt-1 text-sm text-slate-600">
-                      {current.done
-                        ? 'Chương này đã có bản viết trong database. Bạn có thể lưu lại để viết đè nội dung chương nếu vừa chỉnh sửa.'
-                        : 'Khi chương đã sẵn sàng, hệ thống sẽ lưu và viết ngầm chương này vào database.'}
-                    </p>
+                    <p className="text-sm font-semibold text-emerald-900">Chương {activeIndex + 1} đã được viết và lưu vào database.</p>
+                    <p className="mt-1 text-sm text-emerald-800">Bạn có thể chuyển sang chương tiếp theo hoặc chỉnh lại rồi lưu lại chương này nếu cần.</p>
                   </div>
+                </div>
+                )}
+
+                {sourcesReady && !current.done && (
+                <div className="mt-6 flex justify-end">
                   <button
                     type="button"
                     onClick={() => void completeChapter()}
@@ -1682,28 +1717,17 @@ export default function AdvancedGeneratorWizard() {
                       ? 'Đang lưu chương...'
                       : isGeneratingArticle
                         ? 'Đang viết chương...'
-                        : current.done
-                          ? `Lưu lại Chương ${activeIndex + 1}`
-                          : `Hoàn tất Chương ${activeIndex + 1}`}
+                        : `Hoàn tất Chương ${activeIndex + 1}`}
                     <ChevronRight size={16} />
                   </button>
-                </div>
-                )}
-
-                {current.done && !finishedAll && (
-                <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-emerald-200 bg-emerald-50 p-4">
-                  <div>
-                    <p className="text-sm font-semibold text-emerald-900">Chương {activeIndex + 1} đã được viết và lưu vào database.</p>
-                    <p className="mt-1 text-sm text-emerald-800">Bạn có thể chuyển sang chương tiếp theo hoặc chỉnh lại rồi lưu lại chương này nếu cần.</p>
-                  </div>
                 </div>
                 )}
 
                 {finishedAll && (
                 <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-cyan-200 bg-cyan-50 p-4">
                   <div>
-                    <p className="text-sm font-semibold text-cyan-900">Tất cả chương đã được viết ngầm và lưu vào database.</p>
-                    <p className="mt-1 text-sm text-cyan-800">Bước cuối cùng sẽ ráp bài hoàn chỉnh, makeup lại phần trình bày và dọn cache Redis tạm thời.</p>
+                    <p className="text-sm font-semibold text-cyan-900">Tất cả chương đã sẵn sàng.</p>
+                    <p className="mt-1 text-sm text-cyan-800">Bước cuối cùng sẽ ghép các chương thành bài hoàn chỉnh để bạn xem và xuất file.</p>
                   </div>
                   <button
                     type="button"
@@ -1724,14 +1748,14 @@ export default function AdvancedGeneratorWizard() {
             )}
           </main>
 
-          <aside className="h-fit self-start rounded-[28px] border border-slate-200 bg-white/92 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur xl:sticky xl:top-6">
+          <aside className={`self-start rounded-[28px] border border-slate-200 bg-white/92 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur transition-all duration-300 xl:sticky xl:top-5 ${isCompactAiPanel ? 'xl:max-h-[220px]' : 'xl:max-h-[calc(100vh-2.5rem)] xl:overflow-y-auto'}`}>
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-700">Khu gợi ý AI</p>
                 <h2 className="mt-2 text-xl font-semibold text-slate-900">Bảng gợi ý cố định</h2>
               </div>
             </div>
-            <div className="mt-5">
+            <div className={isCompactAiPanel ? 'mt-4' : 'mt-5'}>
               {panelMode === 'count' && !selectedStructure && (
                 <div className="space-y-3">
                   <div className="rounded-[22px] border border-cyan-200 bg-cyan-50 px-4 py-4">
@@ -1771,7 +1795,7 @@ export default function AdvancedGeneratorWizard() {
                 </div>
               )}
               {panelMode === 'hidden' && (
-                <div className="rounded-[22px] border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm leading-6 text-slate-500">
+                <div className="rounded-[22px] border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-500">
                   {selectedStructure
                     ? 'Bố cục đã được chọn. Dùng các nút Gợi ý tiêu đề, Gợi ý tóm tắt, Gợi ý hướng dẫn hoặc Tìm nguồn ở cột trái để nạp lại dữ liệu cho khung này.'
                     : 'Chọn tiêu đề bài và loại nghiên cứu để AI hiển thị các phương án bố cục tại đây.'}
@@ -1782,7 +1806,11 @@ export default function AdvancedGeneratorWizard() {
               {panelMode === 'guide' && <div className="space-y-3">{suggestedGuides.map((item, index) => <button key={item.id} type="button" onClick={() => chooseGuideOption(item)} className="w-full cursor-pointer rounded-[22px] border border-slate-200 bg-slate-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-amber-300 hover:bg-amber-50 hover:shadow-md"><div className="flex items-center justify-between gap-3"><p className="font-semibold text-slate-900">{item.display_title_vi || item.title}</p><span className="whitespace-nowrap rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">Guide {index + 1}</span></div><p className="mt-2 text-sm leading-6 text-slate-600">{item.display_body_vi || item.body}</p></button>)}</div>}
               {panelMode === 'source' && <div className="space-y-3">{suggestedSources.map((item, index) => { const selected = isSourceSelected(item); return <button key={item.id} type="button" onClick={() => toggleSourceSelection(item)} className={`w-full cursor-pointer rounded-[22px] border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${selected ? 'border-violet-400 bg-violet-100 shadow-sm' : 'border-slate-200 bg-slate-50 hover:border-violet-300 hover:bg-violet-50'}`}><div className="flex items-center justify-between gap-3"><p className="break-words font-semibold text-slate-900">{item.display_title_vi || item.title}</p><span className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold ${selected ? 'bg-violet-600 text-white' : 'bg-violet-100 text-violet-700'}`}>{selected ? 'Đã chọn' : `Nguồn ${index + 1}`}</span></div><p className="mt-2 break-words text-sm leading-6 text-slate-600">{item.display_snippet_vi || item.snippet}</p><p className="mt-2 text-sm text-slate-500">{item.display_publication_vi || item.provider} • {item.year}</p><p className="mt-1 break-all text-xs text-violet-700">{item.link}</p></button>; })}</div>}
               {!shouldRenderPanel && panelMode !== 'hidden' && (
-                <div className="min-h-[120px]" />
+                <div className="rounded-[22px] border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-500">
+                  {selectedStructure
+                    ? 'Khung gợi ý đang trống. Hãy dùng các nút gợi ý ở cột trái để nạp nội dung phù hợp cho chương hiện tại.'
+                    : 'Khung gợi ý sẽ hiện nội dung khi bạn bắt đầu chọn bố cục hoặc yêu cầu AI gợi ý.'}
+                </div>
               )}
             </div>
           </aside>
