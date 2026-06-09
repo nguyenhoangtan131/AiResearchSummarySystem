@@ -4,7 +4,6 @@ import { Link, useParams } from 'react-router-dom';
 
 import AdminSidebar from '../features/admin-dashboard/components/AdminSidebar';
 import type { UserTier } from '../features/admin-dashboard/types';
-import AdminArticleInsights from '../features/admin-article-detail/components/AdminArticleInsights';
 import AdminArticleSummary from '../features/admin-article-detail/components/AdminArticleSummary';
 import AdminArticleTimeline from '../features/admin-article-detail/components/AdminArticleTimeline';
 import { useAdminArticleDetail } from '../features/admin-article-detail/hooks/useAdminArticleDetail';
@@ -101,7 +100,7 @@ export default function AdminArticleDetail() {
                   Article execution detail
                 </h1>
                 <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                  Trang nay dang o che do mock UI. Timeline da duoc doi ten de phan anh dung quy trinh nghien cuu cua he thong hien tai.
+                  Trang nay gom usage theo tung nhom buoc, de thay duoc buoc nao ton nhieu token va buoc nao bi goi nhieu lan nhat trong mot bai.
                 </p>
               </div>
 
@@ -130,7 +129,6 @@ export default function AdminArticleDetail() {
             <>
               <AdminArticleSummary articleDetail={articleDetail} />
               <AdminArticleTimeline steps={articleDetail.executionSteps} />
-              <AdminArticleInsights articleDetail={articleDetail} />
             </>
           )}
         </main>

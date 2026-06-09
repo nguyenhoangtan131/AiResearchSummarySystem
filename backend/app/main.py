@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.database import Base  
 from app.core.database import engine
 from app.api import auth
+from app.api import admin
 from app.api import research
 from app.routes import advanced
 Base.metadata.create_all(bind=engine)
@@ -37,4 +38,10 @@ app.include_router(
     advanced.router,
     prefix="/api/advanced",
     tags=["Advanced"]
+)
+
+app.include_router(
+    admin.router,
+    prefix="/api/admin",
+    tags=["Admin"]
 )

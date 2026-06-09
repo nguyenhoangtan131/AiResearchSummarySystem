@@ -24,7 +24,7 @@ export function useAdminDashboard() {
       } catch (loadError) {
         console.error('Không tải được dashboard admin:', loadError);
         if (active) {
-          setError('Chưa tải được dữ liệu dashboard. Khi nối backend, phần này sẽ đọc trực tiếp từ API admin theo ngày.');
+          setError('Chưa tải được dữ liệu dashboard theo ngày. Vui lòng thử lại.');
           setDashboard(null);
         }
       } finally {

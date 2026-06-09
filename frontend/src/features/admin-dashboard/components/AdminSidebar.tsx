@@ -38,7 +38,7 @@ export default function AdminSidebar({ currentUserId, currentArticleId }: Props)
   ];
 
   return (
-    <aside className="hidden w-[272px] shrink-0 flex-col rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm xl:flex">
+    <aside className="sticky top-8 hidden h-[calc(100vh-4rem)] w-[272px] shrink-0 flex-col rounded-[32px] border border-slate-200 bg-white px-5 py-6 shadow-sm xl:flex">
       <div className="border-b border-slate-100 pb-5">
         <p className="text-xs font-semibold uppercase tracking-[0.26em] text-cyan-700">
           API Console
@@ -46,7 +46,7 @@ export default function AdminSidebar({ currentUserId, currentArticleId }: Props)
         <p className="mt-2 text-sm text-slate-500">Admin Monitoring Surface</p>
       </div>
 
-      <nav className="mt-5 space-y-2">
+      <nav className="mt-6 space-y-2">
         {items.map((item) => {
           const Icon = item.icon;
           const isActive = item.isActive;

@@ -20,13 +20,13 @@ export default function AdminUserHeroCard({ userDetail }: Props) {
     {
       label: 'Tong bai viet',
       value: formatNumber(userDetail.totalArticles),
-      hint: `+${userDetail.growthRate}%`,
+      hint: `${formatNumber(userDetail.totalLlmCalls)} calls`,
       progressClassName: 'w-3/4',
     },
     {
       label: 'Tong token',
       value: formatCompactMetric(userDetail.totalTokens),
-      hint: userDetail.tokenLevelLabel,
+      hint: userDetail.tier,
       progressClassName: 'w-1/2',
     },
     {

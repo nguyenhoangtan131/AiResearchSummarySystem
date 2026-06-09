@@ -7,6 +7,10 @@
   --font-serif: "Inter", serif; 
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 @keyframes flash-highlight {
   0% { background-color: transparent; }
   20% { background-color: #dbeafe; }

@@ -10,3 +10,4 @@ class User(Base):
     full_name = Column(String)
     tier = Column(String, nullable=False, default="free", server_default="free")
     articles = relationship("ResearchArticle", back_populates="owner")
+    llm_usages = relationship("LlmUsage", back_populates="owner", cascade="all, delete-orphan")

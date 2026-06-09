@@ -1,5 +1,6 @@
 import json
 import os
+from time import perf_counter
 from uuid import UUID
 
 from google import genai
@@ -19,6 +20,7 @@ from app.prompts.advanced.generation_prompt import (
 )
 from app.redis_store import AdvancedRedisStore
 from app.services.advanced.article_formatter import AdvancedArticleFormatter
+from app.services.llm_usage_service import LlmUsageService, build_gemini_step_metric
 
 
 class AdvancedGenerationService:
@@ -30,7 +32,7 @@ class AdvancedGenerationService:
         self.db = db
         self.user_id = UUID(user_id)
         self.client = genai.Client(api_key=api_key)
-        self.model_name = "gemini-3-flash-preview"
+        self.model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-2.5-flash-lite")
         self.store = AdvancedRedisStore()
         self._generated_cache_available: bool = True
 
@@ -50,6 +52,13 @@ class AdvancedGenerationService:
 
         generated_sections = self._build_generated_section_payloads(article)
         self.store.clear_generated_buffers(str(article.id), article.chapter_count)
+        usage_service = LlmUsageService(self.db)
+        usage = usage_service.get_or_create_usage(
+            user_id=article.user_id,
+            article=article,
+        )
+        usage_service.mark_usage_status(usage, "completed")
+        self.db.commit()
         logger.info(
             "[Advanced] Finalized generated article article_id=%s section_count=%s",
             article.id,
@@ -74,10 +83,12 @@ class AdvancedGenerationService:
             raise ValueError("Chapter is not ready for generation.")
 
         blueprint = blueprint_map.get(chapter.chapter_number)
-        section_payload = self._generate_single_chapter(
+        chapter_context = self.store.get_chapter_context(str(article.id), chapter.chapter_number) or {}
+        section_payload, writing_metric = self._generate_single_chapter(
             article=article,
             chapter=chapter,
             blueprint=blueprint,
+            chapter_context=chapter_context,
         )
 
         chapter.generated_content = section_payload["section_content"]
@@ -90,6 +101,18 @@ class AdvancedGenerationService:
                 "section_title": section_payload["section_title"],
                 "section_content": section_payload["section_content"],
             },
+        )
+
+        usage_service = LlmUsageService(self.db)
+        usage = usage_service.get_or_create_usage(
+            user_id=article.user_id,
+            article=article,
+            session_id=chapter_context.get("session_id") if isinstance(chapter_context, dict) else None,
+        )
+        usage_service.upsert_chapter_detail(
+            usage=usage,
+            chapter=chapter,
+            writing_metric=writing_metric,
         )
 
         self.db.commit()
@@ -226,11 +249,14 @@ class AdvancedGenerationService:
         article: ResearchArticle,
         chapter: ArticleChapter,
         blueprint: ArticleBlueprint | None,
-    ) -> dict[str, str]:
-        chapter_context = self.store.get_chapter_context(str(article.id), chapter.chapter_number) or {}
-        context_brief = str(chapter_context.get("chapter_brief") or "").strip() or (chapter.chapter_brief or "").strip()
+        chapter_context: dict[str, object],
+    ) -> tuple[dict[str, str], object]:
+        final_title = str(chapter_context.get("chapter_title_final") or chapter.chapter_title or "").strip()
+        final_brief = str(chapter_context.get("chapter_brief_final") or chapter.chapter_brief or "").strip()
+        if not final_title or not final_brief:
+            raise ValueError("He thong tao sinh dang co van de. Du lieu chuong chua duoc chot day du.")
 
-        guide_notes = chapter_context.get("guide_notes")
+        guide_notes = chapter_context.get("guide_notes_final") or chapter_context.get("guide_notes")
         if isinstance(guide_notes, list) and guide_notes:
             guide_block = "\n".join(
                 f"- {str(guide).strip()}" for guide in guide_notes if str(guide).strip()
@@ -267,22 +293,25 @@ class AdvancedGenerationService:
                 )
                 for source in sorted(chapter.sources, key=lambda item: item.sort_order)
             )
+        if not source_block.strip():
+            raise ValueError("He thong tao sinh dang co van de. Chua co nguon tai lieu hop le cho chuong nay.")
 
         prompt = ADVANCED_GENERATION_USER_PROMPT.format(
             article_title=article.title,
             report_type=article.report_type or "Báo cáo học thuật",
             chapter_number=chapter.chapter_number,
-            blueprint_title=blueprint.title if blueprint and blueprint.title else chapter.chapter_title or "",
+            blueprint_title=blueprint.title if blueprint and blueprint.title else final_title,
             blueprint_purpose=blueprint.purpose if blueprint and blueprint.purpose else "",
-            blueprint_start_focus=blueprint.start_focus if blueprint and blueprint.start_focus else "Mở chương theo đúng trọng tâm.",
-            blueprint_end_focus=blueprint.end_focus if blueprint and blueprint.end_focus else "Kết chương mạch lạc để nối sang chương sau.",
-            chapter_title=chapter.chapter_title or "",
+            blueprint_start_focus=blueprint.start_focus if blueprint and blueprint.start_focus else "",
+            blueprint_end_focus=blueprint.end_focus if blueprint and blueprint.end_focus else "",
+            chapter_title=final_title,
             chapter_title_description=chapter.chapter_title_description or "",
-            chapter_brief=context_brief or (blueprint.purpose if blueprint and blueprint.purpose else ""),
+            chapter_brief=final_brief,
             guide_block=guide_block,
             source_block=source_block,
         )
 
+        started_at = perf_counter()
         raw_response = self.client.models.generate_content(
             model=self.model_name,
             config=types.GenerateContentConfig(
@@ -297,10 +326,19 @@ class AdvancedGenerationService:
             payload.get("section_title") or chapter.chapter_title or f"Chương {chapter.chapter_number}"
         )
         section_content = AdvancedArticleFormatter.normalize_section_content(payload.get("section_content") or "")
-        return {
-            "section_title": section_title,
-            "section_content": section_content,
-        }
+        metric = build_gemini_step_metric(
+            label="Sinh noi dung chuong",
+            model_name=self.model_name,
+            response=raw_response,
+            started_at=started_at,
+        )
+        return (
+            {
+                "section_title": section_title,
+                "section_content": section_content,
+            },
+            metric,
+        )
 
     def _extract_json_text(self, raw_text: str) -> str:
         cleaned = raw_text.replace("```json", "").replace("```", "").strip()

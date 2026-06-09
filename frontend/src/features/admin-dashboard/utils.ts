@@ -1,4 +1,4 @@
-import type { AdminUsageLog } from './types';
+import type { AdminDashboardUser } from './types';
 
 export const ADMIN_DASHBOARD_PAGE_SIZE = 6;
 
@@ -52,25 +52,25 @@ export const formatUsd = (value: number) =>
     maximumFractionDigits: 3,
   }).format(value);
 
-export const buildCsvContent = (logs: AdminUsageLog[]) => {
+export const buildCsvContent = (users: AdminDashboardUser[]) => {
   const header = [
-    'created_at',
     'user_id',
-    'model_name',
-    'input_tokens',
-    'output_tokens',
+    'full_name',
+    'email',
+    'article_count',
+    'llm_calls',
     'total_tokens',
-    'estimated_cost',
+    'estimated_cost_usd',
   ];
 
-  const rows = logs.map((log) => [
-    log.createdAt,
-    log.userId,
-    log.modelName,
-    log.inputTokens,
-    log.outputTokens,
-    log.totalTokens,
-    log.estimatedCost,
+  const rows = users.map((user) => [
+    user.userId,
+    user.fullName,
+    user.email,
+    user.articleCount,
+    user.llmCalls,
+    user.totalTokens,
+    user.estimatedCostUsd,
   ]);
 
   return [header, ...rows]

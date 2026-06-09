@@ -18,8 +18,5 @@ export type AdminUserDetail = {
   totalTokens: number;
   totalEstimatedCost: number;
   totalLlmCalls: number;
-  growthRate: number;
-  tokenLevelLabel: string;
-  avatarImageUrl: string;
   articles: AdminUserArticleSummary[];
 };

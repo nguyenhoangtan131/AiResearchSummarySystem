@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const apiInstance = axios.create({ 
-  baseURL: 'http://localhost:8000/api',
+  baseURL: 'http://localhost:8001/api',
   withCredentials: true
 });
 
@@ -31,6 +31,8 @@ export const advancedApi = {
     }),
   getCachedStructure: (sessionId: string) =>
     apiInstance.get(`/advanced/structure/cache/${sessionId}`),
+  getManualOverrideCache: (sessionId: string) =>
+    apiInstance.get(`/advanced/chapter/override/cache/${sessionId}`),
   getCachedChapterStep: (
     sessionId: string,
     chapterNumber: number,
@@ -139,4 +141,23 @@ export const advancedApi = {
       sort_order?: number;
     }>;
   }) => apiInstance.post('/advanced/chapter/confirm', payload),
+  syncChapterOverride: (payload: {
+    session_id: string;
+    chapter_number: number;
+    block: 'title' | 'brief' | 'guide' | 'blueprint';
+    mode?: 'ai' | 'manual';
+    article_id?: string;
+    data: Record<string, unknown>;
+  }) => apiInstance.post('/advanced/chapter/override/sync', payload),
+};
+
+export const adminApi = {
+  getDashboard: (selectedDate: string) =>
+    apiInstance.get('/admin/dashboard', {
+      params: { date: selectedDate },
+    }),
+  getUserDetail: (userId: string) =>
+    apiInstance.get(`/admin/users/${userId}`),
+  getArticleDetail: (articleId: string) =>
+    apiInstance.get(`/admin/articles/${articleId}`),
 };

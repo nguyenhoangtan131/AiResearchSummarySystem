@@ -7,21 +7,20 @@ export type AdminOverview = {
   totalEstimatedCost: number;
 };
 
-export type AdminUsageLog = {
-  id: string;
-  createdAt: string;
+export type AdminDashboardUser = {
   userId: string;
-  modelName: string;
-  inputTokens: number;
-  outputTokens: number;
+  fullName: string;
+  email: string;
+  articleCount: number;
+  llmCalls: number;
   totalTokens: number;
-  estimatedCost: number;
+  estimatedCostUsd: number;
 };
 
 export type AdminDashboardResponse = {
   selectedDate: string;
   overview: AdminOverview;
-  logs: AdminUsageLog[];
+  users: AdminDashboardUser[];
   totalRecords: number;
   page: number;
   pageSize: number;

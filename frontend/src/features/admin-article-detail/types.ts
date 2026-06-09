@@ -1,15 +1,13 @@
 export type AdminArticleExecutionStep = {
-  stepNumber: number;
+  stepKey: string;
   title: string;
-  stageType: string;
+  callCount: number;
   modelName: string;
   inputTokens: number;
   outputTokens: number;
   totalTokens: number;
   estimatedCost: number;
-  latencySeconds: number;
-  status: 'completed' | 'cached' | 'generated';
-  note: string;
+  averageLatencySeconds: number;
 };
 
 export type AdminArticleDetail = {
@@ -18,10 +16,7 @@ export type AdminArticleDetail = {
   status: 'Completed' | 'In Progress' | 'Draft';
   totalTokens: number;
   totalEstimatedCost: number;
-  averageLatencySeconds: number;
+  totalLlmCalls: number;
   modelLabels: string[];
-  tokenDeltaPercent: number;
-  costDeltaPercent: number;
-  latencyDeltaSeconds: number;
   executionSteps: AdminArticleExecutionStep[];
 };

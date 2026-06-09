@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -242,6 +242,61 @@ class ConfirmChapterResponse(BaseModel):
     cached_session_id: str
     chapter: ArticleChapterRead
     persisted_at: datetime
+
+
+class BlueprintOverridePayload(BaseModel):
+    working_title: str = Field(..., min_length=1, max_length=300)
+    purpose: str = Field(..., min_length=1)
+    start_focus: str = Field(..., min_length=1)
+    end_focus: str = Field(..., min_length=1)
+
+
+class TitleOverridePayload(BaseModel):
+    final_title: str = Field(..., min_length=1, max_length=300)
+    final_description: Optional[str] = None
+    reason: Optional[str] = None
+    edited_from_ai: bool = False
+
+
+class BriefOverridePayload(BaseModel):
+    final_title: str = Field(..., min_length=1, max_length=300)
+    final_description: str = Field(..., min_length=1)
+    reason: Optional[str] = None
+    edited_from_ai: bool = False
+
+
+class GuideOverrideItem(BaseModel):
+    id: str = Field(..., min_length=1, max_length=80)
+    title: str = Field(..., min_length=1, max_length=300)
+    body: str = Field(..., min_length=1)
+    is_manual: bool = False
+
+
+class GuideOverridePayload(BaseModel):
+    selected_ai_guides: List[GuideOverrideItem] = Field(default_factory=list)
+    manual_guides: List[GuideOverrideItem] = Field(default_factory=list)
+
+
+class ChapterOverrideSyncRequest(BaseModel):
+    session_id: str = Field(..., min_length=1, max_length=120)
+    chapter_number: int = Field(..., ge=1, le=12)
+    block: Literal["title", "brief", "guide", "blueprint"]
+    mode: Optional[Literal["ai", "manual"]] = None
+    article_id: Optional[UUID] = None
+    data: Dict[str, Any] = Field(default_factory=dict)
+
+
+class ChapterOverrideSyncResponse(BaseModel):
+    session_id: str
+    chapter_number: int
+    block: str
+    saved: bool
+
+
+class ManualOverridesCacheResponse(BaseModel):
+    found: bool
+    session_id: str
+    data: Dict[str, Any] = Field(default_factory=dict)
 
 
 class AdvancedArticleRead(BaseModel):

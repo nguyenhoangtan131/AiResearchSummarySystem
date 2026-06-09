@@ -29,6 +29,8 @@ type StructureBlueprintItem = {
   end_focus: string;
   display_working_title_vi?: string;
   display_purpose_vi?: string;
+  display_start_focus_vi?: string;
+  display_end_focus_vi?: string;
 };
 type StructureOption = {
   option_id: string;
@@ -56,12 +58,17 @@ type CachedChapterStepResponse = {
 };
 type Chapter = {
   id: string;
+  titleMode: 'ai' | 'manual';
+  briefMode: 'ai' | 'manual';
   aiTitle: TitleOption | null;
   customTitle: string;
+  manualTitleReason: string;
   aiBrief: BriefOption | null;
   customBrief: string;
+  manualBriefReason: string;
   selectedGuides: GuideOption[];
   customGuide: string;
+  manualGuides: GuideOption[];
   sources: SourceItem[];
   done: boolean;
 };
@@ -139,7 +146,22 @@ const aiCountSummary: Record<string, string> = {
   'Tiểu luận học thuật': 'AI đề xuất một bố cục lập luận gọn với ít nhịp chuyển hơn.',
 };
 
-const makeChapter = (n: number): Chapter => ({ id: `chapter-${n}`, aiTitle: null, customTitle: '', aiBrief: null, customBrief: '', selectedGuides: [], customGuide: '', sources: [], done: false });
+const makeChapter = (n: number): Chapter => ({
+  id: `chapter-${n}`,
+  titleMode: 'ai',
+  briefMode: 'ai',
+  aiTitle: null,
+  customTitle: '',
+  manualTitleReason: '',
+  aiBrief: null,
+  customBrief: '',
+  manualBriefReason: '',
+  selectedGuides: [],
+  customGuide: '',
+  manualGuides: [],
+  sources: [],
+  done: false,
+});
 const pill = (active: boolean, done: boolean) => done ? 'bg-emerald-500 text-white' : active ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-500';
 const ADVANCED_ARTICLE_STORAGE_KEY = 'advanced-article-id';
 const ADVANCED_SESSION_STORAGE_KEY = 'advanced-session-id';
@@ -181,6 +203,18 @@ const dedupeByVietnameseTitle = <T extends { title: string; display_title_vi?: s
     return true;
   });
 };
+
+function getFinalChapterTitleValue(chapter: Chapter | undefined) {
+  return chapter?.titleMode === 'manual'
+    ? chapter.customTitle.trim()
+    : chapter?.aiTitle?.display_title_vi || chapter?.aiTitle?.title || '';
+}
+
+function getFinalChapterBriefValue(chapter: Chapter | undefined) {
+  return chapter?.briefMode === 'manual'
+    ? chapter.customBrief.trim()
+    : chapter?.aiBrief?.display_description_vi || chapter?.aiBrief?.description || '';
+}
 
 const detectBlueprintRole = (blueprint?: StructureBlueprintItem) => {
   const text = normalizeStructureText(
@@ -361,6 +395,14 @@ export default function AdvancedGeneratorWizard() {
   const [sourceRecommendations, setSourceRecommendations] = useState<SourceRecommendationOption[]>([]);
   const [sourceQuery, setSourceQuery] = useState('');
   const [sourceQueryCandidates, setSourceQueryCandidates] = useState<string[]>([]);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [editingTitleDraft, setEditingTitleDraft] = useState<TitleOption | null>(null);
+  const [editingBrief, setEditingBrief] = useState(false);
+  const [editingBriefDraft, setEditingBriefDraft] = useState<BriefOption | null>(null);
+  const [editingGuideId, setEditingGuideId] = useState<string | null>(null);
+  const [editingGuideDraft, setEditingGuideDraft] = useState<GuideOption | null>(null);
+  const [editingBlueprintChapter, setEditingBlueprintChapter] = useState<number | null>(null);
+  const [blueprintDraft, setBlueprintDraft] = useState<StructureBlueprintItem | null>(null);
   const [isLoadingTitleOptions, setIsLoadingTitleOptions] = useState(false);
   const [isLoadingBriefOptions, setIsLoadingBriefOptions] = useState(false);
   const [isLoadingGuideOptions, setIsLoadingGuideOptions] = useState(false);
@@ -413,8 +455,8 @@ export default function AdvancedGeneratorWizard() {
     () => reportTypes.find((item) => item.value === reportType)?.label || reportType,
     [reportType],
   );
-  const titleReady = Boolean(current?.aiTitle?.title || current?.customTitle?.trim());
-  const briefReady = Boolean(current?.aiBrief?.description || current?.customBrief?.trim());
+  const titleReady = Boolean(getFinalChapterTitleValue(current));
+  const briefReady = Boolean(getFinalChapterBriefValue(current));
   const sourcesReady = Boolean((current?.sources.length || 0) > 0);
   const chapterNumber = activeIndex + 1;
   const shouldRenderPanel =
@@ -539,95 +581,74 @@ export default function AdvancedGeneratorWizard() {
     let isMounted = true;
     void advancedApi
       .getArticle(savedArticleId)
-      .then(({ data }) => {
+      .then(async ({ data }) => {
         if (!isMounted) {
           return;
         }
-
         setArticleId(data.article_id);
-        setArticleTitle(data.title);
-        setReportType(data.report_type);
-        setChapterCount(data.chapter_count);
-
-        const restoredBlueprint = data.blueprints.map((blueprint: {
-          chapter_number: number;
-          title?: string;
-          purpose?: string;
-          start_focus?: string;
-          end_focus?: string;
-        }) => ({
-          chapter_number: blueprint.chapter_number,
-          working_title: blueprint.title || `Chapter ${blueprint.chapter_number}`,
-          purpose: blueprint.purpose || 'No blueprint purpose saved yet.',
-          start_focus: blueprint.start_focus || 'No start focus saved yet.',
-          end_focus: blueprint.end_focus || 'No end focus saved yet.',
-          display_working_title_vi: blueprint.title || `Chapter ${blueprint.chapter_number}`,
-          display_purpose_vi: blueprint.purpose || 'No blueprint purpose saved yet.',
-        }));
-
-        setSelectedStructure({
-          option_id: 'persisted-structure',
-          chapter_count: data.chapter_count,
-          rationale: 'Restored from saved blueprint.',
-          display_rationale_vi: 'Đã khôi phục từ bố cục đã lưu.',
-          blueprint: restoredBlueprint,
-        });
-
-        setChapters(
-          data.chapters.map((chapter: {
-            id: string;
-            chapter_number: number;
-            chapter_title?: string;
-            chapter_title_description?: string;
-            chapter_brief?: string;
-            guides?: Array<{ id: string; content: string }>;
-            sources?: Array<{ id: string; title: string; snippet?: string; provider?: string; url?: string; year?: number; publication?: string; citation_count?: number }>;
-          }) => ({
-            id: chapter.id,
-            aiTitle: chapter.chapter_title
-              ? {
-                  title: chapter.chapter_title,
-                  description: chapter.chapter_title_description || '',
-                  display_title_vi: chapter.chapter_title,
-                  display_description_vi: chapter.chapter_title_description || '',
+        await hydrateArticleFromBackend(data.article_id);
+        if (savedSessionId) {
+          const overrideResponse = await advancedApi.getManualOverrideCache(savedSessionId);
+          const overrideData = overrideResponse.data?.data?.chapters || {};
+          if (isMounted && overrideData && typeof overrideData === 'object') {
+            setChapters((list) =>
+              list.map((chapter, index) => {
+                const entry = overrideData[String(index + 1)] as Record<string, any> | undefined;
+                if (!entry) {
+                  return chapter;
                 }
-              : null,
-            customTitle: '',
-            aiBrief: chapter.chapter_brief
-              ? {
-                  title: 'Saved summary',
-                  description: chapter.chapter_brief,
-                  display_title_vi: 'Tóm tắt đã lưu',
-                  display_description_vi: chapter.chapter_brief,
-                }
-              : null,
-            customBrief: '',
-            selectedGuides:
-              chapter.guides?.map((guide, index) => ({
-                id: guide.id || `guide-${chapter.chapter_number}-${index + 1}`,
-                title: 'Saved guide',
-                body: guide.content,
-                display_title_vi: 'Hướng dẫn đã lưu',
-                display_body_vi: guide.content,
-              })) || [],
-            customGuide: '',
-            sources:
-              chapter.sources?.map((source) => ({
-                id: source.id,
-                title: source.title,
-                snippet: source.snippet || '',
-                provider: source.provider || 'Google Scholar',
-                link: source.url || '',
-                year: source.year ? String(source.year) : '',
-                publication: source.publication || '',
-                citationCount: source.citation_count || 0,
-                display_title_vi: source.title,
-                display_snippet_vi: source.snippet || '',
-                display_publication_vi: source.publication || '',
-              })) || [],
-            done: Boolean(chapter.generated_content?.trim()),
-          })),
-        );
+                const titleOverride = entry.title as Record<string, any> | undefined;
+                const briefOverride = entry.brief as Record<string, any> | undefined;
+                const guideOverride = entry.guide as Record<string, any> | undefined;
+                return {
+                  ...chapter,
+                  titleMode: titleOverride?.mode === 'manual' ? 'manual' : chapter.titleMode,
+                  customTitle: titleOverride?.mode === 'manual' ? String(titleOverride.final_title || '') : chapter.customTitle,
+                  manualTitleReason: titleOverride?.mode === 'manual' ? String(titleOverride.reason || '') : chapter.manualTitleReason,
+                  aiTitle:
+                    titleOverride?.mode === 'ai' && titleOverride.final_title
+                      ? {
+                          title: String(titleOverride.final_title || ''),
+                          description: String(titleOverride.final_description || ''),
+                          display_title_vi: String(titleOverride.final_title || ''),
+                          display_description_vi: String(titleOverride.final_description || ''),
+                        }
+                      : (titleOverride?.mode === 'manual' ? null : chapter.aiTitle),
+                  briefMode: briefOverride?.mode === 'manual' ? 'manual' : chapter.briefMode,
+                  customBrief: briefOverride?.mode === 'manual' ? String(briefOverride.final_description || '') : chapter.customBrief,
+                  manualBriefReason: briefOverride?.mode === 'manual' ? String(briefOverride.reason || '') : chapter.manualBriefReason,
+                  aiBrief:
+                    briefOverride?.mode === 'ai' && briefOverride.final_description
+                      ? {
+                          title: String(briefOverride.final_title || 'Tóm tắt đã sửa'),
+                          description: String(briefOverride.final_description || ''),
+                          display_title_vi: String(briefOverride.final_title || 'Tóm tắt đã sửa'),
+                          display_description_vi: String(briefOverride.final_description || ''),
+                        }
+                      : (briefOverride?.mode === 'manual' ? null : chapter.aiBrief),
+                  selectedGuides: Array.isArray(guideOverride?.selected_ai_guides)
+                    ? guideOverride.selected_ai_guides.map((guide: Record<string, any>) => ({
+                      id: String(guide.id || crypto.randomUUID()),
+                      title: String(guide.title || ''),
+                      body: String(guide.body || ''),
+                      display_title_vi: String(guide.title || ''),
+                      display_body_vi: String(guide.body || ''),
+                    }))
+                    : chapter.selectedGuides,
+                  manualGuides: Array.isArray(guideOverride?.manual_guides)
+                    ? guideOverride.manual_guides.map((guide: Record<string, any>) => ({
+                      id: String(guide.id || crypto.randomUUID()),
+                      title: String(guide.title || 'Hướng dẫn thủ công'),
+                      body: String(guide.body || ''),
+                      display_title_vi: String(guide.title || 'Hướng dẫn thủ công'),
+                      display_body_vi: String(guide.body || ''),
+                    }))
+                    : chapter.manualGuides,
+                };
+              }),
+            );
+          }
+        }
 
         const firstPendingIndex = data.chapters.findIndex((chapter: { generated_content?: string }) => {
           return !Boolean(chapter.generated_content?.trim());
@@ -668,6 +689,7 @@ export default function AdvancedGeneratorWizard() {
       });
       setArticleId(data.article_id);
       window.localStorage.setItem(ADVANCED_ARTICLE_STORAGE_KEY, data.article_id);
+      await hydrateArticleFromBackend(data.article_id);
     } catch (error) {
       setChapterActionError('The selected blueprint could not be saved to the backend yet. You can still review the UI, but chapter persistence will fail until structure saving works.');
     }
@@ -766,6 +788,121 @@ export default function AdvancedGeneratorWizard() {
     setChapters((list) => list.map((item, i) => i === activeIndex ? { ...item, [field]: value } : item));
   };
 
+  const syncChapterOverride = async (
+    block: 'title' | 'brief' | 'guide' | 'blueprint',
+    data: Record<string, unknown>,
+    mode?: 'ai' | 'manual',
+    targetChapterNumber?: number,
+  ) => {
+    if (!structureSessionId) {
+      return;
+    }
+
+    await advancedApi.syncChapterOverride({
+      session_id: structureSessionId,
+      chapter_number: targetChapterNumber || chapterNumber,
+      block,
+      mode,
+      article_id: articleId || undefined,
+      data,
+    });
+  };
+
+  const mapPersistedChapter = (chapter: {
+    id: string;
+    chapter_number: number;
+    chapter_title?: string;
+    chapter_title_description?: string;
+    chapter_brief?: string;
+    guides?: Array<{ id: string; content: string }>;
+    sources?: Array<{ id: string; title: string; snippet?: string; provider?: string; url?: string; year?: number; publication?: string; citation_count?: number }>;
+    generated_content?: string;
+  }): Chapter => ({
+    id: chapter.id,
+    titleMode: 'ai',
+    briefMode: 'ai',
+    aiTitle: chapter.chapter_title
+      ? {
+          title: chapter.chapter_title,
+          description: chapter.chapter_title_description || '',
+          display_title_vi: chapter.chapter_title,
+          display_description_vi: chapter.chapter_title_description || '',
+        }
+      : null,
+    customTitle: '',
+    manualTitleReason: '',
+    aiBrief: chapter.chapter_brief
+      ? {
+          title: 'Saved summary',
+          description: chapter.chapter_brief,
+          display_title_vi: 'Tóm tắt đã lưu',
+          display_description_vi: chapter.chapter_brief,
+        }
+      : null,
+    customBrief: '',
+    manualBriefReason: '',
+    selectedGuides:
+      chapter.guides?.map((guide, index) => ({
+        id: guide.id || `guide-${chapter.chapter_number}-${index + 1}`,
+        title: 'Saved guide',
+        body: guide.content,
+        display_title_vi: 'Hướng dẫn đã lưu',
+        display_body_vi: guide.content,
+      })) || [],
+    customGuide: '',
+    manualGuides: [],
+    sources:
+      chapter.sources?.map((source) => ({
+        id: source.id,
+        title: source.title,
+        snippet: source.snippet || '',
+        provider: source.provider || 'Google Scholar',
+        link: source.url || '',
+        year: source.year ? String(source.year) : '',
+        publication: source.publication || '',
+        citationCount: source.citation_count || 0,
+        display_title_vi: source.title,
+        display_snippet_vi: source.snippet || '',
+        display_publication_vi: source.publication || '',
+      })) || [],
+    done: Boolean(chapter.generated_content?.trim()),
+  });
+
+  const hydrateArticleFromBackend = async (nextArticleId: string) => {
+    const { data } = await advancedApi.getArticle(nextArticleId);
+
+    setArticleId(data.article_id);
+    setArticleTitle(data.title);
+    setReportType(data.report_type);
+    setChapterCount(data.chapter_count);
+    setSelectedStructure({
+      option_id: 'persisted-structure',
+      chapter_count: data.chapter_count,
+      rationale: 'Đã khôi phục từ bố cục đã lưu.',
+      display_rationale_vi: 'Đã khôi phục từ bố cục đã lưu.',
+      blueprint: data.blueprints.map((blueprint: {
+        chapter_number: number;
+        title?: string;
+        purpose?: string;
+        start_focus?: string;
+        end_focus?: string;
+      }) => ({
+        chapter_number: blueprint.chapter_number,
+        working_title: blueprint.title || `Chapter ${blueprint.chapter_number}`,
+        purpose: blueprint.purpose || '',
+        start_focus: blueprint.start_focus || '',
+        end_focus: blueprint.end_focus || '',
+        display_working_title_vi: blueprint.title || `Chapter ${blueprint.chapter_number}`,
+        display_purpose_vi: blueprint.purpose || '',
+        display_start_focus_vi: blueprint.start_focus || '',
+        display_end_focus_vi: blueprint.end_focus || '',
+      })),
+    });
+    setChapters(data.chapters.map(mapPersistedChapter));
+    window.localStorage.setItem(ADVANCED_ARTICLE_STORAGE_KEY, data.article_id);
+    return data;
+  };
+
   const openRecommendationPanel = (mode: Exclude<PanelMode, 'hidden' | 'count'>) => {
     setPanelMode(mode);
     setChapterActionError('');
@@ -845,23 +982,16 @@ export default function AdvancedGeneratorWizard() {
       const effectiveSessionId = structureSessionId || `persisted-${persistedArticleId}`;
       const effectiveOptionId = selectedStructure.option_id || 'persisted-structure';
 
-      const chapterTitle =
-        current?.customTitle.trim() ||
-        current?.aiTitle?.display_title_vi ||
-        current?.aiTitle?.title ||
-        '';
+      const chapterTitle = getFinalChapterTitleValue(current);
       const chapterTitleDescription =
         current?.aiTitle?.display_description_vi ||
         current?.aiTitle?.description ||
         selectedStructure.blueprint[activeIndex]?.display_purpose_vi ||
         selectedStructure.blueprint[activeIndex]?.purpose ||
         '';
-      const chapterBrief =
-        current?.customBrief.trim() ||
-        current?.aiBrief?.display_description_vi ||
-        current?.aiBrief?.description ||
-        '';
-      const guidePayload = (current?.selectedGuides || []).map((guide, index) => ({
+      const chapterBrief = getFinalChapterBriefValue(current);
+      const allGuides = [...(current?.selectedGuides || []), ...(current?.manualGuides || [])];
+      const guidePayload = allGuides.map((guide, index) => ({
           content: guide.display_body_vi || guide.body,
           sort_order: index + 1,
         }));
@@ -884,13 +1014,13 @@ export default function AdvancedGeneratorWizard() {
           article_id: persistedArticleId,
           session_id: effectiveSessionId,
           selected_option_id: effectiveOptionId,
-          manual_title: current?.customTitle.trim() || undefined,
+          manual_title: current?.titleMode === 'manual' ? current?.customTitle.trim() || undefined : undefined,
           ai_title: current?.aiTitle?.display_title_vi || current?.aiTitle?.title || undefined,
           ai_title_description: chapterTitleDescription || undefined,
-          manual_brief: current?.customBrief.trim() || undefined,
+          manual_brief: current?.briefMode === 'manual' ? current?.customBrief.trim() || undefined : undefined,
           ai_brief: current?.aiBrief?.display_description_vi || current?.aiBrief?.description || undefined,
           ai_brief_description: current?.aiBrief?.display_title_vi || current?.aiBrief?.title || undefined,
-          manual_guide: current?.customGuide || undefined,
+          manual_guide: undefined,
           selected_guides: guidePayload,
           selected_sources: sourcePayload,
         });
@@ -906,7 +1036,7 @@ export default function AdvancedGeneratorWizard() {
           chapter_title: chapterTitle || undefined,
           chapter_title_description: chapterTitleDescription || undefined,
           chapter_brief: chapterBrief || undefined,
-          manual_guide: current?.customGuide || undefined,
+          manual_guide: undefined,
           selected_guides: guidePayload,
           selected_sources: sourcePayload,
         });
@@ -917,6 +1047,7 @@ export default function AdvancedGeneratorWizard() {
 
       setIsGeneratingArticle(true);
       await advancedApi.generateChapter(savedArticleId, chapterNumber);
+      await hydrateArticleFromBackend(savedArticleId);
     } catch (error) {
       setChapterActionError(getErrorMessage(error, `Chương ${chapterNumber} chưa được lưu vào backend. Hãy thử lại.`));
       setIsSavingChapter(false);
@@ -962,7 +1093,7 @@ export default function AdvancedGeneratorWizard() {
   };
 
   const chooseTitleOption = (value: TitleOption) => {
-    updateCurrent('aiTitle', value as never);
+    setChapters((list) => list.map((item, i) => i === activeIndex ? { ...item, titleMode: 'ai', aiTitle: value, customTitle: '', manualTitleReason: '' } : item));
     setChapterActionError('');
     setBriefRecommendations([]);
     updateCurrent('aiBrief', null);
@@ -988,7 +1119,7 @@ export default function AdvancedGeneratorWizard() {
   };
 
   const chooseBriefOption = (value: BriefOption) => {
-    updateCurrent('aiBrief', value);
+    setChapters((list) => list.map((item, i) => i === activeIndex ? { ...item, briefMode: 'ai', aiBrief: value, customBrief: '', manualBriefReason: '' } : item));
     setChapterActionError('');
     setGuideRecommendations([]);
     setSourceRecommendations([]);
@@ -1020,6 +1151,83 @@ export default function AdvancedGeneratorWizard() {
           : item
       )
     );
+  };
+
+  const addManualTitle = async () => {
+    const finalTitle = current?.customTitle.trim() || '';
+    const reason = current?.manualTitleReason.trim() || '';
+    if (!finalTitle || !reason || !window.confirm('Khi bạn tự nhập tiêu đề, hệ thống sẽ không dùng tiêu đề AI đã sinh nữa.')) {
+      return;
+    }
+    setChapters((list) =>
+      list.map((item, i) =>
+        i === activeIndex
+          ? { ...item, titleMode: 'manual', aiTitle: null }
+          : item,
+      ),
+    );
+    await syncChapterOverride('title', {
+      final_title: finalTitle,
+      final_description: '',
+      reason,
+      edited_from_ai: false,
+    }, 'manual');
+  };
+
+  const addManualBrief = async () => {
+    const finalBrief = current?.customBrief.trim() || '';
+    const reason = current?.manualBriefReason.trim() || '';
+    if (!finalBrief || !reason || !window.confirm('Khi bạn tự nhập tóm tắt, hệ thống sẽ không dùng tóm tắt AI đã sinh nữa.')) {
+      return;
+    }
+    setChapters((list) =>
+      list.map((item, i) =>
+        i === activeIndex
+          ? { ...item, briefMode: 'manual', aiBrief: null }
+          : item,
+      ),
+    );
+    await syncChapterOverride('brief', {
+      final_title: 'Tóm tắt thủ công',
+      final_description: finalBrief,
+      reason,
+      edited_from_ai: false,
+    }, 'manual');
+  };
+
+  const addManualGuide = async () => {
+    const body = current?.customGuide.trim() || '';
+    if (!body) {
+      return;
+    }
+    const manualGuide: GuideOption = {
+      id: crypto.randomUUID(),
+      title: 'Hướng dẫn thủ công',
+      body,
+      display_title_vi: 'Hướng dẫn thủ công',
+      display_body_vi: body,
+    };
+    setChapters((list) =>
+      list.map((item, i) =>
+        i === activeIndex
+          ? { ...item, manualGuides: [...item.manualGuides, manualGuide], customGuide: '' }
+          : item,
+      ),
+    );
+    await syncChapterOverride('guide', {
+      selected_ai_guides: (current?.selectedGuides || []).map((guide) => ({
+        id: guide.id,
+        title: guide.display_title_vi || guide.title,
+        body: guide.display_body_vi || guide.body,
+        is_manual: false,
+      })),
+      manual_guides: [...(current?.manualGuides || []), manualGuide].map((guide) => ({
+        id: guide.id,
+        title: guide.display_title_vi || guide.title,
+        body: guide.display_body_vi || guide.body,
+        is_manual: true,
+      })),
+    }, 'ai');
   };
 
   const handleRecommendTitles = async () => {
@@ -1085,7 +1293,7 @@ export default function AdvancedGeneratorWizard() {
       return;
     }
 
-    const chapterTitle = current.aiTitle?.title || current.customTitle.trim();
+    const chapterTitle = getFinalChapterTitleValue(current);
     const chapterTitleDescription =
       current.aiTitle?.description || selectedStructure.blueprint[activeIndex]?.purpose || '';
 
@@ -1155,8 +1363,8 @@ export default function AdvancedGeneratorWizard() {
       return;
     }
 
-    const chapterTitle = current.aiTitle?.title || current.customTitle.trim();
-    const chapterBrief = current.aiBrief?.description || current.customBrief.trim();
+    const chapterTitle = getFinalChapterTitleValue(current);
+    const chapterBrief = getFinalChapterBriefValue(current);
 
     if (!chapterTitle || !chapterBrief) {
       setChapterActionError('Hãy chọn tiêu đề chương và tóm tắt trước khi yêu cầu AI gợi ý hướng dẫn.');
@@ -1220,8 +1428,8 @@ export default function AdvancedGeneratorWizard() {
       return;
     }
 
-    const chapterTitle = current.aiTitle?.title || current.customTitle.trim();
-    const chapterBrief = current.aiBrief?.description || current.customBrief.trim();
+    const chapterTitle = getFinalChapterTitleValue(current);
+    const chapterBrief = getFinalChapterBriefValue(current);
 
     if (!chapterTitle || !chapterBrief) {
       setChapterActionError('Hãy chọn tiêu đề chương và tóm tắt trước khi yêu cầu AI tìm nguồn.');
@@ -1240,9 +1448,9 @@ export default function AdvancedGeneratorWizard() {
         setChapterActionError('Không thể tải gợi ý nguồn lúc này. Hãy thử lại sau.');
         return;
       }
-      const guideNotes = current.selectedGuides.map((guide) => guide.body).concat(
-        current.customGuide.trim() ? [current.customGuide.trim()] : [],
-      );
+      const guideNotes = current.selectedGuides
+        .map((guide) => guide.body)
+        .concat(current.manualGuides.map((guide) => guide.body));
       const sourceContextSignature = await buildContextSignature(
         'sources',
         liveContext.sessionId,
@@ -1272,7 +1480,7 @@ export default function AdvancedGeneratorWizard() {
       });
       if (data.options.length > 0) {
         setSourceQuery(typeof data.query === 'string' ? data.query : '');
-        setSourceQueryCandidates(Array.isArray(data.query_candidates) ? data.query_candidates : []);
+        setSourceQueryCandidates([]);
         setSourceRecommendations(
           data.options.map((item: {
             id: string;
@@ -1303,7 +1511,7 @@ export default function AdvancedGeneratorWizard() {
       } else {
         setSourceRecommendations([]);
         setSourceQuery(typeof data.query === 'string' ? data.query : '');
-        setSourceQueryCandidates(Array.isArray(data.query_candidates) ? data.query_candidates : []);
+        setSourceQueryCandidates([]);
         setPanelMode('hidden');
         setChapterActionError('Chưa tìm được nguồn phù hợp cho chương này. Hãy điều chỉnh title, tóm tắt hoặc guide rồi thử lại.');
       }
@@ -1428,38 +1636,87 @@ export default function AdvancedGeneratorWizard() {
                   <div className="mt-4 grid gap-3 xl:grid-cols-2">
                     {selectedStructure.blueprint.map((item) => (
                       <div key={item.chapter_number} className="rounded-[18px] border border-slate-200 bg-white px-4 py-3">
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                               Chương {item.chapter_number}
-                        </p>
-                        <p className="mt-1.5 text-[15px] font-semibold leading-7 text-slate-900">
-                          {item.display_working_title_vi || item.working_title}
-                        </p>
+                            </p>
+                            <p className="mt-1.5 text-[15px] font-semibold leading-7 text-slate-900">
+                              {item.display_working_title_vi || item.working_title}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingBlueprintChapter(item.chapter_number);
+                              setBlueprintDraft(item);
+                              setShowBlueprintDetails(true);
+                            }}
+                            className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                          >
+                            Sua
+                          </button>
+                        </div>
                         {showBlueprintDetails && (
                           <div className="mt-3 space-y-3 rounded-[16px] border border-cyan-100 bg-cyan-50 px-4 py-3">
-                            <div>
-                              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700">
-                                Vai trò chương
-                              </p>
-                              <p className="mt-1 text-sm leading-6 text-slate-700">
-                                {item.display_purpose_vi || item.purpose}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700">
-                                Mở chương bằng
-                              </p>
-                              <p className="mt-1 text-sm leading-6 text-slate-700">
-                                {item.display_start_focus_vi || item.start_focus}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700">
-                                Kết chương bằng
-                              </p>
-                              <p className="mt-1 text-sm leading-6 text-slate-700">
-                                {item.display_end_focus_vi || item.end_focus}
-                              </p>
-                            </div>
+                            {editingBlueprintChapter === item.chapter_number && blueprintDraft ? (
+                              <div className="space-y-3">
+                                <input value={blueprintDraft.working_title} onChange={(e) => setBlueprintDraft({ ...blueprintDraft, working_title: e.target.value, display_working_title_vi: e.target.value })} className="w-full rounded-2xl border border-cyan-200 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400" placeholder="Tieu de chuong" />
+                                <textarea rows={3} value={blueprintDraft.purpose} onChange={(e) => setBlueprintDraft({ ...blueprintDraft, purpose: e.target.value, display_purpose_vi: e.target.value })} className="w-full rounded-2xl border border-cyan-200 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400" placeholder="Vai tro chuong" />
+                                <textarea rows={2} value={blueprintDraft.start_focus} onChange={(e) => setBlueprintDraft({ ...blueprintDraft, start_focus: e.target.value, display_start_focus_vi: e.target.value })} className="w-full rounded-2xl border border-cyan-200 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400" placeholder="Mo chuong bang" />
+                                <textarea rows={2} value={blueprintDraft.end_focus} onChange={(e) => setBlueprintDraft({ ...blueprintDraft, end_focus: e.target.value, display_end_focus_vi: e.target.value })} className="w-full rounded-2xl border border-cyan-200 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400" placeholder="Ket chuong bang" />
+                                <div className="flex justify-end">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (!blueprintDraft) return;
+                                      setSelectedStructure((currentStructure) => currentStructure ? ({
+                                        ...currentStructure,
+                                        blueprint: currentStructure.blueprint.map((chapter) => chapter.chapter_number === item.chapter_number ? blueprintDraft : chapter),
+                                      }) : currentStructure);
+                                      void syncChapterOverride('blueprint', {
+                                        working_title: blueprintDraft.working_title,
+                                        purpose: blueprintDraft.purpose,
+                                        start_focus: blueprintDraft.start_focus,
+                                        end_focus: blueprintDraft.end_focus,
+                                      }, 'ai', item.chapter_number);
+                                      setEditingBlueprintChapter(null);
+                                      setBlueprintDraft(null);
+                                    }}
+                                    className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white"
+                                  >
+                                    Xac nhan
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                <div>
+                                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700">
+                                    Vai trò chương
+                                  </p>
+                                  <p className="mt-1 text-sm leading-6 text-slate-700">
+                                    {item.display_purpose_vi || item.purpose}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700">
+                                    Mở chương bằng
+                                  </p>
+                                  <p className="mt-1 text-sm leading-6 text-slate-700">
+                                    {item.display_start_focus_vi || item.start_focus}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700">
+                                    Kết chương bằng
+                                  </p>
+                                  <p className="mt-1 text-sm leading-6 text-slate-700">
+                                    {item.display_end_focus_vi || item.end_focus}
+                                  </p>
+                                </div>
+                              </>
+                            )}
                           </div>
                         )}
                       </div>
@@ -1526,16 +1783,25 @@ export default function AdvancedGeneratorWizard() {
                               <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
                                 <div className="inline-flex rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">Đã chọn</div>
-                                <p className="mt-2 text-base font-semibold leading-7 text-slate-900">{current.aiTitle.display_title_vi || current.aiTitle.title}</p>
-                                <p className="mt-1 text-sm leading-6 text-slate-600">{current.aiTitle.display_description_vi || current.aiTitle.description}</p>
+                                {editingTitle && editingTitleDraft ? (
+                                  <div className="mt-2 space-y-3">
+                                    <input value={editingTitleDraft.display_title_vi || editingTitleDraft.title} onChange={(e) => setEditingTitleDraft({ ...editingTitleDraft, title: e.target.value, display_title_vi: e.target.value })} className="w-full rounded-2xl border border-emerald-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-400" />
+                                    <textarea rows={3} value={editingTitleDraft.display_description_vi || editingTitleDraft.description} onChange={(e) => setEditingTitleDraft({ ...editingTitleDraft, description: e.target.value, display_description_vi: e.target.value })} className="w-full rounded-2xl border border-emerald-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-400" />
+                                    <div className="flex justify-end">
+                                      <button type="button" onClick={() => { if (!editingTitleDraft) return; updateCurrent('aiTitle', editingTitleDraft as never); void syncChapterOverride('title', { final_title: editingTitleDraft.display_title_vi || editingTitleDraft.title, final_description: editingTitleDraft.display_description_vi || editingTitleDraft.description, edited_from_ai: true }, 'ai'); setEditingTitle(false); setEditingTitleDraft(null); }} className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white">Xac nhan</button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <p className="mt-2 text-base font-semibold leading-7 text-slate-900">{current.aiTitle.display_title_vi || current.aiTitle.title}</p>
+                                    <p className="mt-1 text-sm leading-6 text-slate-600">{current.aiTitle.display_description_vi || current.aiTitle.description}</p>
+                                  </>
+                                )}
                                 </div>
-                                <button
-                                  type="button"
-                                  onClick={clearAiTitle}
-                                  className="shrink-0 rounded-full bg-white px-2 py-1 text-xs font-semibold text-slate-500 transition hover:bg-slate-100"
-                                >
-                                  X
-                                </button>
+                                <div className="flex shrink-0 gap-2">
+                                  <button type="button" onClick={() => { setEditingTitle(true); setEditingTitleDraft(current.aiTitle); }} className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-100">Sua</button>
+                                  <button type="button" onClick={clearAiTitle} className="rounded-full bg-white px-2 py-1 text-xs font-semibold text-slate-500 transition hover:bg-slate-100">X</button>
+                                </div>
                               </div>
                           ) : (
                             <p className="text-base text-slate-400">Hãy chọn từ khung gợi ý bên phải</p>
@@ -1544,7 +1810,13 @@ export default function AdvancedGeneratorWizard() {
                       </label>
                       <label className="space-y-2">
                         <span className="text-sm font-semibold text-slate-700">Tự nhập tiêu đề</span>
-                        <input value={current.customTitle} onChange={(e) => updateCurrent('customTitle', e.target.value)} className="w-full rounded-[20px] border border-slate-200 bg-white px-4 py-3 outline-none transition hover:border-emerald-200 focus:border-emerald-400" placeholder="Hoặc tự viết tiêu đề của bạn" />
+                        <div className="space-y-3">
+                          <input value={current.customTitle} onChange={(e) => updateCurrent('customTitle', e.target.value)} className="w-full rounded-[20px] border border-slate-200 bg-white px-4 py-3 outline-none transition hover:border-emerald-200 focus:border-emerald-400" placeholder="Hoặc tự viết tiêu đề của bạn" />
+                          <textarea rows={2} value={current.manualTitleReason} onChange={(e) => updateCurrent('manualTitleReason', e.target.value)} className="w-full rounded-[20px] border border-slate-200 bg-white px-4 py-3 outline-none transition hover:border-emerald-200 focus:border-emerald-400" placeholder="Ly do vi sao chon tieu de nay" />
+                          <div className="flex justify-end">
+                            <button type="button" onClick={() => void addManualTitle()} className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700">Them</button>
+                          </div>
+                        </div>
                       </label>
                     </div>
                   </div>
@@ -1572,16 +1844,25 @@ export default function AdvancedGeneratorWizard() {
                               <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
                                 <div className="inline-flex rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-700">Đã chọn</div>
-                                <p className="mt-2 text-base font-semibold leading-7 text-slate-900">{current.aiBrief.display_title_vi || current.aiBrief.title}</p>
-                                <p className="mt-1 text-sm leading-7 text-slate-600">{current.aiBrief.display_description_vi || current.aiBrief.description}</p>
+                                {editingBrief && editingBriefDraft ? (
+                                  <div className="mt-2 space-y-3">
+                                    <input value={editingBriefDraft.display_title_vi || editingBriefDraft.title} onChange={(e) => setEditingBriefDraft({ ...editingBriefDraft, title: e.target.value, display_title_vi: e.target.value })} className="w-full rounded-2xl border border-cyan-200 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400" />
+                                    <textarea rows={4} value={editingBriefDraft.display_description_vi || editingBriefDraft.description} onChange={(e) => setEditingBriefDraft({ ...editingBriefDraft, description: e.target.value, display_description_vi: e.target.value })} className="w-full rounded-2xl border border-cyan-200 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400" />
+                                    <div className="flex justify-end">
+                                      <button type="button" onClick={() => { if (!editingBriefDraft) return; updateCurrent('aiBrief', editingBriefDraft as never); void syncChapterOverride('brief', { final_title: editingBriefDraft.display_title_vi || editingBriefDraft.title, final_description: editingBriefDraft.display_description_vi || editingBriefDraft.description, edited_from_ai: true }, 'ai'); setEditingBrief(false); setEditingBriefDraft(null); }} className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white">Xac nhan</button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <p className="mt-2 text-base font-semibold leading-7 text-slate-900">{current.aiBrief.display_title_vi || current.aiBrief.title}</p>
+                                    <p className="mt-1 text-sm leading-7 text-slate-600">{current.aiBrief.display_description_vi || current.aiBrief.description}</p>
+                                  </>
+                                )}
                                 </div>
-                                <button
-                                  type="button"
-                                  onClick={clearAiBrief}
-                                  className="shrink-0 rounded-full bg-white px-2 py-1 text-xs font-semibold text-slate-500 transition hover:bg-slate-100"
-                                >
-                                  X
-                                </button>
+                                <div className="flex shrink-0 gap-2">
+                                  <button type="button" onClick={() => { setEditingBrief(true); setEditingBriefDraft(current.aiBrief); }} className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-100">Sua</button>
+                                  <button type="button" onClick={clearAiBrief} className="rounded-full bg-white px-2 py-1 text-xs font-semibold text-slate-500 transition hover:bg-slate-100">X</button>
+                                </div>
                               </div>
                           ) : (
                             <p className="text-base text-slate-400">Hãy chọn từ các gợi ý AI</p>
@@ -1590,7 +1871,13 @@ export default function AdvancedGeneratorWizard() {
                       </label>
                       <label className="mt-4 block space-y-2">
                         <span className="text-sm font-semibold text-slate-700">Tự nhập tóm tắt</span>
-                        <textarea rows={4} value={current.customBrief} onChange={(e) => updateCurrent('customBrief', e.target.value)} className="w-full rounded-[20px] border border-slate-200 bg-white px-4 py-3 outline-none transition hover:border-cyan-200 focus:border-cyan-400" placeholder="Hoặc tự viết tóm tắt chương" />
+                        <div className="space-y-3">
+                          <textarea rows={4} value={current.customBrief} onChange={(e) => updateCurrent('customBrief', e.target.value)} className="w-full rounded-[20px] border border-slate-200 bg-white px-4 py-3 outline-none transition hover:border-cyan-200 focus:border-cyan-400" placeholder="Hoặc tự viết tóm tắt chương" />
+                          <textarea rows={2} value={current.manualBriefReason} onChange={(e) => updateCurrent('manualBriefReason', e.target.value)} className="w-full rounded-[20px] border border-slate-200 bg-white px-4 py-3 outline-none transition hover:border-cyan-200 focus:border-cyan-400" placeholder="Ly do vi sao chon tom tat nay" />
+                          <div className="flex justify-end">
+                            <button type="button" onClick={() => void addManualBrief()} className="rounded-full bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-700">Them</button>
+                          </div>
+                        </div>
                       </label>
                     </div>
                   )}
@@ -1609,21 +1896,39 @@ export default function AdvancedGeneratorWizard() {
                         <label className="block space-y-2">
                           <span className="text-sm font-semibold text-slate-700">Hướng dẫn AI đã chọn</span>
                           <div className="min-h-28 rounded-[20px] border border-slate-200 bg-white px-4 py-3">
-                            {current.selectedGuides.length > 0 ? (
+                            {current.selectedGuides.length > 0 || current.manualGuides.length > 0 ? (
                               <div className="space-y-2">
                                 {current.selectedGuides.map((guide) => (
                                   <div key={guide.id} className="flex items-start justify-between gap-3 rounded-2xl bg-amber-50 px-3 py-3">
                                     <div>
-                                      <p className="text-sm font-semibold text-slate-900">{guide.display_title_vi || guide.title}</p>
+                                      {editingGuideId === guide.id && editingGuideDraft ? (
+                                        <div className="space-y-2">
+                                          <input value={editingGuideDraft.display_title_vi || editingGuideDraft.title} onChange={(e) => setEditingGuideDraft({ ...editingGuideDraft, title: e.target.value, display_title_vi: e.target.value })} className="w-full rounded-2xl border border-amber-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber-400" />
+                                          <textarea rows={3} value={editingGuideDraft.display_body_vi || editingGuideDraft.body} onChange={(e) => setEditingGuideDraft({ ...editingGuideDraft, body: e.target.value, display_body_vi: e.target.value })} className="w-full rounded-2xl border border-amber-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber-400" />
+                                          <div className="flex justify-end">
+                                            <button type="button" onClick={() => { if (!editingGuideDraft) return; setChapters((list) => list.map((item, idx) => idx === activeIndex ? { ...item, selectedGuides: item.selectedGuides.map((selectedGuide) => selectedGuide.id === guide.id ? editingGuideDraft : selectedGuide) } : item)); void syncChapterOverride('guide', { selected_ai_guides: current.selectedGuides.map((selectedGuide) => ({ id: selectedGuide.id === guide.id ? editingGuideDraft.id : selectedGuide.id, title: selectedGuide.id === guide.id ? (editingGuideDraft.display_title_vi || editingGuideDraft.title) : (selectedGuide.display_title_vi || selectedGuide.title), body: selectedGuide.id === guide.id ? (editingGuideDraft.display_body_vi || editingGuideDraft.body) : (selectedGuide.display_body_vi || selectedGuide.body), is_manual: false })), manual_guides: current.manualGuides.map((manualGuide) => ({ id: manualGuide.id, title: manualGuide.display_title_vi || manualGuide.title, body: manualGuide.display_body_vi || manualGuide.body, is_manual: true })) }, 'ai'); setEditingGuideId(null); setEditingGuideDraft(null); }} className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white">Xac nhan</button>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <>
+                                          <p className="text-sm font-semibold text-slate-900">{guide.display_title_vi || guide.title}</p>
+                                          <p className="mt-1 text-sm leading-6 text-slate-700">{guide.display_body_vi || guide.body}</p>
+                                        </>
+                                      )}
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <button type="button" onClick={() => { setEditingGuideId(guide.id); setEditingGuideDraft(guide); }} className="cursor-pointer rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-amber-100">Sua</button>
+                                      <button type="button" onClick={() => removeGuideOption(guide.id)} className="cursor-pointer rounded-full bg-white px-2 py-1 text-xs font-semibold text-amber-700 transition hover:bg-amber-100">Xóa</button>
+                                    </div>
+                                  </div>
+                                ))}
+                                {current.manualGuides.map((guide) => (
+                                  <div key={guide.id} className="flex items-start justify-between gap-3 rounded-2xl border border-amber-200 bg-white px-3 py-3">
+                                    <div>
+                                      <div className="inline-flex rounded-full bg-amber-100 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-700">Thu cong</div>
+                                      <p className="mt-2 text-sm font-semibold text-slate-900">{guide.display_title_vi || guide.title}</p>
                                       <p className="mt-1 text-sm leading-6 text-slate-700">{guide.display_body_vi || guide.body}</p>
                                     </div>
-                                    <button
-                                      type="button"
-                                      onClick={() => removeGuideOption(guide.id)}
-                                      className="cursor-pointer rounded-full bg-white px-2 py-1 text-xs font-semibold text-amber-700 transition hover:bg-amber-100"
-                                    >
-                                      Xóa
-                                    </button>
                                   </div>
                                 ))}
                               </div>
@@ -1634,7 +1939,12 @@ export default function AdvancedGeneratorWizard() {
                         </label>
                         <label className="block space-y-2">
                           <span className="text-sm font-semibold text-slate-700">Tự nhập hướng dẫn</span>
-                          <textarea rows={3} value={current.customGuide} onChange={(e) => updateCurrent('customGuide', e.target.value)} className="w-full rounded-[20px] border border-slate-200 bg-white px-4 py-3 outline-none transition hover:border-amber-200 focus:border-amber-400" placeholder="Hoặc tự viết hướng dẫn của bạn" />
+                          <div className="space-y-3">
+                            <textarea rows={3} value={current.customGuide} onChange={(e) => updateCurrent('customGuide', e.target.value)} className="w-full rounded-[20px] border border-slate-200 bg-white px-4 py-3 outline-none transition hover:border-amber-200 focus:border-amber-400" placeholder="Hoặc tự viết hướng dẫn của bạn" />
+                            <div className="flex justify-end">
+                              <button type="button" onClick={() => void addManualGuide()} className="rounded-full bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700">Them</button>
+                            </div>
+                          </div>
                         </label>
                       </div>
                     </div>
@@ -1654,11 +1964,6 @@ export default function AdvancedGeneratorWizard() {
                         <div className="mt-4 rounded-[18px] border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-900">
                           <p className="font-semibold">Truy vấn học thuật do Gemini lập</p>
                           {sourceQuery && <p className="mt-2 break-words leading-6">{sourceQuery}</p>}
-                          {sourceQueryCandidates.length > 1 && (
-                            <p className="mt-2 text-xs leading-5 text-violet-700">
-                              Đã chuẩn bị {sourceQueryCandidates.length} biến thể truy vấn để tự fallback khi cần.
-                            </p>
-                          )}
                         </div>
                       )}
                       <div className="mt-4 space-y-3">

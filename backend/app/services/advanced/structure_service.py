@@ -19,9 +19,19 @@ from app.models.research import (
 )
 from app.prompts.advanced.structure_prompt import STRUCTURE_RECOMMENDATION_PROMPT
 from app.redis_store import AdvancedRedisStore
+from app.services.llm_usage_service import (
+    LlmUsageService,
+    build_gemini_step_metric,
+    start_step_timer,
+    step_metric_from_dict,
+    step_metric_to_dict,
+)
 from app.schemas.advanced import (
     AdvancedStructureCacheRead,
     AdvancedArticleRead,
+    ManualOverridesCacheResponse,
+    ChapterOverrideSyncRequest,
+    ChapterOverrideSyncResponse,
     ConfirmChapterRequest,
     ConfirmChapterResponse,
     ConfirmFirstChapterRequest,
@@ -45,7 +55,7 @@ class AdvancedStructureService:
 
         self.client = genai.Client(api_key=api_key)
         self.store = AdvancedRedisStore()
-        self.model_name = "gemini-3-flash-preview"
+        self.model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-2.5-flash-lite")
 
     def recommend_structure(
         self, payload: AdvancedStructureRequest
@@ -57,6 +67,7 @@ class AdvancedStructureService:
             payload.report_type.strip(),
             payload.article_title.strip(),
         )
+        started_at = start_step_timer()
         raw_response = self.client.models.generate_content(
             model=self.model_name,
             contents=STRUCTURE_RECOMMENDATION_PROMPT.format(
@@ -104,6 +115,13 @@ class AdvancedStructureService:
                 item.display_start_focus_vi = item.start_focus
                 item.display_end_focus_vi = item.end_focus
         self.store.save_structure(session_id, response.model_dump())
+        metric = build_gemini_step_metric(
+            label="Tao bo cuc tong the",
+            model_name=self.model_name,
+            response=raw_response,
+            started_at=started_at,
+        )
+        self.store.save_usage_metric(session_id, "blueprint", step_metric_to_dict(metric))
         logger.info(
             "[Advanced] Recommend structure cached session_id=%s option_count=%s recommended_option_id=%s",
             session_id,
@@ -172,6 +190,31 @@ class AdvancedStructureService:
             article.report_type = cached.data.report_type
             article.chapter_count = selected_option.chapter_count
 
+        usage_service = LlmUsageService(db)
+        usage = usage_service.get_or_create_usage(
+            user_id=UUID(user_id),
+            article=article,
+            session_id=payload.session_id,
+        )
+        usage.details.clear()
+        usage.blueprint_label = None
+        usage.blueprint_input_tokens = 0
+        usage.blueprint_output_tokens = 0
+        usage.blueprint_total_tokens = 0
+        usage.blueprint_cost_usd = 0
+        usage.blueprint_latency_ms = None
+        usage.total_input_tokens = 0
+        usage.total_output_tokens = 0
+        usage.total_tokens = 0
+        usage.total_cost_usd = 0
+        usage.total_latency_ms = None
+        usage.status = "in_progress"
+        blueprint_metric = step_metric_from_dict(
+            self.store.get_usage_metric(payload.session_id, "blueprint")
+        )
+        if blueprint_metric:
+            usage_service.record_blueprint_metrics(usage=usage, metric=blueprint_metric)
+
         db.query(ChapterGuide).filter(
             ChapterGuide.chapter_id.in_(
                 db.query(ArticleChapter.id).filter(ArticleChapter.article_id == article.id)
@@ -235,6 +278,91 @@ class AdvancedStructureService:
                 for blueprint in sorted(blueprint_rows, key=lambda item: item.chapter_number)
             ],
             persisted_at=article.updated_at or article.created_at,
+        )
+
+    def sync_chapter_override(
+        self,
+        db: Session,
+        user_id: str,
+        payload: ChapterOverrideSyncRequest,
+    ) -> ChapterOverrideSyncResponse:
+        if payload.block == "blueprint":
+            cached = self.store.get_structure(payload.session_id)
+            if not cached:
+                raise ValueError("Structure cache was not found for this session.")
+
+            data = dict(payload.data or {})
+            options = cached.get("options") or []
+            for option in options:
+                for item in option.get("blueprint") or []:
+                    if int(item.get("chapter_number") or 0) != payload.chapter_number:
+                        continue
+                    item["working_title"] = str(data.get("working_title") or item.get("working_title") or "").strip()
+                    item["purpose"] = str(data.get("purpose") or item.get("purpose") or "").strip()
+                    item["start_focus"] = str(data.get("start_focus") or item.get("start_focus") or "").strip()
+                    item["end_focus"] = str(data.get("end_focus") or item.get("end_focus") or "").strip()
+                    item["display_working_title_vi"] = item["working_title"]
+                    item["display_purpose_vi"] = item["purpose"]
+                    item["display_start_focus_vi"] = item["start_focus"]
+                    item["display_end_focus_vi"] = item["end_focus"]
+            self.store.save_structure(payload.session_id, cached)
+
+            if payload.article_id:
+                article = (
+                    db.query(ResearchArticle)
+                    .filter(
+                        ResearchArticle.id == payload.article_id,
+                        ResearchArticle.user_id == UUID(user_id),
+                    )
+                    .first()
+                )
+                if article:
+                    blueprint = (
+                        db.query(ArticleBlueprint)
+                        .filter(
+                            ArticleBlueprint.article_id == article.id,
+                            ArticleBlueprint.chapter_number == payload.chapter_number,
+                        )
+                        .first()
+                    )
+                    if blueprint:
+                        blueprint.title = str(data.get("working_title") or blueprint.title or "").strip()
+                        blueprint.purpose = str(data.get("purpose") or blueprint.purpose or "").strip()
+                        blueprint.start_focus = str(data.get("start_focus") or blueprint.start_focus or "").strip()
+                        blueprint.end_focus = str(data.get("end_focus") or blueprint.end_focus or "").strip()
+                    db.flush()
+                    db.commit()
+            self.store.save_manual_override(payload.session_id, payload.chapter_number, payload.block, dict(payload.data or {}))
+            return ChapterOverrideSyncResponse(
+                session_id=payload.session_id,
+                chapter_number=payload.chapter_number,
+                block=payload.block,
+                saved=True,
+            )
+
+        override_payload = {
+            "mode": payload.mode,
+            **dict(payload.data or {}),
+        }
+        self.store.save_manual_override(
+            payload.session_id,
+            payload.chapter_number,
+            payload.block,
+            override_payload,
+        )
+        return ChapterOverrideSyncResponse(
+            session_id=payload.session_id,
+            chapter_number=payload.chapter_number,
+            block=payload.block,
+            saved=True,
+        )
+
+    def get_manual_overrides(self, session_id: str) -> ManualOverridesCacheResponse:
+        data = self.store.get_manual_overrides(session_id) or {}
+        return ManualOverridesCacheResponse(
+            found=bool(data),
+            session_id=session_id,
+            data=data,
         )
 
     def confirm_first_chapter(
@@ -357,19 +485,62 @@ class AdvancedStructureService:
         if chapter is None:
             raise ValueError("The selected chapter was not found for this article.")
 
-        chapter.chapter_title = (payload.chapter_title or "").strip() or chapter.chapter_title
+        title_override = self.store.get_manual_override(
+            payload.session_id,
+            payload.chapter_number,
+            "title",
+        ) or {}
+        brief_override = self.store.get_manual_override(
+            payload.session_id,
+            payload.chapter_number,
+            "brief",
+        ) or {}
+        guide_override = self.store.get_manual_override(
+            payload.session_id,
+            payload.chapter_number,
+            "guide",
+        ) or {}
+
+        final_chapter_title = str(
+            title_override.get("final_title")
+            or payload.chapter_title
+            or ""
+        ).strip() or chapter.chapter_title
+        final_title_description = str(
+            title_override.get("final_description")
+            or payload.chapter_title_description
+            or ""
+        ).strip() or chapter.chapter_title_description
+        final_chapter_brief = str(
+            brief_override.get("final_description")
+            or payload.chapter_brief
+            or ""
+        ).strip() or chapter.chapter_brief
+
+        chapter.chapter_title = final_chapter_title
         if chapter.chapter_title:
             chapter.chapter_title = self._normalize_chapter_title(chapter.chapter_title)
-        chapter.chapter_title_description = (
-            (payload.chapter_title_description or "").strip() or chapter.chapter_title_description
-        )
-        chapter.chapter_brief = (payload.chapter_brief or "").strip() or chapter.chapter_brief
+        chapter.chapter_title_description = final_title_description
+        chapter.chapter_brief = final_chapter_brief
 
         manual_guide = (payload.manual_guide or "").strip() or None
 
         db.query(ChapterGuide).filter(ChapterGuide.chapter_id == chapter.id).delete()
         guide_rows = []
-        for index, guide in enumerate(payload.selected_guides, start=1):
+        selected_guide_payload = payload.selected_guides
+        manual_guides_from_override = []
+        if guide_override:
+            selected_guide_payload = [
+                type("GuidePayload", (), {"content": item.get("body", ""), "sort_order": index + 1})()
+                for index, item in enumerate(guide_override.get("selected_ai_guides") or [])
+                if str(item.get("body") or "").strip()
+            ]
+            manual_guides_from_override = [
+                str(item.get("body") or "").strip()
+                for item in (guide_override.get("manual_guides") or [])
+                if str(item.get("body") or "").strip()
+            ]
+        for index, guide in enumerate(selected_guide_payload, start=1):
             guide_rows.append(
                 ChapterGuide(
                     chapter_id=chapter.id,
@@ -382,6 +553,14 @@ class AdvancedStructureService:
                 ChapterGuide(
                     chapter_id=chapter.id,
                     content=manual_guide,
+                    sort_order=len(guide_rows) + 1,
+                )
+            )
+        for body in manual_guides_from_override:
+            guide_rows.append(
+                ChapterGuide(
+                    chapter_id=chapter.id,
+                    content=body,
                     sort_order=len(guide_rows) + 1,
                 )
             )
@@ -404,6 +583,34 @@ class AdvancedStructureService:
                 )
             )
 
+        usage_service = LlmUsageService(db)
+        usage = usage_service.get_or_create_usage(
+            user_id=UUID(user_id),
+            article=article,
+            session_id=payload.session_id,
+        )
+        citation_payload = self.store.get_usage_metric(
+            payload.session_id,
+            "citation",
+            payload.chapter_number,
+        ) or {}
+        usage_service.upsert_chapter_detail(
+            usage=usage,
+            chapter=chapter,
+            title_metric=step_metric_from_dict(
+                self.store.get_usage_metric(payload.session_id, "title", payload.chapter_number)
+            ),
+            brief_metric=step_metric_from_dict(
+                self.store.get_usage_metric(payload.session_id, "brief", payload.chapter_number)
+            ),
+            guide_metric=step_metric_from_dict(
+                self.store.get_usage_metric(payload.session_id, "guide", payload.chapter_number)
+            ),
+            citation_metric=step_metric_from_dict(citation_payload),
+            source_query=citation_payload.get("source_query"),
+            source_result_count=int(citation_payload.get("source_result_count") or 0),
+        )
+
         db.commit()
         db.refresh(chapter)
         self.store.save_chapter_context(
@@ -414,9 +621,16 @@ class AdvancedStructureService:
                 "session_id": payload.session_id,
                 "chapter_number": payload.chapter_number,
                 "chapter_title": chapter.chapter_title or "",
+                "chapter_title_final": chapter.chapter_title or "",
                 "chapter_title_description": chapter.chapter_title_description or "",
-                "chapter_brief": (payload.chapter_brief or "").strip(),
+                "chapter_brief": chapter.chapter_brief or "",
+                "chapter_brief_final": chapter.chapter_brief or "",
+                "manual_title_reason": str(title_override.get("reason") or "").strip(),
+                "manual_brief_reason": str(brief_override.get("reason") or "").strip(),
+                "selection_mode_title": str(title_override.get("mode") or ("manual" if payload.chapter_title else "ai")),
+                "selection_mode_brief": str(brief_override.get("mode") or ("manual" if payload.chapter_brief else "ai")),
                 "guide_notes": [guide.content for guide in guide_rows],
+                "guide_notes_final": [guide.content for guide in guide_rows],
                 "sources": [
                     {
                         "title": source.title,
@@ -511,7 +725,7 @@ class AdvancedStructureService:
         self, raw_options: list[dict[str, Any]], report_type: str
     ) -> list[StructureOption]:
         if not raw_options:
-            raw_options = self._fallback_options(report_type)
+            raise ValueError("He thong tao sinh dang co van de. Vui long thu lai.")
 
         limited = raw_options[:5]
         if len(limited) > 1:
@@ -521,21 +735,24 @@ class AdvancedStructureService:
         for index, raw_option in enumerate(limited, start=1):
             chapter_count = int(raw_option.get("chapter_count") or 0)
             raw_blueprint = raw_option.get("blueprint") or []
-            fallback_blueprint = self._fallback_blueprint(chapter_count or len(raw_blueprint) or 3, report_type)
+            if chapter_count <= 0 or not raw_blueprint:
+                continue
 
             normalized_blueprint: list[ChapterBlueprintItem] = []
             for chapter_index, raw_item in enumerate(raw_blueprint, start=1):
-                fallback_item = fallback_blueprint[min(chapter_index - 1, len(fallback_blueprint) - 1)]
                 working_title = (raw_item.get("working_title") or "").strip()
-                if not working_title or self._is_generic_working_title(working_title):
-                    working_title = fallback_item.working_title
-
                 purpose = (raw_item.get("purpose") or "").strip()
-                if not purpose or self._is_generic_purpose(purpose):
-                    purpose = fallback_item.purpose
-
-                start_focus = (raw_item.get("start_focus") or "").strip() or fallback_item.start_focus
-                end_focus = (raw_item.get("end_focus") or "").strip() or fallback_item.end_focus
+                start_focus = (raw_item.get("start_focus") or "").strip()
+                end_focus = (raw_item.get("end_focus") or "").strip()
+                if (
+                    not working_title
+                    or not purpose
+                    or not start_focus
+                    or not end_focus
+                    or self._is_generic_working_title(working_title)
+                    or self._is_generic_purpose(purpose)
+                ):
+                    continue
                 normalized_blueprint.append(
                     ChapterBlueprintItem(
                         chapter_number=chapter_index,
@@ -546,30 +763,23 @@ class AdvancedStructureService:
                     )
                 )
 
-            if chapter_count <= 0:
-                chapter_count = len(normalized_blueprint) or 3
-
             if not normalized_blueprint:
-                normalized_blueprint = self._fallback_blueprint(chapter_count, report_type)
-            elif len(normalized_blueprint) < chapter_count:
-                normalized_blueprint.extend(
-                    self._fallback_blueprint(chapter_count, report_type)[len(normalized_blueprint) :]
-                )
-            elif len(normalized_blueprint) > chapter_count:
+                continue
+            if len(normalized_blueprint) > chapter_count:
                 normalized_blueprint = normalized_blueprint[:chapter_count]
+            chapter_count = len(normalized_blueprint)
 
             normalized.append(
                 StructureOption(
                     option_id=(raw_option.get("option_id") or f"option-{index}").strip(),
                     chapter_count=chapter_count,
-                    rationale=(raw_option.get("rationale") or "Balanced structure for the selected report type.").strip(),
+                    rationale=(raw_option.get("rationale") or "").strip() or "AI de xuat bo cuc cho bai viet nay.",
                     blueprint=normalized_blueprint,
                 )
             )
 
         if not normalized:
-            fallback = self._fallback_options(report_type)[0]
-            normalized = self._normalize_options([fallback], report_type)
+            raise ValueError("He thong tao sinh dang co van de. Vui long thu lai.")
 
         return normalized
 
@@ -614,83 +824,3 @@ class AdvancedStructureService:
             "phát triển nội dung bài",
         ]
         return any(marker in lowered for marker in generic_markers)
-
-    def _fallback_options(self, report_type: str) -> list[dict[str, Any]]:
-        lower_report_type = report_type.lower()
-
-        if "systematic" in lower_report_type or "hệ thống" in lower_report_type:
-            counts = [4, 5]
-        elif "policy" in lower_report_type or "technical" in lower_report_type or "chính sách" in lower_report_type or "kỹ thuật" in lower_report_type:
-            counts = [3, 4]
-        elif "essay" in lower_report_type or "tiểu luận" in lower_report_type:
-            counts = [3]
-        else:
-            counts = [3, 4, 5]
-
-        fallback_options: list[dict[str, Any]] = []
-        for index, count in enumerate(counts[:5], start=1):
-            fallback_options.append(
-                {
-                    "option_id": f"option-{index}",
-                    "chapter_count": count,
-                    "rationale": self._fallback_rationale(report_type, count),
-                    "blueprint": [
-                        item.model_dump()
-                        for item in self._fallback_blueprint(count, report_type)
-                    ],
-                }
-            )
-        return fallback_options or [
-            {
-                "option_id": "option-1",
-                "chapter_count": 3,
-                "rationale": "Compact default structure when only one sensible option is available.",
-                "blueprint": [
-                    item.model_dump()
-                    for item in self._fallback_blueprint(3, report_type)
-                ],
-            }
-        ]
-
-    def _fallback_rationale(self, report_type: str, count: int) -> str:
-        if count == 3:
-            return f"Bố cục {report_type.lower()} gọn, đi từ định khung vấn đề đến phân tích và kết luận mà không bị chia nhỏ quá mức."
-        if count == 4:
-            return f"Bố cục {report_type.lower()} cân bằng, tách rõ phần định khung, xử lý bằng chứng, tổng hợp phân tích và hàm ý cuối."
-        return f"Bố cục {report_type.lower()} đầy đủ hơn, có không gian riêng cho mở bài, tổ chức bằng chứng, phân tích, giới hạn và kết luận."
-
-    def _fallback_blueprint(
-        self, chapter_count: int, report_type: str
-    ) -> list[ChapterBlueprintItem]:
-        templates = {
-            3: [
-                ("Bối cảnh và phạm vi", "Xác định ranh giới chủ đề và lý do bài viết này quan trọng.", "Mở đầu bằng bối cảnh vấn đề và phạm vi bàn luận.", "Kết lại bằng hướng phân tích sẽ được triển khai ở chương sau."),
-                ("Bằng chứng và phân tích trọng tâm", "Trình bày phần bằng chứng chính và đối chiếu phân tích cốt lõi.", "Mở đầu bằng tiêu chí hoặc góc nhìn phân tích quan trọng nhất.", "Kết lại bằng những phát hiện nổi bật nhất từ bằng chứng."),
-                ("Hàm ý và kết luận", "Chuyển phần phân tích thành ý nghĩa, khoảng trống và bước đi tiếp theo.", "Mở đầu bằng hàm ý chính của các phát hiện.", "Kết lại bằng một phần tổng hợp ngắn gọn nhưng dứt điểm."),
-            ],
-            4: [
-                ("Bối cảnh và phạm vi", "Định khung bài viết, chủ đề và ranh giới báo cáo.", "Mở đầu bằng bối cảnh chủ đề và ý nghĩa của vấn đề.", "Kết lại bằng cách giới thiệu hướng xử lý bằng chứng."),
-                ("Nền bằng chứng và logic phương pháp", "Giải thích cách bằng chứng hoặc lập luận được tổ chức cho toàn bài.", "Mở đầu bằng cách chọn nguồn, tiêu chí hoặc hướng lập luận.", "Kết lại bằng những mẫu hình quan trọng cần được tổng hợp sâu hơn."),
-                ("Tổng hợp so sánh", "Kết nối bằng chứng, đối chiếu các mẫu hình và triển khai mạch phân tích chính.", "Mở đầu bằng câu hỏi phân tích trung tâm.", "Kết lại bằng diễn giải then chốt dẫn sang phần hàm ý."),
-                ("Hàm ý và kết luận", "Tóm lược ý nghĩa, giới hạn và các bước thực tiễn hoặc nghiên cứu tiếp theo.", "Mở đầu bằng ý nghĩa tổng thể của phần phân tích.", "Kết lại bằng một kết luận mạnh và rõ."),
-            ],
-            5: [
-                ("Bối cảnh và phạm vi", "Giới thiệu vấn đề, bối cảnh nghiên cứu và ranh giới bài viết.", "Mở đầu bằng bối cảnh và động lực của chủ đề.", "Kết lại bằng mục tiêu tổng quan hoặc phân tích."),
-                ("Nền bằng chứng và định khung", "Mô tả nền bằng chứng, nguồn liệu hoặc khung khái niệm được dùng.", "Mở đầu bằng toàn cảnh bằng chứng.", "Kết lại bằng cơ sở cho việc so sánh và phân tích."),
-                ("Phân tích trọng tâm", "Triển khai phần phân tích so sánh hoặc diễn giải cốt lõi.", "Mở đầu bằng lăng kính phân tích quan trọng nhất.", "Kết lại bằng phát hiện có trọng lượng nhất của phần phân tích."),
-                ("Khoảng trống và giới hạn", "Làm rõ những gì còn yếu, chưa chắc chắn hoặc còn tranh luận.", "Mở đầu bằng các điểm còn bỏ ngỏ trong nền bằng chứng.", "Kết lại bằng ý nghĩa của các giới hạn đối với chương cuối."),
-                ("Hàm ý và kết luận", "Chuyển hóa phát hiện thành kết luận và hướng hành động tiếp theo.", "Mở đầu bằng ý nghĩa tổng thể của toàn bộ phần tổng hợp.", "Kết lại bằng một kết luận súc tích và dứt khoát."),
-            ],
-        }
-
-        selected = templates.get(chapter_count, templates[3])
-        return [
-            ChapterBlueprintItem(
-                chapter_number=index,
-                working_title=title,
-                purpose=f"{purpose} Bố cục này được điều chỉnh cho loại bài {report_type.lower()}.",
-                start_focus=start_focus,
-                end_focus=end_focus,
-            )
-            for index, (title, purpose, start_focus, end_focus) in enumerate(selected, start=1)
-        ]

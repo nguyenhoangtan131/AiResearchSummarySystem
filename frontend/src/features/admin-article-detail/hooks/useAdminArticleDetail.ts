@@ -29,7 +29,7 @@ export function useAdminArticleDetail(articleId?: string) {
       } catch (loadError) {
         console.error('Khong tai duoc chi tiet article admin:', loadError);
         if (active) {
-          setError('Chua tai duoc chi tiet article. Khi noi backend, phan nay se doc tu API admin article detail.');
+          setError('Chua tai duoc chi tiet article tu admin API.');
           setArticleDetail(null);
         }
       } finally {

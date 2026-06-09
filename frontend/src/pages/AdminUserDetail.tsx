@@ -101,7 +101,7 @@ export default function AdminUserDetail() {
                   Ho so su dung nguoi dung
                 </h1>
                 <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                  Trang nay dang o che do mock UI. Sau khi xong API admin detail, minh se noi so lieu that cho profile va danh sach bai nghien cuu.
+                  Tại đây hiển thị tổng usage của người dùng và danh sách từng bài nghiên cứu đã được gộp theo article.
                 </p>
               </div>
 

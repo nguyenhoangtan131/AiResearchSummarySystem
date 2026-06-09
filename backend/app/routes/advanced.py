@@ -13,6 +13,9 @@ from app.schemas.advanced import (
     AdvancedGeneratedSourceResponse,
     AdvancedStructureRequest,
     AdvancedStructureResponse,
+    ChapterOverrideSyncRequest,
+    ChapterOverrideSyncResponse,
+    ManualOverridesCacheResponse,
     ChapterBriefRecommendationRequest,
     ChapterBriefRecommendationResponse,
     ChapterGuideRecommendationRequest,
@@ -280,6 +283,44 @@ async def confirm_chapter(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=f"Failed to confirm chapter: {exc}",
         ) from exc
+
+
+@router.post(
+    "/chapter/override/sync",
+    response_model=ChapterOverrideSyncResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def sync_chapter_override(
+    payload: ChapterOverrideSyncRequest,
+    user_id: str = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ChapterOverrideSyncResponse:
+    try:
+        service = AdvancedStructureService()
+        return service.sync_chapter_override(db=db, user_id=user_id, payload=payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Failed to sync chapter override: {exc}",
+        ) from exc
+
+
+@router.get(
+    "/chapter/override/cache/{session_id}",
+    response_model=ManualOverridesCacheResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def get_manual_override_cache(
+    session_id: str,
+    user_id: str = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ManualOverridesCacheResponse:
+    del user_id
+    del db
+    service = AdvancedStructureService()
+    return service.get_manual_overrides(session_id)
 
 
 @router.post(

@@ -23,6 +23,12 @@ class AdvancedRedisStore:
     def chapter_context_key(self, article_id: str, chapter_number: int) -> str:
         return f"advanced:article:{article_id}:context:chapter:{chapter_number}"
 
+    def usage_metrics_key(self, session_id: str) -> str:
+        return f"advanced:{session_id}:usage-metrics"
+
+    def manual_overrides_key(self, session_id: str) -> str:
+        return f"advanced:{session_id}:manual-overrides"
+
     def save_structure(self, session_id: str, payload: dict[str, Any]) -> str:
         key = self.structure_key(session_id)
         self.cache.set_json(key, payload)
@@ -30,6 +36,72 @@ class AdvancedRedisStore:
 
     def get_structure(self, session_id: str) -> dict[str, Any] | None:
         return self.cache.get_json(self.structure_key(session_id))
+
+    def save_usage_metrics(self, session_id: str, payload: dict[str, Any]) -> str:
+        key = self.usage_metrics_key(session_id)
+        self.cache.set_json(key, payload)
+        return key
+
+    def get_usage_metrics(self, session_id: str) -> dict[str, Any] | None:
+        return self.cache.get_json(self.usage_metrics_key(session_id))
+
+    def save_usage_metric(
+        self,
+        session_id: str,
+        step: str,
+        payload: dict[str, Any],
+        chapter_number: int | None = None,
+    ) -> str:
+        cached = self.get_usage_metrics(session_id) or {"article": {}, "chapters": {}}
+        if chapter_number is None:
+            cached["article"][step] = payload
+        else:
+            chapter_bucket = cached["chapters"].setdefault(str(chapter_number), {})
+            chapter_bucket[step] = payload
+        return self.save_usage_metrics(session_id, cached)
+
+    def get_usage_metric(
+        self,
+        session_id: str,
+        step: str,
+        chapter_number: int | None = None,
+    ) -> dict[str, Any] | None:
+        cached = self.get_usage_metrics(session_id) or {}
+        if chapter_number is None:
+            article_metrics = cached.get("article") or {}
+            return article_metrics.get(step)
+        chapter_metrics = (cached.get("chapters") or {}).get(str(chapter_number)) or {}
+        return chapter_metrics.get(step)
+
+    def save_manual_overrides(self, session_id: str, payload: dict[str, Any]) -> str:
+        key = self.manual_overrides_key(session_id)
+        self.cache.set_json(key, payload)
+        return key
+
+    def get_manual_overrides(self, session_id: str) -> dict[str, Any] | None:
+        return self.cache.get_json(self.manual_overrides_key(session_id))
+
+    def save_manual_override(
+        self,
+        session_id: str,
+        chapter_number: int,
+        block: str,
+        payload: dict[str, Any],
+    ) -> str:
+        cached = self.get_manual_overrides(session_id) or {"chapters": {}}
+        chapter_bucket = cached["chapters"].setdefault(str(chapter_number), {})
+        chapter_bucket[block] = payload
+        return self.save_manual_overrides(session_id, cached)
+
+    def get_manual_override(
+        self,
+        session_id: str,
+        chapter_number: int,
+        block: str,
+    ) -> dict[str, Any] | None:
+        cached = self.get_manual_overrides(session_id) or {}
+        chapter_bucket = (cached.get("chapters") or {}).get(str(chapter_number)) or {}
+        return chapter_bucket.get(block)
 
     def save_chapter_step(
         self,

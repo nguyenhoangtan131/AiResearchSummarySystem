@@ -1,44 +1,39 @@
-import { adminUsageLogSeed } from '../mockData';
-import {
-  ADMIN_DASHBOARD_PAGE_SIZE,
-  isSameDate,
-} from '../utils';
-import type { AdminDashboardResponse, AdminUsageLog } from '../types';
-
-const sortLogsDescending = (logs: AdminUsageLog[]) =>
-  [...logs].sort(
-    (left, right) =>
-      new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
-  );
+import { adminApi } from '../../../services/api';
+import type { AdminDashboardResponse } from '../types';
 
 export const adminDashboardService = {
   async getUsageByDate(selectedDate: string): Promise<AdminDashboardResponse> {
-    const filteredLogs = sortLogsDescending(
-      adminUsageLogSeed.filter((log) => isSameDate(log.createdAt, selectedDate)),
-    );
-
-    const overview = filteredLogs.reduce(
-      (accumulator, log) => ({
-        totalCalls: accumulator.totalCalls + 1,
-        totalInputTokens: accumulator.totalInputTokens + log.inputTokens,
-        totalOutputTokens: accumulator.totalOutputTokens + log.outputTokens,
-        totalEstimatedCost: accumulator.totalEstimatedCost + log.estimatedCost,
-      }),
-      {
-        totalCalls: 0,
-        totalInputTokens: 0,
-        totalOutputTokens: 0,
-        totalEstimatedCost: 0,
-      },
-    );
-
+    const { data } = await adminApi.getDashboard(selectedDate);
     return {
-      selectedDate,
-      overview,
-      logs: filteredLogs.slice(0, ADMIN_DASHBOARD_PAGE_SIZE),
-      totalRecords: filteredLogs.length,
-      page: 1,
-      pageSize: ADMIN_DASHBOARD_PAGE_SIZE,
+      selectedDate: data.selectedDate,
+      overview: {
+        totalCalls: Number(data.overview?.totalCalls || 0),
+        totalInputTokens: Number(data.overview?.totalInputTokens || 0),
+        totalOutputTokens: Number(data.overview?.totalOutputTokens || 0),
+        totalEstimatedCost: Number(data.overview?.totalEstimatedCostUsd || 0),
+      },
+      users: Array.isArray(data.users)
+        ? data.users.map((user: {
+          userId: string;
+          fullName: string;
+          email: string;
+          articleCount: number;
+          llmCalls: number;
+          totalTokens: number;
+          estimatedCostUsd: number;
+        }) => ({
+          userId: user.userId,
+          fullName: user.fullName,
+          email: user.email,
+          articleCount: Number(user.articleCount || 0),
+          llmCalls: Number(user.llmCalls || 0),
+          totalTokens: Number(user.totalTokens || 0),
+          estimatedCostUsd: Number(user.estimatedCostUsd || 0),
+        }))
+        : [],
+      totalRecords: Number(data.totalRecords || 0),
+      page: Number(data.page || 1),
+      pageSize: Number(data.pageSize || 6),
     };
   },
 };

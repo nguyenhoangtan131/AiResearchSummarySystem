@@ -143,7 +143,7 @@ export default function AdminDashboard() {
             <>
               <AdminOverviewCards overview={dashboard.overview} />
               <AdminUsageTable
-                logs={dashboard.logs}
+                users={dashboard.users}
                 totalRecords={dashboard.totalRecords}
                 selectedDate={dashboard.selectedDate}
               />

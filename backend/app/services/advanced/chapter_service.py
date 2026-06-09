@@ -1,6 +1,7 @@
 import json
 import os
 import hashlib
+from time import perf_counter
 import unicodedata
 from typing import Any
 
@@ -9,6 +10,7 @@ from google import genai
 
 from app.core.logging import logger
 from app.redis_store import AdvancedRedisStore
+from app.services.llm_usage_service import build_gemini_step_metric, step_metric_to_dict
 from app.schemas.advanced import (
     AdvancedStructureResponse,
     AdvancedChapterStepCacheRead,
@@ -42,7 +44,7 @@ class AdvancedChapterRecommendationService:
 
         self.client = genai.Client(api_key=api_key)
         self.store = AdvancedRedisStore()
-        self.model_name = "gemini-3-flash-preview"
+        self.model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-2.5-flash-lite")
         self.serper_api_key = os.getenv("SERPER_API_KEY")
 
     def get_cached_step(
@@ -75,7 +77,8 @@ class AdvancedChapterRecommendationService:
             payload.chapter_number,
             payload.selected_option_id,
         )
-        parsed = self._generate_json(
+        started_at = perf_counter()
+        parsed, raw_response = self._generate_json(
             TITLE_RECOMMENDATION_PROMPT.format(
                 report_type=structure.report_type,
                 article_title_context=(
@@ -123,6 +126,18 @@ class AdvancedChapterRecommendationService:
             item.display_title_vi = item.title
             item.display_description_vi = item.description
         self.store.save_chapter_step(payload.session_id, payload.chapter_number, "titles", response.model_dump())
+        metric = build_gemini_step_metric(
+            label="Sinh tieu de chuong",
+            model_name=self.model_name,
+            response=raw_response,
+            started_at=started_at,
+        )
+        self.store.save_usage_metric(
+            payload.session_id,
+            "title",
+            step_metric_to_dict(metric),
+            chapter_number=payload.chapter_number,
+        )
         return response
 
     def recommend_briefs(
@@ -139,7 +154,8 @@ class AdvancedChapterRecommendationService:
             payload.chapter_number,
             payload.selected_option_id,
         )
-        parsed = self._generate_json(
+        started_at = perf_counter()
+        parsed, raw_response = self._generate_json(
             BRIEF_RECOMMENDATION_PROMPT.format(
                 report_type=structure.report_type,
                 article_title_context=(
@@ -178,6 +194,18 @@ class AdvancedChapterRecommendationService:
             item.display_title_vi = item.title
             item.display_description_vi = item.description
         self.store.save_chapter_step(payload.session_id, payload.chapter_number, "briefs", response.model_dump())
+        metric = build_gemini_step_metric(
+            label="Sinh tom tat chuong",
+            model_name=self.model_name,
+            response=raw_response,
+            started_at=started_at,
+        )
+        self.store.save_usage_metric(
+            payload.session_id,
+            "brief",
+            step_metric_to_dict(metric),
+            chapter_number=payload.chapter_number,
+        )
         return response
 
     def recommend_guides(
@@ -194,7 +222,8 @@ class AdvancedChapterRecommendationService:
             payload.chapter_number,
             payload.selected_option_id,
         )
-        parsed = self._generate_json(
+        started_at = perf_counter()
+        parsed, raw_response = self._generate_json(
             GUIDE_RECOMMENDATION_PROMPT.format(
                 report_type=structure.report_type,
                 article_title_context=(
@@ -233,6 +262,18 @@ class AdvancedChapterRecommendationService:
             item.display_title_vi = item.title
             item.display_body_vi = item.body
         self.store.save_chapter_step(payload.session_id, payload.chapter_number, "guides", response.model_dump())
+        metric = build_gemini_step_metric(
+            label="Sinh dinh huong viet chuong",
+            model_name=self.model_name,
+            response=raw_response,
+            started_at=started_at,
+        )
+        self.store.save_usage_metric(
+            payload.session_id,
+            "guide",
+            step_metric_to_dict(metric),
+            chapter_number=payload.chapter_number,
+        )
         return response
 
     async def recommend_sources(
@@ -246,7 +287,8 @@ class AdvancedChapterRecommendationService:
         if not self.serper_api_key:
             raise ValueError("SERPER_API_KEY is missing.")
 
-        query_candidates = self._build_source_queries(structure, blueprint, payload)
+        started_at = perf_counter()
+        query_candidates, planning_response = self._build_source_queries(structure, blueprint, payload)
         selected_query = query_candidates[0]
         raw_organic: list[dict[str, Any]] = []
 
@@ -306,6 +348,22 @@ class AdvancedChapterRecommendationService:
             item.display_snippet_vi = item.snippet
             item.display_publication_vi = item.publication
         self.store.save_chapter_step(payload.session_id, payload.chapter_number, "sources", source_response.model_dump())
+        metric = build_gemini_step_metric(
+            label="Lay trich dan va nguon hoc thuat",
+            model_name=self.model_name,
+            response=planning_response,
+            started_at=started_at,
+        )
+        self.store.save_usage_metric(
+            payload.session_id,
+            "citation",
+            step_metric_to_dict(
+                metric,
+                source_query=selected_query,
+                source_result_count=len(source_response.options),
+            ),
+            chapter_number=payload.chapter_number,
+        )
         return source_response
 
     def _load_structure_context(
@@ -332,26 +390,26 @@ class AdvancedChapterRecommendationService:
 
         return structure, blueprint
 
-    def _generate_json(self, prompt: str) -> dict[str, Any]:
+    def _generate_json(self, prompt: str) -> tuple[dict[str, Any], Any]:
         raw_response = self.client.models.generate_content(
             model=self.model_name,
             contents=prompt,
         )
         raw_text = (raw_response.text or "").replace("```json", "").replace("```", "").strip()
         try:
-            return json.loads(raw_text)
+            return json.loads(raw_text), raw_response
         except json.JSONDecodeError:
             first = raw_text.find("{")
             last = raw_text.rfind("}")
             if first != -1 and last != -1 and last > first:
                 extracted = raw_text[first:last + 1]
                 try:
-                    return json.loads(extracted)
+                    return json.loads(extracted), raw_response
                 except json.JSONDecodeError:
                     logger.exception("[Advanced] Failed to parse Gemini JSON after extraction. raw=%s", raw_text[:1200])
-                    return {}
+                    return {}, raw_response
             logger.exception("[Advanced] Failed to parse Gemini JSON. raw=%s", raw_text[:1200])
-            return {}
+            return {}, raw_response
 
     def _normalize_title_options(
         self, raw_options: list[dict[str, Any]], blueprint: ChapterBlueprintItem
@@ -359,37 +417,28 @@ class AdvancedChapterRecommendationService:
         role = self._detect_blueprint_role(blueprint)
         normalized_raw = [
             ChapterTitleOption(
-                title=(item.get("title") or blueprint.working_title).strip(),
-                description=(item.get("description") or blueprint.purpose).strip(),
+                title=str(item.get("title") or "").strip(),
+                description=str(item.get("description") or "").strip(),
             )
             for item in raw_options[:5]
+            if str(item.get("title") or "").strip() and str(item.get("description") or "").strip()
         ]
         filtered = [
             item for item in normalized_raw
             if self._title_matches_role(item.title, item.description, role)
         ]
-        if filtered:
-            filtered = self._merge_title_options(
-                [ChapterTitleOption(
-                    title=(blueprint.display_working_title_vi or blueprint.working_title).strip(),
-                    description=(blueprint.display_purpose_vi or blueprint.purpose).strip(),
-                )],
-                filtered,
-            )
         return filtered[:3]
 
     def _normalize_brief_options(
         self, raw_options: list[dict[str, Any]], blueprint: ChapterBlueprintItem
     ) -> list[ChapterBriefOption]:
-        options = raw_options[:5]
-
         return [
             ChapterBriefOption(
-                title=(item.get("title") or blueprint.working_title).strip(),
-                description=(item.get("description") or blueprint.purpose).strip(),
+                title=str(item.get("title") or "").strip(),
+                description=str(item.get("description") or "").strip(),
             )
-            for item in options
-            if (item.get("title") or "").strip() or (item.get("description") or "").strip()
+            for item in raw_options[:5]
+            if str(item.get("title") or "").strip() and str(item.get("description") or "").strip()
         ]
 
     def _normalize_guide_options(
@@ -399,13 +448,15 @@ class AdvancedChapterRecommendationService:
 
         normalized: list[ChapterGuideOption] = []
         for index, item in enumerate(options, start=1):
-            if not ((item.get("title") or "").strip() or (item.get("body") or "").strip()):
+            title = str(item.get("title") or "").strip()
+            body = str(item.get("body") or "").strip()
+            if not title or not body:
                 continue
             normalized.append(
                 ChapterGuideOption(
                     id=(item.get("id") or f"guide-{index}").strip(),
-                    title=(item.get("title") or f"Guide option {index}").strip(),
-                    body=(item.get("body") or "Write clearly, stay evidence-based, and maintain chapter-level coherence.").strip(),
+                    title=title,
+                    body=body,
                 )
             )
         return normalized
@@ -418,13 +469,17 @@ class AdvancedChapterRecommendationService:
         for index, item in enumerate(options, start=1):
             publication_info = item.get("publicationInfo")
             publication_text = self._stringify_publication(publication_info)
+            title = str(item.get("title") or "").strip()
+            link = str(item.get("link") or "").strip()
+            if not title:
+                continue
             normalized.append(
                 ChapterSourceOption(
                     id=f"source-{index}",
-                    title=(item.get("title") or "Untitled source").strip(),
+                    title=title,
                     snippet=(item.get("snippet") or "").strip() or None,
                     provider="Google Scholar",
-                    link=item.get("link"),
+                    link=link or None,
                     year=str(item.get("year")) if item.get("year") else None,
                     publication=publication_text,
                     citation_count=int(item.get("citedBy") or 0),
@@ -438,9 +493,9 @@ class AdvancedChapterRecommendationService:
         structure: AdvancedStructureResponse,
         blueprint: ChapterBlueprintItem,
         payload: ChapterSourceRecommendationRequest,
-    ) -> list[str]:
+    ) -> tuple[list[str], Any]:
         guide_notes = " | ".join(note.strip() for note in payload.guide_notes if note.strip())[:500]
-        parsed = self._generate_json(
+        parsed, raw_response = self._generate_json(
             SOURCE_QUERY_PLANNING_PROMPT.format(
                 report_type=structure.report_type.strip(),
                 article_title=(structure.display_article_title_vi or structure.article_title).strip(),
@@ -469,46 +524,9 @@ class AdvancedChapterRecommendationService:
                 cleaned_queries.append(compact[:280])
 
         if cleaned_queries:
-            return cleaned_queries[:5]
+            return cleaned_queries[:5], raw_response
 
-        fallback_queries = self._build_source_query_fallbacks(structure, blueprint, payload)
-        return fallback_queries[:5]
-
-    def _build_source_query_fallbacks(
-        self,
-        structure: AdvancedStructureResponse,
-        blueprint: ChapterBlueprintItem,
-        payload: ChapterSourceRecommendationRequest,
-    ) -> list[str]:
-        article_title = (
-            structure.normalized_article_title.strip()
-            or structure.normalized_article_title_en.strip()
-            or structure.article_title.strip()
-        )
-        chapter_title = payload.chapter_title.strip()
-        chapter_brief = payload.chapter_brief.strip()
-        purpose = blueprint.purpose.strip()
-        report_type = structure.report_type.strip()
-        guide_fragment = " ".join(note.strip() for note in payload.guide_notes if note.strip())[:120]
-        queries = [
-            f'{article_title} "{chapter_title}" open access scholarly article',
-            f'{article_title} {chapter_title} journal article review',
-            f'{chapter_title} {chapter_brief[:140]} open access research',
-            f'{article_title} {purpose[:140]} peer reviewed article',
-            f'{chapter_title} {report_type} google scholar',
-        ]
-        if guide_fragment:
-            queries.insert(2, f'{chapter_title} {guide_fragment} peer reviewed article')
-
-        cleaned: list[str] = []
-        seen: set[str] = set()
-        for query in queries:
-            compact = " ".join(query.split()).strip()
-            normalized = self._normalize_text(compact)
-            if compact and normalized and normalized not in seen:
-                seen.add(normalized)
-                cleaned.append(compact[:280])
-        return cleaned
+        raise ValueError("Khong tao duoc truy van hoc thuat tu AI. Vui long thu lai.")
 
     def _build_context_signature(self, *parts: Any) -> str:
         normalized_parts = [" ".join(str(part or "").split()).strip() for part in parts]

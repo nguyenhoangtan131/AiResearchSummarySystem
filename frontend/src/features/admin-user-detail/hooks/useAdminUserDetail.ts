@@ -30,7 +30,7 @@ export function useAdminUserDetail(userId?: string) {
       } catch (loadError) {
         console.error('Không tải được chi tiết user admin:', loadError);
         if (active) {
-          setError('Chưa tải được hồ sơ người dùng. Khi nối backend, phần này sẽ đọc từ API admin detail.');
+          setError('Chưa tải được hồ sơ người dùng từ admin API.');
           setUserDetail(null);
         }
       } finally {

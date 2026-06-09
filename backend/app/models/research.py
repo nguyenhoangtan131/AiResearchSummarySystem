@@ -16,6 +16,8 @@ class ResearchArticle(Base):
     blueprints = relationship("ArticleBlueprint", back_populates="article_parent", cascade="all, delete-orphan", order_by="ArticleBlueprint.chapter_number")
     chapters = relationship("ArticleChapter", back_populates="article_parent", cascade="all, delete-orphan", order_by="ArticleChapter.chapter_number")
     owner = relationship("User", back_populates="articles")
+    llm_usages = relationship("LlmUsage", back_populates="article_parent", cascade="all, delete-orphan")
+    llm_usage_details = relationship("LlmUsageDetail", back_populates="article_parent")
 
 class ArticleBlueprint(Base):
     __tablename__ = "article_blueprints"
@@ -46,6 +48,7 @@ class ArticleChapter(Base):
     article_parent = relationship("ResearchArticle", back_populates="chapters")
     guides = relationship("ChapterGuide", back_populates="chapter_parent", cascade="all, delete-orphan", order_by="ChapterGuide.sort_order")
     sources = relationship("ChapterSource", back_populates="chapter_parent", cascade="all, delete-orphan", order_by="ChapterSource.sort_order")
+    llm_usage_details = relationship("LlmUsageDetail", back_populates="chapter_parent")
 
 class ChapterGuide(Base):
     __tablename__ = "chapter_guides"
