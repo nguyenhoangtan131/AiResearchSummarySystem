@@ -29,14 +29,14 @@ export default function AdminUsageTable({
   };
 
   return (
-    <section className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-sm">
+    <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
       <div className="flex flex-col gap-4 border-b border-slate-200 bg-slate-50 px-6 py-5 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-700">
-            User Overview
+            Người dùng
           </p>
           <h2 className="mt-2 text-xl font-semibold text-slate-950">
-            Danh sach nguoi dung theo ngay
+            Usage theo người dùng trong ngày
           </h2>
         </div>
         <button
@@ -57,9 +57,9 @@ export default function AdminUsageTable({
                 'User ID',
                 'Người dùng',
                 'Số bài',
-                'Số lần gọi LLM',
+                'Lượt gọi',
                 'Tổng token',
-                'Chi phí ($)',
+                'Chi phí',
               ].map((label) => (
                 <th
                   key={label}
@@ -115,7 +115,7 @@ export default function AdminUsageTable({
               Không có user usage trong ngày này
             </p>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Chưa có người dùng nào phát sinh usage cho ngày đang chọn.
+              Chưa có người dùng nào phát sinh token hoặc chi phí trong ngày đang chọn.
             </p>
           </div>
         </div>
@@ -123,14 +123,14 @@ export default function AdminUsageTable({
 
       <div className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4 text-sm text-slate-600 md:flex-row md:items-center md:justify-between">
         <p>
-          Hiển thị {users.length} trên {totalRecords} người dùng trong ngày
+          Hiển thị {users.length} / {totalRecords} người dùng
         </p>
         <div className="flex items-center gap-2">
           <span className="rounded-full border border-slate-200 bg-white px-3 py-1 font-semibold text-slate-900">
             Trang 1
           </span>
           <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-slate-500">
-            Chưa bật phân trang server
+            Chưa có thêm trang
           </span>
         </div>
       </div>

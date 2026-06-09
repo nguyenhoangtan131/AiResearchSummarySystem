@@ -192,6 +192,22 @@ const normalizeStructureText = (value?: string) =>
     .replace(/\s+/g, ' ')
     .trim();
 
+const legacyBlueprintTextMap: Record<string, string> = {
+  'tong quan ve he thong tom tat ai va khung danh gia hieu suat':
+    'Tổng quan về hệ thống tóm tắt AI và khung đánh giá hiệu suất',
+  'thiet ke nghien cuu va chien luoc tong hop tai lieu':
+    'Thiết kế nghiên cứu và chiến lược tổng hợp tài liệu',
+  'phan tich tac dong da chieu cua ai qua cac bang chung thuc nghiem':
+    'Phân tích tác động đa chiều của AI qua các bằng chứng thực nghiệm',
+  'ham y doi voi hoat dong nghien cuu hoc thuat va ket luan':
+    'Hàm ý đối với hoạt động nghiên cứu học thuật và kết luận',
+};
+
+const formatBlueprintText = (displayValue?: string, fallbackValue?: string) => {
+  const value = displayValue || fallbackValue || '';
+  return legacyBlueprintTextMap[normalizeStructureText(value)] || value;
+};
+
 const dedupeByVietnameseTitle = <T extends { title: string; display_title_vi?: string }>(items: T[]) => {
   const seen = new Set<string>();
   return items.filter((item) => {
@@ -1642,7 +1658,7 @@ export default function AdvancedGeneratorWizard() {
                               Chương {item.chapter_number}
                             </p>
                             <p className="mt-1.5 text-[15px] font-semibold leading-7 text-slate-900">
-                              {item.display_working_title_vi || item.working_title}
+                              {formatBlueprintText(item.display_working_title_vi, item.working_title)}
                             </p>
                           </div>
                           <button
@@ -1654,17 +1670,17 @@ export default function AdvancedGeneratorWizard() {
                             }}
                             className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
                           >
-                            Sua
+                            Sửa
                           </button>
                         </div>
                         {showBlueprintDetails && (
                           <div className="mt-3 space-y-3 rounded-[16px] border border-cyan-100 bg-cyan-50 px-4 py-3">
                             {editingBlueprintChapter === item.chapter_number && blueprintDraft ? (
                               <div className="space-y-3">
-                                <input value={blueprintDraft.working_title} onChange={(e) => setBlueprintDraft({ ...blueprintDraft, working_title: e.target.value, display_working_title_vi: e.target.value })} className="w-full rounded-2xl border border-cyan-200 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400" placeholder="Tieu de chuong" />
-                                <textarea rows={3} value={blueprintDraft.purpose} onChange={(e) => setBlueprintDraft({ ...blueprintDraft, purpose: e.target.value, display_purpose_vi: e.target.value })} className="w-full rounded-2xl border border-cyan-200 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400" placeholder="Vai tro chuong" />
-                                <textarea rows={2} value={blueprintDraft.start_focus} onChange={(e) => setBlueprintDraft({ ...blueprintDraft, start_focus: e.target.value, display_start_focus_vi: e.target.value })} className="w-full rounded-2xl border border-cyan-200 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400" placeholder="Mo chuong bang" />
-                                <textarea rows={2} value={blueprintDraft.end_focus} onChange={(e) => setBlueprintDraft({ ...blueprintDraft, end_focus: e.target.value, display_end_focus_vi: e.target.value })} className="w-full rounded-2xl border border-cyan-200 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400" placeholder="Ket chuong bang" />
+                                <input value={blueprintDraft.working_title} onChange={(e) => setBlueprintDraft({ ...blueprintDraft, working_title: e.target.value, display_working_title_vi: e.target.value })} className="w-full rounded-2xl border border-cyan-200 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400" placeholder="Tiêu đề chương" />
+                                <textarea rows={3} value={blueprintDraft.purpose} onChange={(e) => setBlueprintDraft({ ...blueprintDraft, purpose: e.target.value, display_purpose_vi: e.target.value })} className="w-full rounded-2xl border border-cyan-200 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400" placeholder="Vai trò chương" />
+                                <textarea rows={2} value={blueprintDraft.start_focus} onChange={(e) => setBlueprintDraft({ ...blueprintDraft, start_focus: e.target.value, display_start_focus_vi: e.target.value })} className="w-full rounded-2xl border border-cyan-200 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400" placeholder="Mở chương bằng" />
+                                <textarea rows={2} value={blueprintDraft.end_focus} onChange={(e) => setBlueprintDraft({ ...blueprintDraft, end_focus: e.target.value, display_end_focus_vi: e.target.value })} className="w-full rounded-2xl border border-cyan-200 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400" placeholder="Kết chương bằng" />
                                 <div className="flex justify-end">
                                   <button
                                     type="button"
@@ -1685,7 +1701,7 @@ export default function AdvancedGeneratorWizard() {
                                     }}
                                     className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white"
                                   >
-                                    Xac nhan
+                                    Xác nhận
                                   </button>
                                 </div>
                               </div>
@@ -1788,7 +1804,7 @@ export default function AdvancedGeneratorWizard() {
                                     <input value={editingTitleDraft.display_title_vi || editingTitleDraft.title} onChange={(e) => setEditingTitleDraft({ ...editingTitleDraft, title: e.target.value, display_title_vi: e.target.value })} className="w-full rounded-2xl border border-emerald-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-400" />
                                     <textarea rows={3} value={editingTitleDraft.display_description_vi || editingTitleDraft.description} onChange={(e) => setEditingTitleDraft({ ...editingTitleDraft, description: e.target.value, display_description_vi: e.target.value })} className="w-full rounded-2xl border border-emerald-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-400" />
                                     <div className="flex justify-end">
-                                      <button type="button" onClick={() => { if (!editingTitleDraft) return; updateCurrent('aiTitle', editingTitleDraft as never); void syncChapterOverride('title', { final_title: editingTitleDraft.display_title_vi || editingTitleDraft.title, final_description: editingTitleDraft.display_description_vi || editingTitleDraft.description, edited_from_ai: true }, 'ai'); setEditingTitle(false); setEditingTitleDraft(null); }} className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white">Xac nhan</button>
+                                      <button type="button" onClick={() => { if (!editingTitleDraft) return; updateCurrent('aiTitle', editingTitleDraft as never); void syncChapterOverride('title', { final_title: editingTitleDraft.display_title_vi || editingTitleDraft.title, final_description: editingTitleDraft.display_description_vi || editingTitleDraft.description, edited_from_ai: true }, 'ai'); setEditingTitle(false); setEditingTitleDraft(null); }} className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white">Xác nhận</button>
                                     </div>
                                   </div>
                                 ) : (
@@ -1799,7 +1815,7 @@ export default function AdvancedGeneratorWizard() {
                                 )}
                                 </div>
                                 <div className="flex shrink-0 gap-2">
-                                  <button type="button" onClick={() => { setEditingTitle(true); setEditingTitleDraft(current.aiTitle); }} className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-100">Sua</button>
+                                  <button type="button" onClick={() => { setEditingTitle(true); setEditingTitleDraft(current.aiTitle); }} className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-100">Sửa</button>
                                   <button type="button" onClick={clearAiTitle} className="rounded-full bg-white px-2 py-1 text-xs font-semibold text-slate-500 transition hover:bg-slate-100">X</button>
                                 </div>
                               </div>
@@ -1812,9 +1828,9 @@ export default function AdvancedGeneratorWizard() {
                         <span className="text-sm font-semibold text-slate-700">Tự nhập tiêu đề</span>
                         <div className="space-y-3">
                           <input value={current.customTitle} onChange={(e) => updateCurrent('customTitle', e.target.value)} className="w-full rounded-[20px] border border-slate-200 bg-white px-4 py-3 outline-none transition hover:border-emerald-200 focus:border-emerald-400" placeholder="Hoặc tự viết tiêu đề của bạn" />
-                          <textarea rows={2} value={current.manualTitleReason} onChange={(e) => updateCurrent('manualTitleReason', e.target.value)} className="w-full rounded-[20px] border border-slate-200 bg-white px-4 py-3 outline-none transition hover:border-emerald-200 focus:border-emerald-400" placeholder="Ly do vi sao chon tieu de nay" />
+                          <textarea rows={2} value={current.manualTitleReason} onChange={(e) => updateCurrent('manualTitleReason', e.target.value)} className="w-full rounded-[20px] border border-slate-200 bg-white px-4 py-3 outline-none transition hover:border-emerald-200 focus:border-emerald-400" placeholder="Lý do vì sao chọn tiêu đề này" />
                           <div className="flex justify-end">
-                            <button type="button" onClick={() => void addManualTitle()} className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700">Them</button>
+                            <button type="button" onClick={() => void addManualTitle()} className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700">Thêm</button>
                           </div>
                         </div>
                       </label>
@@ -1849,7 +1865,7 @@ export default function AdvancedGeneratorWizard() {
                                     <input value={editingBriefDraft.display_title_vi || editingBriefDraft.title} onChange={(e) => setEditingBriefDraft({ ...editingBriefDraft, title: e.target.value, display_title_vi: e.target.value })} className="w-full rounded-2xl border border-cyan-200 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400" />
                                     <textarea rows={4} value={editingBriefDraft.display_description_vi || editingBriefDraft.description} onChange={(e) => setEditingBriefDraft({ ...editingBriefDraft, description: e.target.value, display_description_vi: e.target.value })} className="w-full rounded-2xl border border-cyan-200 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400" />
                                     <div className="flex justify-end">
-                                      <button type="button" onClick={() => { if (!editingBriefDraft) return; updateCurrent('aiBrief', editingBriefDraft as never); void syncChapterOverride('brief', { final_title: editingBriefDraft.display_title_vi || editingBriefDraft.title, final_description: editingBriefDraft.display_description_vi || editingBriefDraft.description, edited_from_ai: true }, 'ai'); setEditingBrief(false); setEditingBriefDraft(null); }} className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white">Xac nhan</button>
+                                      <button type="button" onClick={() => { if (!editingBriefDraft) return; updateCurrent('aiBrief', editingBriefDraft as never); void syncChapterOverride('brief', { final_title: editingBriefDraft.display_title_vi || editingBriefDraft.title, final_description: editingBriefDraft.display_description_vi || editingBriefDraft.description, edited_from_ai: true }, 'ai'); setEditingBrief(false); setEditingBriefDraft(null); }} className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white">Xác nhận</button>
                                     </div>
                                   </div>
                                 ) : (
@@ -1860,7 +1876,7 @@ export default function AdvancedGeneratorWizard() {
                                 )}
                                 </div>
                                 <div className="flex shrink-0 gap-2">
-                                  <button type="button" onClick={() => { setEditingBrief(true); setEditingBriefDraft(current.aiBrief); }} className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-100">Sua</button>
+                                  <button type="button" onClick={() => { setEditingBrief(true); setEditingBriefDraft(current.aiBrief); }} className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-100">Sửa</button>
                                   <button type="button" onClick={clearAiBrief} className="rounded-full bg-white px-2 py-1 text-xs font-semibold text-slate-500 transition hover:bg-slate-100">X</button>
                                 </div>
                               </div>
@@ -1873,9 +1889,9 @@ export default function AdvancedGeneratorWizard() {
                         <span className="text-sm font-semibold text-slate-700">Tự nhập tóm tắt</span>
                         <div className="space-y-3">
                           <textarea rows={4} value={current.customBrief} onChange={(e) => updateCurrent('customBrief', e.target.value)} className="w-full rounded-[20px] border border-slate-200 bg-white px-4 py-3 outline-none transition hover:border-cyan-200 focus:border-cyan-400" placeholder="Hoặc tự viết tóm tắt chương" />
-                          <textarea rows={2} value={current.manualBriefReason} onChange={(e) => updateCurrent('manualBriefReason', e.target.value)} className="w-full rounded-[20px] border border-slate-200 bg-white px-4 py-3 outline-none transition hover:border-cyan-200 focus:border-cyan-400" placeholder="Ly do vi sao chon tom tat nay" />
+                          <textarea rows={2} value={current.manualBriefReason} onChange={(e) => updateCurrent('manualBriefReason', e.target.value)} className="w-full rounded-[20px] border border-slate-200 bg-white px-4 py-3 outline-none transition hover:border-cyan-200 focus:border-cyan-400" placeholder="Lý do vì sao chọn tóm tắt này" />
                           <div className="flex justify-end">
-                            <button type="button" onClick={() => void addManualBrief()} className="rounded-full bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-700">Them</button>
+                            <button type="button" onClick={() => void addManualBrief()} className="rounded-full bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-700">Thêm</button>
                           </div>
                         </div>
                       </label>
@@ -1906,7 +1922,7 @@ export default function AdvancedGeneratorWizard() {
                                           <input value={editingGuideDraft.display_title_vi || editingGuideDraft.title} onChange={(e) => setEditingGuideDraft({ ...editingGuideDraft, title: e.target.value, display_title_vi: e.target.value })} className="w-full rounded-2xl border border-amber-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber-400" />
                                           <textarea rows={3} value={editingGuideDraft.display_body_vi || editingGuideDraft.body} onChange={(e) => setEditingGuideDraft({ ...editingGuideDraft, body: e.target.value, display_body_vi: e.target.value })} className="w-full rounded-2xl border border-amber-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber-400" />
                                           <div className="flex justify-end">
-                                            <button type="button" onClick={() => { if (!editingGuideDraft) return; setChapters((list) => list.map((item, idx) => idx === activeIndex ? { ...item, selectedGuides: item.selectedGuides.map((selectedGuide) => selectedGuide.id === guide.id ? editingGuideDraft : selectedGuide) } : item)); void syncChapterOverride('guide', { selected_ai_guides: current.selectedGuides.map((selectedGuide) => ({ id: selectedGuide.id === guide.id ? editingGuideDraft.id : selectedGuide.id, title: selectedGuide.id === guide.id ? (editingGuideDraft.display_title_vi || editingGuideDraft.title) : (selectedGuide.display_title_vi || selectedGuide.title), body: selectedGuide.id === guide.id ? (editingGuideDraft.display_body_vi || editingGuideDraft.body) : (selectedGuide.display_body_vi || selectedGuide.body), is_manual: false })), manual_guides: current.manualGuides.map((manualGuide) => ({ id: manualGuide.id, title: manualGuide.display_title_vi || manualGuide.title, body: manualGuide.display_body_vi || manualGuide.body, is_manual: true })) }, 'ai'); setEditingGuideId(null); setEditingGuideDraft(null); }} className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white">Xac nhan</button>
+                                            <button type="button" onClick={() => { if (!editingGuideDraft) return; setChapters((list) => list.map((item, idx) => idx === activeIndex ? { ...item, selectedGuides: item.selectedGuides.map((selectedGuide) => selectedGuide.id === guide.id ? editingGuideDraft : selectedGuide) } : item)); void syncChapterOverride('guide', { selected_ai_guides: current.selectedGuides.map((selectedGuide) => ({ id: selectedGuide.id === guide.id ? editingGuideDraft.id : selectedGuide.id, title: selectedGuide.id === guide.id ? (editingGuideDraft.display_title_vi || editingGuideDraft.title) : (selectedGuide.display_title_vi || selectedGuide.title), body: selectedGuide.id === guide.id ? (editingGuideDraft.display_body_vi || editingGuideDraft.body) : (selectedGuide.display_body_vi || selectedGuide.body), is_manual: false })), manual_guides: current.manualGuides.map((manualGuide) => ({ id: manualGuide.id, title: manualGuide.display_title_vi || manualGuide.title, body: manualGuide.display_body_vi || manualGuide.body, is_manual: true })) }, 'ai'); setEditingGuideId(null); setEditingGuideDraft(null); }} className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white">Xác nhận</button>
                                           </div>
                                         </div>
                                       ) : (
@@ -1917,7 +1933,7 @@ export default function AdvancedGeneratorWizard() {
                                       )}
                                     </div>
                                     <div className="flex gap-2">
-                                      <button type="button" onClick={() => { setEditingGuideId(guide.id); setEditingGuideDraft(guide); }} className="cursor-pointer rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-amber-100">Sua</button>
+                                      <button type="button" onClick={() => { setEditingGuideId(guide.id); setEditingGuideDraft(guide); }} className="cursor-pointer rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-amber-100">Sửa</button>
                                       <button type="button" onClick={() => removeGuideOption(guide.id)} className="cursor-pointer rounded-full bg-white px-2 py-1 text-xs font-semibold text-amber-700 transition hover:bg-amber-100">Xóa</button>
                                     </div>
                                   </div>
@@ -1925,7 +1941,7 @@ export default function AdvancedGeneratorWizard() {
                                 {current.manualGuides.map((guide) => (
                                   <div key={guide.id} className="flex items-start justify-between gap-3 rounded-2xl border border-amber-200 bg-white px-3 py-3">
                                     <div>
-                                      <div className="inline-flex rounded-full bg-amber-100 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-700">Thu cong</div>
+                                      <div className="inline-flex rounded-full bg-amber-100 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-700">Thủ công</div>
                                       <p className="mt-2 text-sm font-semibold text-slate-900">{guide.display_title_vi || guide.title}</p>
                                       <p className="mt-1 text-sm leading-6 text-slate-700">{guide.display_body_vi || guide.body}</p>
                                     </div>
@@ -1942,7 +1958,7 @@ export default function AdvancedGeneratorWizard() {
                           <div className="space-y-3">
                             <textarea rows={3} value={current.customGuide} onChange={(e) => updateCurrent('customGuide', e.target.value)} className="w-full rounded-[20px] border border-slate-200 bg-white px-4 py-3 outline-none transition hover:border-amber-200 focus:border-amber-400" placeholder="Hoặc tự viết hướng dẫn của bạn" />
                             <div className="flex justify-end">
-                              <button type="button" onClick={() => void addManualGuide()} className="rounded-full bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700">Them</button>
+                              <button type="button" onClick={() => void addManualGuide()} className="rounded-full bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700">Thêm</button>
                             </div>
                           </div>
                         </label>

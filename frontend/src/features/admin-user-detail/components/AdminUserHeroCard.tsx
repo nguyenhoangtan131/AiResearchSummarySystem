@@ -18,28 +18,28 @@ const getTierClassName = (tier: string) => {
 export default function AdminUserHeroCard({ userDetail }: Props) {
   const stats = [
     {
-      label: 'Tong bai viet',
+      label: 'Tổng bài viết',
       value: formatNumber(userDetail.totalArticles),
-      hint: `${formatNumber(userDetail.totalLlmCalls)} calls`,
+      hint: `${formatNumber(userDetail.totalLlmCalls)} lượt gọi`,
       progressClassName: 'w-3/4',
     },
     {
-      label: 'Tong token',
+      label: 'Tổng token',
       value: formatCompactMetric(userDetail.totalTokens),
       hint: userDetail.tier,
       progressClassName: 'w-1/2',
     },
     {
-      label: 'Tong chi phi',
+      label: 'Chi phí ước tính',
       value: formatUsd(userDetail.totalEstimatedCost),
-      hint: `${formatNumber(userDetail.totalLlmCalls)} calls`,
+      hint: `${formatNumber(userDetail.totalLlmCalls)} lượt gọi`,
       progressClassName: 'w-2/3',
     },
   ];
 
   return (
     <section className="grid gap-5 xl:grid-cols-12">
-      <article className="xl:col-span-4 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+      <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm xl:col-span-4">
         <div className="min-w-0 flex-1">
           <h2 className="text-2xl font-bold tracking-tight text-slate-950">
             {userDetail.fullName}
@@ -57,7 +57,7 @@ export default function AdminUserHeroCard({ userDetail }: Props) {
               {userDetail.tier}
             </span>
             <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-700">
-              Active
+              Đang hoạt động
             </span>
           </div>
         </div>
@@ -67,7 +67,7 @@ export default function AdminUserHeroCard({ userDetail }: Props) {
         {stats.map((stat) => (
           <article
             key={stat.label}
-            className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm"
+            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
           >
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
               {stat.label}

@@ -127,7 +127,7 @@ class AdvancedChapterRecommendationService:
             item.display_description_vi = item.description
         self.store.save_chapter_step(payload.session_id, payload.chapter_number, "titles", response.model_dump())
         metric = build_gemini_step_metric(
-            label="Sinh tieu de chuong",
+            label="Gợi ý tiêu đề chương",
             model_name=self.model_name,
             response=raw_response,
             started_at=started_at,
@@ -195,7 +195,7 @@ class AdvancedChapterRecommendationService:
             item.display_description_vi = item.description
         self.store.save_chapter_step(payload.session_id, payload.chapter_number, "briefs", response.model_dump())
         metric = build_gemini_step_metric(
-            label="Sinh tom tat chuong",
+            label="Sinh tóm tắt chương",
             model_name=self.model_name,
             response=raw_response,
             started_at=started_at,
@@ -263,7 +263,7 @@ class AdvancedChapterRecommendationService:
             item.display_body_vi = item.body
         self.store.save_chapter_step(payload.session_id, payload.chapter_number, "guides", response.model_dump())
         metric = build_gemini_step_metric(
-            label="Sinh dinh huong viet chuong",
+            label="Sinh định hướng viết chương",
             model_name=self.model_name,
             response=raw_response,
             started_at=started_at,
@@ -349,7 +349,7 @@ class AdvancedChapterRecommendationService:
             item.display_publication_vi = item.publication
         self.store.save_chapter_step(payload.session_id, payload.chapter_number, "sources", source_response.model_dump())
         metric = build_gemini_step_metric(
-            label="Lay trich dan va nguon hoc thuat",
+            label="Lấy trích dẫn và nguồn học thuật",
             model_name=self.model_name,
             response=planning_response,
             started_at=started_at,

@@ -15,35 +15,35 @@ type Props = {
 const cards = [
   {
     key: 'calls',
-    title: 'Tổng số cuộc gọi LLM',
+    title: 'Lượt gọi model',
     valueKey: 'totalCalls',
     icon: Activity,
     accent: 'from-blue-600 to-cyan-500',
-    hint: 'Số lượt gọi API Gemini trong ngày.',
+    hint: 'Tổng số request Gemini trong ngày.',
   },
   {
     key: 'input',
-    title: 'Tổng Input Tokens',
+    title: 'Token đầu vào',
     valueKey: 'totalInputTokens',
     icon: SquareArrowDown,
     accent: 'from-slate-900 to-slate-700',
-    hint: 'Khối lượng prompt đi vào hệ thống.',
+    hint: 'Token từ prompt, blueprint và nguồn tham khảo.',
   },
   {
     key: 'output',
-    title: 'Tổng Output Tokens',
+    title: 'Token đầu ra',
     valueKey: 'totalOutputTokens',
     icon: Download,
     accent: 'from-orange-500 to-amber-500',
-    hint: 'Lượng token sinh ra từ Gemini.',
+    hint: 'Token do model sinh ra trong các bước xử lý.',
   },
   {
     key: 'cost',
-    title: 'Tổng chi phí ước tính',
+    title: 'Chi phí ước tính',
     valueKey: 'totalEstimatedCost',
     icon: BadgeDollarSign,
     accent: 'from-emerald-500 to-teal-500',
-    hint: 'Chi phí USD được quy đổi theo log.',
+    hint: 'Ước tính theo log usage đã lưu.',
   },
 ] as const;
 
@@ -61,7 +61,7 @@ export default function AdminOverviewCards({ overview }: Props) {
         return (
           <article
             key={card.key}
-            className="relative overflow-hidden rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm"
+            className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"
           >
             <div
               className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${card.accent}`}

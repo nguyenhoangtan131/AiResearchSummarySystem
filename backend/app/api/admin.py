@@ -214,7 +214,7 @@ def get_admin_article_detail(
         steps.append(
             AdminArticleStepBreakdownItem(
                 stepKey="blueprint",
-                label=usage.blueprint_label or "Tao bo cuc tong the",
+                label=usage.blueprint_label or "Tạo bố cục tổng thể",
                 callCount=1,
                 inputTokens=_int_attr(usage, "blueprint_input_tokens"),
                 outputTokens=_int_attr(usage, "blueprint_output_tokens"),

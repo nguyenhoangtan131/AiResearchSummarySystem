@@ -19,14 +19,14 @@ export default function AdminUserArticlesTable({
   onSearchChange,
 }: Props) {
   return (
-    <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+    <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
       <div className="flex flex-col gap-4 border-b border-slate-200 bg-slate-50 px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-700">
-            User Articles
+            Bài viết
           </p>
           <h3 className="mt-2 text-xl font-semibold text-slate-950">
-            Danh sach bai nghien cuu
+            Danh sách bài nghiên cứu
           </h3>
         </div>
 
@@ -40,7 +40,7 @@ export default function AdminUserArticlesTable({
               type="text"
               value={searchValue}
               onChange={(event) => onSearchChange(event.target.value)}
-              placeholder="Tim kiem bai viet..."
+              placeholder="Tìm kiếm bài viết..."
               className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm text-slate-700 outline-none transition focus:border-cyan-400"
             />
           </label>
@@ -50,7 +50,7 @@ export default function AdminUserArticlesTable({
             className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
           >
             <Filter size={16} />
-            Loc
+            Lọc
           </button>
         </div>
       </div>
@@ -61,11 +61,11 @@ export default function AdminUserArticlesTable({
             <tr>
               {[
                 'Article ID',
-                'Tieu de bai nghien cuu',
-                'Ngay tao',
-                'So lan goi LLM',
-                'Tong token',
-                'Chi phi ($)',
+                'Tiêu đề bài nghiên cứu',
+                'Ngày tạo',
+                'Lượt gọi',
+                'Tổng token',
+                'Chi phí',
               ].map((label) => (
                 <th
                   key={label}
@@ -110,7 +110,7 @@ export default function AdminUserArticlesTable({
 
       <div className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4 text-sm text-slate-600 md:flex-row md:items-center md:justify-between">
         <span>
-          Hien thi {articles.length} tren tong {totalArticles} bai viet
+          Hiển thị {articles.length} / {totalArticles} bài viết
         </span>
         <div className="flex items-center gap-2">
           {['1', '2', '3'].map((label, index) => (

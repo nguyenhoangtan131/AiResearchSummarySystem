@@ -12,12 +12,12 @@ from app.models.llm_usage import LlmUsage, LlmUsageDetail
 from app.models.research import ArticleChapter, ResearchArticle
 
 DEFAULT_STEP_LABELS = {
-    "blueprint": "Tao bo cuc tong the",
-    "title": "Sinh tieu de chuong",
-    "brief": "Sinh tom tat chuong",
-    "guide": "Sinh dinh huong viet chuong",
-    "citation": "Lay trich dan va nguon hoc thuat",
-    "writing": "Sinh noi dung chuong",
+    "blueprint": "Tạo bố cục tổng thể",
+    "title": "Gợi ý tiêu đề chương",
+    "brief": "Sinh tóm tắt chương",
+    "guide": "Sinh định hướng viết chương",
+    "citation": "Lấy trích dẫn và nguồn học thuật",
+    "writing": "Sinh nội dung chương",
 }
 
 

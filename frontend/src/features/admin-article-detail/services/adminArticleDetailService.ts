@@ -1,5 +1,6 @@
 import { adminApi } from '../../../services/api';
 import type { AdminArticleDetail } from '../types';
+import { formatStepTitle } from '../utils';
 
 export const adminArticleDetailService = {
   async getArticleDetail(articleId: string): Promise<AdminArticleDetail> {
@@ -25,7 +26,7 @@ export const adminArticleDetailService = {
           averageLatencySeconds: number;
         }) => ({
           stepKey: step.stepKey,
-          title: step.label,
+          title: formatStepTitle(step.stepKey, step.label),
           callCount: Number(step.callCount || 0),
           modelName: step.modelName,
           inputTokens: Number(step.inputTokens || 0),

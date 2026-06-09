@@ -327,7 +327,7 @@ class AdvancedGenerationService:
         )
         section_content = AdvancedArticleFormatter.normalize_section_content(payload.get("section_content") or "")
         metric = build_gemini_step_metric(
-            label="Sinh noi dung chuong",
+            label="Sinh nội dung chương",
             model_name=self.model_name,
             response=raw_response,
             started_at=started_at,

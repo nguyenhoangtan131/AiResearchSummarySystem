@@ -70,15 +70,15 @@ export default function AdminDashboard() {
   if (!userAccess.canOpenAdminUi) {
     return (
       <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.14),_transparent_28%),linear-gradient(180deg,_#f8fafc_0%,_#eef2ff_100%)] px-4 py-8">
-        <div className="mx-auto max-w-3xl rounded-[32px] border border-amber-200 bg-white p-8 shadow-sm">
+        <div className="mx-auto max-w-3xl rounded-3xl border border-amber-200 bg-white p-8 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-amber-700">
-            Admin Access Required
+            Yêu cầu quyền admin
           </p>
           <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-            Bạn không có quyền vào Dashboard Admin
+            Bạn chưa có quyền mở trang quản trị
           </h1>
           <p className="mt-4 text-sm leading-7 text-slate-600">
-            Trang này chỉ nên hiển thị khi tài khoản có <code>tier = admin</code>. Ở frontend mình đã ẩn menu với user thường và chặn mềm khi truy cập trực tiếp URL. Khi làm backend admin, các endpoint <code>/api/admin/*</code> cũng sẽ trả về <code>403 Forbidden</code> nếu tier không hợp lệ.
+            Khu vực này chỉ dành cho tài khoản có quyền <code>admin</code>. Vui lòng đăng nhập bằng tài khoản quản trị để tiếp tục.
           </p>
         </div>
       </div>
@@ -86,22 +86,22 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.14),_transparent_28%),linear-gradient(180deg,_#f8fafc_0%,_#eef2ff_100%)] px-4 py-8">
-      <div className="mx-auto flex max-w-7xl gap-6">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.12),_transparent_26%),linear-gradient(180deg,_#f8fafc_0%,_#eef3f8_100%)] px-4 py-7">
+      <div className="mx-auto flex max-w-[1280px] gap-6">
         <AdminSidebar />
 
         <main className="min-w-0 flex-1 space-y-6">
-          <section className="rounded-[32px] border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
+          <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-700">
-                  Dashboard Admin
+                  Bảng điều khiển
                 </p>
-                <h1 className="mt-3 text-4xl font-bold tracking-tight text-slate-950">
-                  Quản trị hệ thống Gemini
+                <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+                  Giám sát usage Gemini
                 </h1>
                 <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                  Theo dõi lượng token, số lần gọi LLM và chi phí quy đổi theo từng ngày. Cấu trúc trang này đã tách sẵn theo feature để sau đó nối API `/api/admin/*` dễ hơn.
+                  Theo dõi token, lượt gọi model và chi phí ước tính theo từng ngày để kiểm soát ngân sách vận hành.
                 </p>
               </div>
 
@@ -122,20 +122,20 @@ export default function AdminDashboard() {
             </div>
             {!userAccess.hasRealAdminAccess && (
               <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-800">
-                Frontend đang bật quyền xem tạm thời vì backend chưa trả về <code>tier</code> trong <code>user_info</code>. Khi backend auth đã trả về tier thật, mình sẽ khóa lại đúng chuẩn chỉ cho <code>admin</code>.
+                Đang dùng quyền xem tạm thời trong môi trường kiểm thử. Khi xác thực admin hoàn tất, khu vực này sẽ chỉ mở cho tài khoản quản trị.
               </div>
             )}
           </section>
 
           {error && (
-            <div className="rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm leading-6 text-rose-700">
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm leading-6 text-rose-700">
               {error}
             </div>
           )}
 
           {isLoading && (
-            <div className="rounded-[28px] border border-slate-200 bg-white px-6 py-10 text-center text-sm italic text-slate-500 shadow-sm">
-              Đang tải dữ liệu dashboard admin...
+            <div className="rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center text-sm italic text-slate-500 shadow-sm">
+              Đang tải dữ liệu quản trị...
             </div>
           )}
 

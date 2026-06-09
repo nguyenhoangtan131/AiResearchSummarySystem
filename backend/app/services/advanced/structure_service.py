@@ -116,7 +116,7 @@ class AdvancedStructureService:
                 item.display_end_focus_vi = item.end_focus
         self.store.save_structure(session_id, response.model_dump())
         metric = build_gemini_step_metric(
-            label="Tao bo cuc tong the",
+            label="Tạo bố cục tổng thể",
             model_name=self.model_name,
             response=raw_response,
             started_at=started_at,

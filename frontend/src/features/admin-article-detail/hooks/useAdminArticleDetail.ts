@@ -13,7 +13,7 @@ export function useAdminArticleDetail(articleId?: string) {
 
     const loadArticleDetail = async () => {
       if (!articleId) {
-        setError('Khong tim thay article ID de hien thi chi tiet.');
+        setError('Không tìm thấy article ID để hiển thị chi tiết.');
         setArticleDetail(null);
         setIsLoading(false);
         return;
@@ -27,9 +27,9 @@ export function useAdminArticleDetail(articleId?: string) {
           setArticleDetail(response);
         }
       } catch (loadError) {
-        console.error('Khong tai duoc chi tiet article admin:', loadError);
+        console.error('Không tải được chi tiết article admin:', loadError);
         if (active) {
-          setError('Chua tai duoc chi tiet article tu admin API.');
+          setError('Chưa tải được chi tiết bài viết từ admin API.');
           setArticleDetail(null);
         }
       } finally {

@@ -11,7 +11,7 @@ export default function AdminSidebar({ currentUserId, currentArticleId }: Props)
   const items = [
     {
       to: '/admin/dashboard',
-      label: 'Usage Overview',
+      label: 'Tổng quan usage',
       icon: BarChart3,
       isActive: location.pathname === '/admin/dashboard',
     },
@@ -19,7 +19,7 @@ export default function AdminSidebar({ currentUserId, currentArticleId }: Props)
       ? [
           {
             to: `/admin/users/${currentUserId}`,
-            label: 'User Detail',
+            label: 'Hồ sơ người dùng',
             icon: UserSquare2,
             isActive: location.pathname.startsWith('/admin/users/'),
           },
@@ -29,7 +29,7 @@ export default function AdminSidebar({ currentUserId, currentArticleId }: Props)
       ? [
           {
             to: `/admin/articles/${currentArticleId}`,
-            label: 'Article Detail',
+            label: 'Chi tiết bài viết',
             icon: FileText,
             isActive: location.pathname.startsWith('/admin/articles/'),
           },
@@ -38,12 +38,12 @@ export default function AdminSidebar({ currentUserId, currentArticleId }: Props)
   ];
 
   return (
-    <aside className="sticky top-8 hidden h-[calc(100vh-4rem)] w-[272px] shrink-0 flex-col rounded-[32px] border border-slate-200 bg-white px-5 py-6 shadow-sm xl:flex">
+    <aside className="sticky top-7 hidden h-[calc(100vh-3.5rem)] w-[252px] shrink-0 flex-col rounded-3xl border border-slate-200 bg-white px-5 py-6 shadow-sm xl:flex">
       <div className="border-b border-slate-100 pb-5">
         <p className="text-xs font-semibold uppercase tracking-[0.26em] text-cyan-700">
-          API Console
+          Admin Console
         </p>
-        <p className="mt-2 text-sm text-slate-500">Admin Monitoring Surface</p>
+        <p className="mt-2 text-sm text-slate-500">Theo dõi usage và chi phí AI</p>
       </div>
 
       <nav className="mt-6 space-y-2">
@@ -55,7 +55,7 @@ export default function AdminSidebar({ currentUserId, currentArticleId }: Props)
             <Link
               key={item.to}
               to={item.to}
-              className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
+              className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition ${
                 isActive
                   ? 'bg-slate-950 text-cyan-300 shadow-[rgba(0,0,0,0.3)_0px_12px_24px]'
                   : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
@@ -69,13 +69,13 @@ export default function AdminSidebar({ currentUserId, currentArticleId }: Props)
       </nav>
 
       <div className="mt-auto space-y-2 border-t border-slate-100 pt-5">
-        <div className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-500">
+        <div className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-500">
           <HelpCircle size={18} />
-          Help Center
+          Trung tâm hỗ trợ
         </div>
-        <div className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-500">
+        <div className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-500">
           <LogOut size={18} />
-          Sign Out
+          Đăng xuất
         </div>
       </div>
     </aside>

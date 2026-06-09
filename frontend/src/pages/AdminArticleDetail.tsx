@@ -40,7 +40,7 @@ export default function AdminArticleDetail() {
       try {
         applyUserAccess(JSON.parse(savedUser) as { tier?: UserTier });
       } catch (parseError) {
-        console.error('Khong doc duoc user_info:', parseError);
+        console.error('Không đọc được user_info:', parseError);
       }
     }
 
@@ -51,7 +51,7 @@ export default function AdminArticleDetail() {
         localStorage.setItem('user_info', JSON.stringify(userInfo));
         applyUserAccess(userInfo);
       } catch (syncError) {
-        console.error('Khong dong bo duoc tier user:', syncError);
+        console.error('Không đồng bộ được tier user:', syncError);
       }
     };
 
@@ -65,15 +65,15 @@ export default function AdminArticleDetail() {
   if (!userAccess.canOpenAdminUi) {
     return (
       <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.14),_transparent_28%),linear-gradient(180deg,_#f8fafc_0%,_#eef2ff_100%)] px-4 py-8">
-        <div className="mx-auto max-w-3xl rounded-[32px] border border-amber-200 bg-white p-8 shadow-sm">
+        <div className="mx-auto max-w-3xl rounded-3xl border border-amber-200 bg-white p-8 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-amber-700">
-            Admin Access Required
+            Yêu cầu quyền admin
           </p>
           <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-            Ban khong co quyen vao khu admin
+            Bạn chưa có quyền mở chi tiết bài viết
           </h1>
           <p className="mt-4 text-sm leading-7 text-slate-600">
-            Trang chi tiet article chi duoc mo khi tai khoan co <code>tier = admin</code>.
+            Trang này chỉ dành cho tài khoản có quyền <code>admin</code>.
           </p>
         </div>
       </div>
@@ -81,12 +81,12 @@ export default function AdminArticleDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.14),_transparent_28%),linear-gradient(180deg,_#f8fafc_0%,_#eef2ff_100%)] px-4 py-8">
-      <div className="mx-auto flex max-w-7xl gap-6">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.12),_transparent_26%),linear-gradient(180deg,_#f8fafc_0%,_#eef3f8_100%)] px-4 py-7">
+      <div className="mx-auto flex max-w-[1280px] gap-6">
         <AdminSidebar currentArticleId={articleId} />
 
         <main className="min-w-0 flex-1 space-y-6">
-          <section className="rounded-[32px] border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
+          <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <Link
@@ -94,34 +94,34 @@ export default function AdminArticleDetail() {
                   className="inline-flex items-center gap-2 text-sm font-semibold text-cyan-700 transition hover:text-cyan-500"
                 >
                   <ArrowLeft size={16} />
-                  Dashboard Admin
+                  Quay lại bảng điều khiển
                 </Link>
-                <h1 className="mt-3 text-4xl font-bold tracking-tight text-slate-950">
-                  Article execution detail
+                <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+                  Chi tiết thực thi bài viết
                 </h1>
                 <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                  Trang nay gom usage theo tung nhom buoc, de thay duoc buoc nao ton nhieu token va buoc nao bi goi nhieu lan nhat trong mot bai.
+                  Phân tích token, lượt gọi model và chi phí theo từng bước tạo bài để dễ phát hiện phần đang tốn nhiều tài nguyên.
                 </p>
               </div>
 
               {!userAccess.hasRealAdminAccess && (
                 <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800">
                   <ShieldAlert size={16} />
-                  Dang dung quyen admin tam de review UI
+                  Quyền xem tạm thời
                 </div>
               )}
             </div>
           </section>
 
           {error && (
-            <div className="rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm leading-6 text-rose-700">
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm leading-6 text-rose-700">
               {error}
             </div>
           )}
 
           {isLoading && (
-            <div className="rounded-[28px] border border-slate-200 bg-white px-6 py-10 text-center text-sm italic text-slate-500 shadow-sm">
-              Dang tai trang chi tiet article...
+            <div className="rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center text-sm italic text-slate-500 shadow-sm">
+              Đang tải chi tiết bài viết...
             </div>
           )}
 
