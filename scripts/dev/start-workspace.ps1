@@ -38,8 +38,8 @@ else {
 }
 
 if (-not $DryRun) {
-    [void](Wait-ForPort -Port 5432 -TimeoutSeconds 30)
-    [void](Wait-ForPort -Port 6379 -TimeoutSeconds 30)
+    [void](Wait-ForPort -Port 5433 -TimeoutSeconds 30)
+    [void](Wait-ForPort -Port 6380 -TimeoutSeconds 30)
 
     Push-Location $backendDir
     try {

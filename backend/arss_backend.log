@@ -16423,3 +16423,5 @@ redis.exceptions.ConnectionError: Error 10061 connecting to localhost:6379. No c
 2026-06-09 19:51:39,577 [INFO] ARSS: [Redis] Cache client initialized with ttl=21600s
 2026-06-09 20:56:07,679 [DEBUG] urllib3.connectionpool: Starting new HTTPS connection (1): www.googleapis.com:443
 2026-06-09 20:56:08,396 [DEBUG] urllib3.connectionpool: https://www.googleapis.com:443 "GET /oauth2/v3/userinfo HTTP/1.1" 200 None
+2026-06-09 20:59:08,003 [DEBUG] urllib3.connectionpool: Starting new HTTPS connection (1): www.googleapis.com:443
+2026-06-09 20:59:08,449 [DEBUG] urllib3.connectionpool: https://www.googleapis.com:443 "GET /oauth2/v3/userinfo HTTP/1.1" 200 None
