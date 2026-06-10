@@ -2,8 +2,8 @@
 
 $dockerComposeFile = Join-Path $RepoRoot "docker-compose.yml"
 
-Stop-ManagedPortProcess -Port 5173 -Name "Frontend Vite"
-Stop-ManagedPortProcess -Port 8000 -Name "Backend Uvicorn"
+Stop-ManagedPortProcess -Port 5175 -Name "Frontend Vite"
+Stop-ManagedPortProcess -Port 8010 -Name "Backend Uvicorn"
 
 try {
     & docker compose -f $dockerComposeFile stop

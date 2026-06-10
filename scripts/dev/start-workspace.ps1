@@ -38,8 +38,8 @@ else {
 }
 
 if (-not $DryRun) {
-    [void](Wait-ForPort -Port 5433 -TimeoutSeconds 30)
-    [void](Wait-ForPort -Port 6380 -TimeoutSeconds 30)
+    [void](Wait-ForPort -Port 55433 -TimeoutSeconds 30)
+    [void](Wait-ForPort -Port 56380 -TimeoutSeconds 30)
 
     Push-Location $backendDir
     try {
@@ -55,9 +55,9 @@ else {
 
 Start-ManagedProcess `
     -Name "Backend Uvicorn" `
-    -Port 8000 `
+    -Port 8010 `
     -FilePath $backendPython `
-    -ArgumentList @("-m", "uvicorn", "app.main:app", "--reload", "--host", "127.0.0.1", "--port", "8000") `
+    -ArgumentList @("-m", "uvicorn", "app.main:app", "--reload", "--host", "127.0.0.1", "--port", "8010") `
     -WorkingDirectory $backendDir `
     -StdOutPath $backendStdOut `
     -StdErrPath $backendStdErr `
@@ -65,9 +65,9 @@ Start-ManagedProcess `
 
 Start-ManagedProcess `
     -Name "Frontend Vite" `
-    -Port 5173 `
+    -Port 5175 `
     -FilePath $frontendNpm `
-    -ArgumentList @("run", "dev", "--", "--host", "127.0.0.1", "--port", "5173") `
+    -ArgumentList @("run", "dev", "--", "--host", "127.0.0.1", "--port", "5175") `
     -WorkingDirectory $frontendDir `
     -StdOutPath $frontendStdOut `
     -StdErrPath $frontendStdErr `
@@ -75,6 +75,6 @@ Start-ManagedProcess `
 
 if (-not $DryRun) {
     Write-Host "Workspace dev stack da san sang."
-    Write-Host "Frontend: http://127.0.0.1:5173"
-    Write-Host "Backend:  http://127.0.0.1:8000"
+    Write-Host "Frontend: http://127.0.0.1:5175"
+    Write-Host "Backend:  http://127.0.0.1:8010"
 }

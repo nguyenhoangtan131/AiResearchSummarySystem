@@ -3,18 +3,18 @@ services:
     image: postgres:15
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: tantantan@123
+      POSTGRES_USER: ai_research_user
+      POSTGRES_PASSWORD: ai_research_password
       POSTGRES_DB: ai_research_db
     ports:
-      - "5433:5432"
+      - "55433:5432"
     volumes:
       - "postgres_data:/var/lib/postgresql/data"
   redis:
     image: redis:7-alpine
     restart: always
     ports:
-      - "6380:6379"
+      - "56380:6379"
   pg_admin:
     image: dpage/pgadmin4
     restart: always
@@ -22,7 +22,7 @@ services:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
       PGADMIN_DEFAULT_PASSWORD: rootpassword
     ports:
-      - "8081:80"
+      - "18081:80"
     depends_on:
       - db
 
