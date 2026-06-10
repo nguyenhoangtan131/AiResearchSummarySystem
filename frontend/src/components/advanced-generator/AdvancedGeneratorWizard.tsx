@@ -463,20 +463,17 @@ export default function AdvancedGeneratorWizard() {
   const finishedAll = chapterCount !== null && completed === chapterCount;
   const isLastChapter = chapterCount !== null && activeIndex === chapterCount - 1;
   const setupReady = Boolean(articleTitle.trim() && reportType.trim());
+  const hasDraftStructure = Boolean(selectedStructure || chapterCount !== null || structureOptions.length > 0 || articleId);
   const suggestedTitles = useMemo(() => titleRecommendations, [titleRecommendations]);
   const suggestedBriefs = useMemo(() => briefRecommendations, [briefRecommendations]);
   const suggestedGuides = useMemo(() => guideRecommendations, [guideRecommendations]);
   const suggestedSources = useMemo(() => sourceRecommendations, [sourceRecommendations]);
-  const reportTypeLabel = useMemo(
-    () => reportTypes.find((item) => item.value === reportType)?.label || reportType,
-    [reportType],
-  );
   const titleReady = Boolean(getFinalChapterTitleValue(current));
   const briefReady = Boolean(getFinalChapterBriefValue(current));
   const sourcesReady = Boolean((current?.sources.length || 0) > 0);
   const chapterNumber = activeIndex + 1;
   const shouldRenderPanel =
-    (panelMode === 'count' && !selectedStructure && (isLoadingStructure || structureOptions.length > 0)) ||
+    (panelMode === 'count' && !selectedStructure && (isLoadingStructure || structureOptions.length > 0 || Boolean(structureError))) ||
     (panelMode === 'title' && (isLoadingTitleOptions || suggestedTitles.length > 0)) ||
     (panelMode === 'brief' && (isLoadingBriefOptions || suggestedBriefs.length > 0)) ||
     (panelMode === 'guide' && (isLoadingGuideOptions || suggestedGuides.length > 0)) ||
@@ -711,7 +708,7 @@ export default function AdvancedGeneratorWizard() {
     }
   };
 
-  const loadStructureOptions = async (nextTitle: string, nextType: string) => {
+  const loadStructureOptions = async (nextTitle: string, nextType: string, useFreshSession = false) => {
     if (!nextTitle.trim() || !nextType.trim()) {
       setStructureOptions([]);
       setStructureSessionId('');
@@ -726,8 +723,11 @@ export default function AdvancedGeneratorWizard() {
       const { data } = await advancedApi.recommendStructure(
         nextTitle.trim(),
         nextType.trim(),
-        structureSessionId || undefined,
+        useFreshSession ? undefined : structureSessionId || undefined,
       );
+      if (data.report_type) {
+        setReportType(data.report_type);
+      }
       setStructureOptions(data.options);
       setStructureSessionId(data.session_id);
       window.localStorage.setItem(ADVANCED_SESSION_STORAGE_KEY, data.session_id);
@@ -787,17 +787,44 @@ export default function AdvancedGeneratorWizard() {
     };
   };
 
-  const handleReportTypeChange = async (value: string) => {
+  const handleReportTypeChange = (value: string) => {
     setReportType(value);
+    setIsTypeMenuOpen(false);
+  };
+
+  const resetStructureDraft = () => {
     setChapterCount(null);
     setChapters([]);
     setSelectedStructure(null);
     setActiveIndex(0);
     setStructureOptions([]);
-    setPanelMode(articleTitle.trim() ? 'count' : 'hidden');
-    setIsTypeMenuOpen(false);
+    setNormalizedArticleTitle('');
+    setArticleId('');
+    setTitleRecommendations([]);
+    setBriefRecommendations([]);
+    setGuideRecommendations([]);
+    setSourceRecommendations([]);
+    setChapterActionError('');
     window.localStorage.removeItem(ADVANCED_ARTICLE_STORAGE_KEY);
-    await loadStructureOptions(articleTitle, value);
+  };
+
+  const handleGenerateStructure = async () => {
+    if (!articleTitle.trim() || !reportType.trim()) {
+      setStructureError('Vui lòng nhập tiêu đề bài viết và loại bài viết trước khi tạo bố cục.');
+      setPanelMode('count');
+      return;
+    }
+
+    if (hasDraftStructure) {
+      const confirmed = window.confirm('Bạn muốn hủy bố cục/bài hiện tại để tạo bố cục mới? Các lựa chọn chương đang có sẽ bị thay thế.');
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    resetStructureDraft();
+    setPanelMode('count');
+    await loadStructureOptions(articleTitle, reportType, true);
   };
 
   const updateCurrent = (field: keyof Chapter, value: Chapter[keyof Chapter]) => {
@@ -1571,7 +1598,9 @@ export default function AdvancedGeneratorWizard() {
                   <h2 className="mt-2 text-2xl font-semibold text-slate-900">Thiết lập bài viết</h2>
                 </div>
                 <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-600">
-                  {reportType ? 'Các phương án chương do AI gợi ý đã sẵn ở bên phải' : 'Hãy chọn loại nghiên cứu để mở các phương án chương do AI gợi ý'}
+                  {structureOptions.length > 0
+                    ? 'Các phương án chương do AI gợi ý đã sẵn ở bên phải'
+                    : 'Nhập thiết lập để AI gợi ý chương'}
                 </div>
               </div>
               <div className="mt-6 grid gap-4 lg:grid-cols-2">
@@ -1582,23 +1611,30 @@ export default function AdvancedGeneratorWizard() {
                 <div className="space-y-2" ref={typeMenuRef}>
                   <span className="text-sm font-semibold text-slate-700">Loại bài viết</span>
                   <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setIsTypeMenuOpen((current) => !current)}
-                      className={`flex w-full cursor-pointer items-center justify-between rounded-[24px] border px-4 py-3 text-left outline-none transition ${
-                        isTypeMenuOpen || reportType
-                          ? 'border-cyan-300 bg-white shadow-[0_10px_30px_rgba(14,165,233,0.10)]'
-                          : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'
-                      }`}
-                    >
-                      <span className={reportType ? 'text-slate-900' : 'text-slate-400'}>
-                        {reportTypeLabel || 'Chọn loại bài viết'}
-                      </span>
-                      <ChevronDown
-                        size={18}
-                        className={`text-slate-500 transition ${isTypeMenuOpen ? 'rotate-180' : ''}`}
+                    <div className={`flex items-center rounded-[24px] border pr-3 transition ${
+                      isTypeMenuOpen || reportType
+                        ? 'border-cyan-300 bg-white shadow-[0_10px_30px_rgba(14,165,233,0.10)]'
+                        : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'
+                    }`}>
+                      <input
+                        value={reportType}
+                        onChange={(e) => setReportType(e.target.value)}
+                        onFocus={() => setIsTypeMenuOpen(true)}
+                        className="min-w-0 flex-1 rounded-l-[24px] bg-transparent px-4 py-3 text-slate-900 outline-none placeholder:text-slate-400"
+                        placeholder="Nhập hoặc chọn loại bài viết"
                       />
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsTypeMenuOpen((current) => !current)}
+                        className="cursor-pointer rounded-full p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+                        aria-label="Mở danh sách loại bài viết"
+                      >
+                        <ChevronDown
+                          size={18}
+                          className={`transition ${isTypeMenuOpen ? 'rotate-180' : ''}`}
+                        />
+                      </button>
+                    </div>
 
                     {isTypeMenuOpen && (
                       <div className="absolute top-full right-0 left-0 z-30 mt-[5px] max-h-72 overflow-auto rounded-[24px] border border-slate-200 bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.16)]">
@@ -1619,6 +1655,21 @@ export default function AdvancedGeneratorWizard() {
                         ))}
                       </div>
                     )}
+                  </div>
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => void handleGenerateStructure()}
+                      disabled={!setupReady || isLoadingStructure}
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                        setupReady && !isLoadingStructure
+                          ? 'cursor-pointer border border-slate-900 bg-slate-900 text-white hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-md'
+                          : 'cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-400'
+                      }`}
+                    >
+                      <Sparkles size={14} />
+                      {isLoadingStructure ? 'Đang tạo...' : hasDraftStructure ? 'Tạo lại bố cục' : 'Tạo bố cục'}
+                    </button>
                   </div>
                 </div>
               </div>

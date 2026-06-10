@@ -79,7 +79,7 @@ async def get_me(
     if not user:
         raise HTTPException(status_code=404, detail="Không tìm thấy người dùng")
         
-    return CheckMeResponse(user)
+    return CheckMeResponse.model_validate(user)
 
 @router.post("/logout")
 async def logout(response: Response):

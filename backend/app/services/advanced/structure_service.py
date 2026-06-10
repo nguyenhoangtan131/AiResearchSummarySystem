@@ -47,6 +47,25 @@ from app.schemas.advanced import (
 from app.schemas.research import ArticleBlueprintRead, ArticleChapterRead
 
 
+SUPPORTED_REPORT_TYPES = [
+    "Tổng quan tài liệu",
+    "Tổng quan hệ thống",
+    "Tổng quan phạm vi",
+    "Tổng quan tường thuật",
+    "Phân tích gộp",
+    "Báo cáo nghiên cứu",
+    "Báo cáo chính sách",
+    "Báo cáo nghiên cứu tình huống",
+    "Báo cáo kỹ thuật",
+    "Tiểu luận học thuật",
+    "Bài báo hội thảo",
+    "Bài báo tạp chí",
+    "Chương luận văn",
+    "Đề cương luận án",
+    "Đề xuất xin tài trợ",
+]
+
+
 class AdvancedStructureService:
     def __init__(self) -> None:
         api_key = os.getenv("GOOGLE_API_KEY")
@@ -73,12 +92,17 @@ class AdvancedStructureService:
             contents=STRUCTURE_RECOMMENDATION_PROMPT.format(
                 article_title=payload.article_title.strip(),
                 report_type=payload.report_type.strip(),
+                supported_report_types=", ".join(SUPPORTED_REPORT_TYPES),
             ),
         )
         parsed = self._extract_json(raw_response.text)
+        effective_report_type = self._normalize_report_type(
+            payload.report_type.strip(),
+            str(parsed.get("normalized_report_type") or "").strip(),
+        )
         options = self._normalize_options(
             parsed.get("options", []),
-            payload.report_type.strip(),
+            effective_report_type,
         )
 
         recommended_option_id = parsed.get("recommended_option_id") or options[0].option_id
@@ -98,7 +122,7 @@ class AdvancedStructureService:
                 or payload.article_title.strip()
             ).strip(),
             display_article_title_vi=payload.article_title.strip(),
-            report_type=payload.report_type.strip(),
+            report_type=effective_report_type,
             session_id=session_id,
             cache_key=self.store.structure_key(session_id),
             cache_ttl_seconds=self.store.ttl_seconds,
@@ -720,6 +744,26 @@ class AdvancedStructureService:
                 cleaned[:2000],
             )
             raise
+
+    def _normalize_report_type(self, user_value: str, model_value: str) -> str:
+        candidates = [model_value, user_value]
+        by_lower = {item.lower(): item for item in SUPPORTED_REPORT_TYPES}
+
+        for candidate in candidates:
+            cleaned = candidate.strip()
+            if cleaned in SUPPORTED_REPORT_TYPES:
+                return cleaned
+            lowered = cleaned.lower()
+            if lowered in by_lower:
+                return by_lower[lowered]
+
+        user_lower = user_value.lower()
+        for report_type in SUPPORTED_REPORT_TYPES:
+            lowered = report_type.lower()
+            if lowered in user_lower or user_lower in lowered:
+                return report_type
+
+        return "Báo cáo nghiên cứu"
 
     def _normalize_options(
         self, raw_options: list[dict[str, Any]], report_type: str

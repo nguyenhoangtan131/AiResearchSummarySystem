@@ -5,7 +5,8 @@ Nhiệm vụ của bạn là đề xuất các phương án bố cục chương 
 
 Đầu vào:
 - Tiêu đề bài: "{article_title}"
-- Loại bài: "{report_type}"
+- Loại bài người dùng nhập: "{report_type}"
+- Danh sách loại bài hợp lệ trong hệ thống: {supported_report_types}
 
 Mục tiêu:
 1. Suy ra số chương hợp lý nhất cho bài này.
@@ -14,6 +15,7 @@ Mục tiêu:
 4. Mỗi phương án phải thể hiện rõ mạch mở đầu, triển khai và kết thúc.
 5. Bố cục phải đúng chất học thuật và phù hợp với loại bài.
 6. Toàn bộ nội dung trả về phải bằng tiếng Việt tự nhiên, rõ ràng, dễ hiểu.
+7. Nếu loại bài người dùng nhập không khớp hoặc nhập bậy, hãy tự chọn loại gần nhất trong danh sách hợp lệ và lưu vào normalized_report_type.
 
 Quy tắc:
 - Chỉ trả về JSON. Không markdown. Không code fence.
@@ -36,10 +38,12 @@ Quy tắc:
 - Độ dài blueprint phải đúng bằng chapter_count.
 - rationale và blueprint phải viết bằng tiếng Việt.
 - Trường normalized_article_title dùng để lưu tiêu đề chuẩn hóa phục vụ nội bộ, nhưng trong hệ thống tiếng Việt hiện tại hãy ưu tiên giữ sát tiêu đề đầu vào.
+- Trường normalized_report_type phải là đúng một giá trị trong danh sách loại bài hợp lệ.
 
 Trả về đúng JSON theo mẫu này:
 {{
   "normalized_article_title": "Giữ nguyên tiêu đề đầu vào hoặc bản chuẩn hóa tối thiểu",
+  "normalized_report_type": "Báo cáo nghiên cứu",
   "recommended_option_id": "option-1",
   "options": [
     {{
