@@ -19,20 +19,21 @@ from app.prompts.advanced.generation_prompt import (
     ADVANCED_GENERATION_USER_PROMPT,
 )
 from app.redis_store import AdvancedRedisStore
+from app.services.api_key_vault import get_active_api_key
 from app.services.advanced.article_formatter import AdvancedArticleFormatter
 from app.services.llm_usage_service import LlmUsageService, build_gemini_step_metric
 
 
 class AdvancedGenerationService:
     def __init__(self, db: Session, user_id: str) -> None:
-        api_key = os.getenv("GOOGLE_API_KEY")
+        api_key = get_active_api_key("gemini", db)
         if not api_key:
             raise ValueError("GOOGLE_API_KEY is missing.")
 
         self.db = db
         self.user_id = UUID(user_id)
         self.client = genai.Client(api_key=api_key)
-        self.model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-2.5-flash-lite")
+        self.model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-3-flash-preview")
         self.store = AdvancedRedisStore()
         self._generated_cache_available: bool = True
 

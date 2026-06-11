@@ -21,7 +21,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
   }, [location.pathname]);
 
   return (
-    <nav className="border-b border-slate-800 bg-slate-950/95 text-white shadow-[0_16px_40px_rgba(15,23,42,0.35)] backdrop-blur">
+    <nav className="sticky top-0 z-[100] border-b border-slate-800 bg-slate-950/95 text-white shadow-[0_16px_40px_rgba(15,23,42,0.35)] backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
         <div
           className="group inline-flex cursor-pointer items-center gap-3 rounded-full border border-white/10 bg-white/5 px-4 py-2 transition duration-300 hover:-translate-y-0.5 hover:border-cyan-300/40 hover:bg-white/10 hover:shadow-[rgba(0,0,0,0.3)_0px_19px_38px,rgba(0,0,0,0.22)_0px_15px_12px]"
@@ -73,12 +73,12 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
             </div>
 
             {canAccessAdminUi && (
-              <div className="relative">
+              <div className="relative z-[130]">
                 <button
                   type="button"
                   onClick={() => setIsAdminMenuOpen((current) => !current)}
                   className={`inline-flex cursor-pointer items-center justify-center rounded-full border px-3 py-2 transition duration-200 ${
-                    location.pathname === '/admin/dashboard' || isAdminMenuOpen
+                    location.pathname.startsWith('/admin') || isAdminMenuOpen
                       ? 'border-cyan-300/40 bg-cyan-300/10 text-cyan-300 shadow-[0_0_0_1px_rgba(34,211,238,0.16)]'
                       : 'border-white/10 bg-white/6 text-slate-200 hover:-translate-y-0.5 hover:border-cyan-300/40 hover:bg-white/10 hover:text-cyan-300'
                   }`}
@@ -90,7 +90,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                 </button>
 
                 {isAdminMenuOpen && (
-                  <div className="absolute right-0 top-[calc(100%+0.75rem)] z-50 w-64 overflow-hidden rounded-[24px] border border-white/10 bg-slate-950/98 p-2 shadow-[0_24px_60px_rgba(0,0,0,0.45)] backdrop-blur">
+                  <div className="absolute right-0 top-[calc(100%+0.75rem)] z-[140] w-64 overflow-hidden rounded-[24px] border border-white/10 bg-slate-950/98 p-2 shadow-[0_24px_60px_rgba(0,0,0,0.45)] backdrop-blur">
                     <div className="border-b border-white/8 px-3 py-3">
                       <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300">
                         Quản trị hệ thống

@@ -23,6 +23,7 @@ export const authApi = {
 };
 
 export const advancedApi = {
+  getReportTypes: () => apiInstance.get('/advanced/report-types'),
   recommendStructure: (articleTitle: string, reportType: string, sessionId?: string) =>
     apiInstance.post('/advanced/structure/recommend', {
       article_title: articleTitle,
@@ -160,4 +161,26 @@ export const adminApi = {
     apiInstance.get(`/admin/users/${userId}`),
   getArticleDetail: (articleId: string) =>
     apiInstance.get(`/admin/articles/${articleId}`),
+  getApiKeys: () =>
+    apiInstance.get('/admin/api-keys'),
+  testApiKey: (provider: 'gemini' | 'serper', payload: { apiKey?: string; keyId?: string }) =>
+    apiInstance.post(`/admin/api-keys/${provider}/test`, payload),
+  addApiKey: (provider: 'gemini' | 'serper', payload: { apiKey: string }) =>
+    apiInstance.post(`/admin/api-keys/${provider}/add`, payload),
+  applyApiKey: (provider: 'gemini' | 'serper', payload: { keyId: string }) =>
+    apiInstance.post(`/admin/api-keys/${provider}/apply`, payload),
+  getGeminiModels: () =>
+    apiInstance.get('/admin/gemini-models'),
+  refreshGeminiModels: () =>
+    apiInstance.post('/admin/gemini-models/refresh'),
+  applyGeminiModel: (payload: { modelName: string }) =>
+    apiInstance.post('/admin/gemini-models/apply', payload),
+  getReportTypes: () =>
+    apiInstance.get('/admin/report-types'),
+  createReportType: (payload: { name: string; sortOrder?: number }) =>
+    apiInstance.post('/admin/report-types', payload),
+  updateReportType: (reportTypeId: string, payload: { name: string; sortOrder?: number }) =>
+    apiInstance.put(`/admin/report-types/${reportTypeId}`, payload),
+  deleteReportType: (reportTypeId: string) =>
+    apiInstance.delete(`/admin/report-types/${reportTypeId}`),
 };

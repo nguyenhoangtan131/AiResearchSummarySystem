@@ -19,6 +19,8 @@ from app.models.research import (
 )
 from app.prompts.advanced.structure_prompt import STRUCTURE_RECOMMENDATION_PROMPT
 from app.redis_store import AdvancedRedisStore
+from app.services.api_key_vault import get_active_api_key
+from app.services.report_type_service import get_active_report_type_names_from_db
 from app.services.llm_usage_service import (
     LlmUsageService,
     build_gemini_step_metric,
@@ -47,34 +49,15 @@ from app.schemas.advanced import (
 from app.schemas.research import ArticleBlueprintRead, ArticleChapterRead
 
 
-SUPPORTED_REPORT_TYPES = [
-    "Tổng quan tài liệu",
-    "Tổng quan hệ thống",
-    "Tổng quan phạm vi",
-    "Tổng quan tường thuật",
-    "Phân tích gộp",
-    "Báo cáo nghiên cứu",
-    "Báo cáo chính sách",
-    "Báo cáo nghiên cứu tình huống",
-    "Báo cáo kỹ thuật",
-    "Tiểu luận học thuật",
-    "Bài báo hội thảo",
-    "Bài báo tạp chí",
-    "Chương luận văn",
-    "Đề cương luận án",
-    "Đề xuất xin tài trợ",
-]
-
-
 class AdvancedStructureService:
     def __init__(self) -> None:
-        api_key = os.getenv("GOOGLE_API_KEY")
+        api_key = get_active_api_key("gemini")
         if not api_key:
             raise ValueError("GOOGLE_API_KEY is missing.")
 
         self.client = genai.Client(api_key=api_key)
         self.store = AdvancedRedisStore()
-        self.model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-2.5-flash-lite")
+        self.model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-3-flash-preview")
 
     def recommend_structure(
         self, payload: AdvancedStructureRequest
@@ -87,18 +70,20 @@ class AdvancedStructureService:
             payload.article_title.strip(),
         )
         started_at = start_step_timer()
+        supported_report_types = get_active_report_type_names_from_db()
         raw_response = self.client.models.generate_content(
             model=self.model_name,
             contents=STRUCTURE_RECOMMENDATION_PROMPT.format(
                 article_title=payload.article_title.strip(),
                 report_type=payload.report_type.strip(),
-                supported_report_types=", ".join(SUPPORTED_REPORT_TYPES),
+                supported_report_types=", ".join(supported_report_types),
             ),
         )
         parsed = self._extract_json(raw_response.text)
         effective_report_type = self._normalize_report_type(
             payload.report_type.strip(),
             str(parsed.get("normalized_report_type") or "").strip(),
+            supported_report_types,
         )
         options = self._normalize_options(
             parsed.get("options", []),
@@ -745,25 +730,25 @@ class AdvancedStructureService:
             )
             raise
 
-    def _normalize_report_type(self, user_value: str, model_value: str) -> str:
+    def _normalize_report_type(self, user_value: str, model_value: str, supported_report_types: list[str]) -> str:
         candidates = [model_value, user_value]
-        by_lower = {item.lower(): item for item in SUPPORTED_REPORT_TYPES}
+        by_lower = {item.lower(): item for item in supported_report_types}
 
         for candidate in candidates:
             cleaned = candidate.strip()
-            if cleaned in SUPPORTED_REPORT_TYPES:
+            if cleaned in supported_report_types:
                 return cleaned
             lowered = cleaned.lower()
             if lowered in by_lower:
                 return by_lower[lowered]
 
         user_lower = user_value.lower()
-        for report_type in SUPPORTED_REPORT_TYPES:
+        for report_type in supported_report_types:
             lowered = report_type.lower()
             if lowered in user_lower or user_lower in lowered:
                 return report_type
 
-        return "Báo cáo nghiên cứu"
+        return "Báo cáo nghiên cứu" if "Báo cáo nghiên cứu" in supported_report_types else supported_report_types[0]
 
     def _normalize_options(
         self, raw_options: list[dict[str, Any]], report_type: str

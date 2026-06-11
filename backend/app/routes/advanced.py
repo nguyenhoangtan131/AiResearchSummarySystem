@@ -5,6 +5,7 @@ from uuid import UUID
 from app.core.database import get_db
 from app.core.logging import logger
 from app.core.security import get_current_user
+from app.services.report_type_service import get_active_report_type_names
 from app.schemas.advanced import (
     AdvancedStructureCacheRead,
     AdvancedChapterStepCacheRead,
@@ -38,6 +39,11 @@ from app.services.advanced.generation_service import AdvancedGenerationService
 from app.services.advanced.structure_service import AdvancedStructureService
 
 router = APIRouter()
+
+
+@router.get("/report-types", status_code=status.HTTP_200_OK)
+async def get_report_types(db: Session = Depends(get_db)) -> dict[str, list[str]]:
+    return {"reportTypes": get_active_report_type_names(db)}
 
 
 @router.post(

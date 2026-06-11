@@ -6,6 +6,7 @@ import History from './pages/History';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminUserDetail from './pages/AdminUserDetail';
 import AdminArticleDetail from './pages/AdminArticleDetail';
+import AdminApiKeys from './pages/AdminApiKeys';
 import Navbar from './components/layout/navbar';
 import LandingPage from './pages/LandingPage';
 import { authApi } from './services/api';
@@ -118,6 +119,14 @@ function App() {
             element={
               <RequireAuth user={user}>
                 <AdminDashboard />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/admin/api-keys"
+            element={
+              <RequireAuth user={user}>
+                <AdminApiKeys />
               </RequireAuth>
             }
           />

@@ -10,6 +10,7 @@ from google import genai
 
 from app.core.logging import logger
 from app.redis_store import AdvancedRedisStore
+from app.services.api_key_vault import get_active_api_key
 from app.services.llm_usage_service import build_gemini_step_metric, step_metric_to_dict
 from app.schemas.advanced import (
     AdvancedStructureResponse,
@@ -38,14 +39,14 @@ from app.prompts.advanced.chapter_prompt import (
 
 class AdvancedChapterRecommendationService:
     def __init__(self) -> None:
-        api_key = os.getenv("GOOGLE_API_KEY")
+        api_key = get_active_api_key("gemini")
         if not api_key:
             raise ValueError("GOOGLE_API_KEY is missing.")
 
         self.client = genai.Client(api_key=api_key)
         self.store = AdvancedRedisStore()
-        self.model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-2.5-flash-lite")
-        self.serper_api_key = os.getenv("SERPER_API_KEY")
+        self.model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-3-flash-preview")
+        self.serper_api_key = get_active_api_key("serper")
 
     def get_cached_step(
         self, session_id: str, chapter_number: int, step: str

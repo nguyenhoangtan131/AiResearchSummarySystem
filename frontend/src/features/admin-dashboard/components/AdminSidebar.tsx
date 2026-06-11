@@ -1,4 +1,4 @@
-import { BarChart3, FileText, HelpCircle, LogOut, UserSquare2 } from 'lucide-react';
+import { BarChart3, FileText, KeyRound, UserSquare2 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 type Props = {
@@ -14,6 +14,12 @@ export default function AdminSidebar({ currentUserId, currentArticleId }: Props)
       label: 'Tổng quan usage',
       icon: BarChart3,
       isActive: location.pathname === '/admin/dashboard',
+    },
+    {
+      to: '/admin/api-keys',
+      label: 'API key & thể loại',
+      icon: KeyRound,
+      isActive: location.pathname === '/admin/api-keys',
     },
     ...(currentUserId
       ? [
@@ -38,7 +44,7 @@ export default function AdminSidebar({ currentUserId, currentArticleId }: Props)
   ];
 
   return (
-    <aside className="sticky top-7 hidden h-[calc(100vh-3.5rem)] w-[252px] shrink-0 flex-col rounded-3xl border border-slate-200 bg-white px-5 py-6 shadow-sm xl:flex">
+    <aside className="sticky top-28 hidden h-fit w-[252px] shrink-0 flex-col rounded-3xl border border-slate-200 bg-white px-5 py-6 shadow-sm xl:flex">
       <div className="border-b border-slate-100 pb-5">
         <p className="text-xs font-semibold uppercase tracking-[0.26em] text-cyan-700">
           Admin Console
@@ -68,16 +74,6 @@ export default function AdminSidebar({ currentUserId, currentArticleId }: Props)
         })}
       </nav>
 
-      <div className="mt-auto space-y-2 border-t border-slate-100 pt-5">
-        <div className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-500">
-          <HelpCircle size={18} />
-          Trung tâm hỗ trợ
-        </div>
-        <div className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-500">
-          <LogOut size={18} />
-          Đăng xuất
-        </div>
-      </div>
     </aside>
   );
 }

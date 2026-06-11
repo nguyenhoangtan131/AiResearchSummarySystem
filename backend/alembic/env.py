@@ -18,6 +18,8 @@ from app.models.research import (
 )
 from app.models.llm_usage import LlmUsage, LlmUsageDetail
 from app.models.user import User
+from app.models.api_key import ManagedApiKey
+from app.models.report_type import ReportType
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 

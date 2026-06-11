@@ -164,7 +164,7 @@ export default function ResearchResult() {
             </div>
           </div>
 
-          <aside className="h-fit xl:sticky xl:top-6">
+          <aside className="h-fit xl:sticky xl:top-28">
             <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">
                 Tác vụ bài viết

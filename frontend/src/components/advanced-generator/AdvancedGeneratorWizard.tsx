@@ -73,7 +73,7 @@ type Chapter = {
   done: boolean;
 };
 
-const reportTypes = [
+const defaultReportTypes = [
   { value: 'Tổng quan tài liệu', label: 'Tổng quan tài liệu' },
   { value: 'Tổng quan hệ thống', label: 'Tổng quan hệ thống' },
   { value: 'Tổng quan phạm vi', label: 'Tổng quan phạm vi' },
@@ -396,6 +396,7 @@ export default function AdvancedGeneratorWizard() {
   const navigate = useNavigate();
   const [articleTitle, setArticleTitle] = useState('');
   const [reportType, setReportType] = useState('');
+  const [reportTypes, setReportTypes] = useState<Array<{ value: string; label: string }>>([...defaultReportTypes]);
   const [chapterCount, setChapterCount] = useState<number | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [structureOptions, setStructureOptions] = useState<StructureOption[]>([]);
@@ -479,6 +480,33 @@ export default function AdvancedGeneratorWizard() {
     (panelMode === 'guide' && (isLoadingGuideOptions || suggestedGuides.length > 0)) ||
     (panelMode === 'source' && (isLoadingSourceOptions || suggestedSources.length > 0));
   const isCompactAiPanel = !shouldRenderPanel;
+
+  useEffect(() => {
+    let active = true;
+
+    const loadReportTypes = async () => {
+      try {
+        const { data } = await advancedApi.getReportTypes();
+        const values = Array.isArray(data.reportTypes) ? data.reportTypes : [];
+        const nextTypes = values
+          .map((value: unknown) => String(value || '').trim())
+          .filter(Boolean)
+          .map((value: string) => ({ value, label: value }));
+
+        if (active && nextTypes.length > 0) {
+          setReportTypes(nextTypes);
+        }
+      } catch (error) {
+        console.error('Không tải được danh sách thể loại:', error);
+      }
+    };
+
+    void loadReportTypes();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const mapCachedTitleOptions = (options: Array<Record<string, unknown>>): TitleOption[] =>
     options.map((item) => ({
@@ -1637,7 +1665,7 @@ export default function AdvancedGeneratorWizard() {
                     </div>
 
                     {isTypeMenuOpen && (
-                      <div className="absolute top-full right-0 left-0 z-30 mt-[5px] max-h-72 overflow-auto rounded-[24px] border border-slate-200 bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.16)]">
+                      <div className="absolute top-full right-0 left-0 z-[80] mt-[5px] max-h-72 overflow-auto rounded-[24px] border border-slate-200 bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.16)]">
                         {reportTypes.map((option) => (
                           <button
                             key={option.value}
@@ -1951,7 +1979,7 @@ export default function AdvancedGeneratorWizard() {
 
                   {briefReady && (
                     <div className="grid items-start gap-5 xl:grid-cols-2">
-                    <div className="h-fit self-start rounded-[24px] border border-slate-200 bg-slate-50 p-4 xl:sticky xl:top-6">
+                    <div className="h-fit self-start rounded-[24px] border border-slate-200 bg-slate-50 p-4 xl:sticky xl:top-28">
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
                           <p className="text-sm font-semibold text-slate-900">Hướng dẫn viết (tùy chọn)</p>
@@ -2016,7 +2044,7 @@ export default function AdvancedGeneratorWizard() {
                       </div>
                     </div>
 
-                    <div className="h-fit self-start rounded-[24px] border border-slate-200 bg-slate-50 p-4 xl:sticky xl:top-6">
+                    <div className="h-fit self-start rounded-[24px] border border-slate-200 bg-slate-50 p-4 xl:sticky xl:top-28">
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
                           <p className="text-sm font-semibold text-slate-900">Nguồn tài liệu</p>
@@ -2120,7 +2148,7 @@ export default function AdvancedGeneratorWizard() {
             )}
           </main>
 
-          <aside className={`self-start rounded-[28px] border border-slate-200 bg-white/92 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur transition-all duration-300 xl:sticky xl:top-5 ${isCompactAiPanel ? 'xl:max-h-[220px]' : 'xl:max-h-[calc(100vh-2.5rem)] xl:overflow-y-auto'}`}>
+          <aside className={`self-start rounded-[28px] border border-slate-200 bg-white/92 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur transition-all duration-300 xl:sticky xl:top-28 ${isCompactAiPanel ? 'xl:max-h-[220px]' : 'xl:max-h-[calc(100vh-7rem)] xl:overflow-y-auto'}`}>
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-700">Khu gợi ý AI</p>
