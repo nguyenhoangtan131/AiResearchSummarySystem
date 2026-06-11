@@ -32,10 +32,5 @@ export const canShowAdminUiDuringBootstrap = (
     return false;
   }
 
-  if (hasExplicitAdminAccess(user)) {
-    return true;
-  }
-
-  // Temporary frontend fallback while backend has not exposed tier yet.
-  return !hasAnyAuthorizationField(user);
+  return hasExplicitAdminAccess(user);
 };

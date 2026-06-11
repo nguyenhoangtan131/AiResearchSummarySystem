@@ -13,8 +13,22 @@ interface NavbarProps {
 
 export default function Navbar({ user, onLogout }: NavbarProps) {
   const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
-  const [isPingPongActive, setIsPingPongActive] = useState(false);
+  const [isPingPongActive, setIsPingPongActive] = useState<boolean>(() => {
+    try {
+      const cached = localStorage.getItem('ping_pong_active');
+      return cached === 'true';
+    } catch {
+      return false;
+    }
+  });
   const [isPingPongLoading, setIsPingPongLoading] = useState(false);
+  const [isPingPongInitialized, setIsPingPongInitialized] = useState(() => {
+    try {
+      return localStorage.getItem('ping_pong_active') !== null;
+    } catch {
+      return false;
+    }
+  });
   const location = useLocation();
   const navigate = useNavigate();
   const canAccessAdminUi = canShowAdminUiDuringBootstrap(user);
@@ -38,22 +52,34 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
   }, []);
 
   useEffect(() => {
-    if (isAdminMenuOpen && canAccessAdminUi) {
+    if (canAccessAdminUi) {
       const fetchStatus = async () => {
         try {
           const { data } = await adminApi.getPingPongStatus();
-          setIsPingPongActive(Boolean(data.active));
+          const active = Boolean(data.active);
+          setIsPingPongActive(active);
+          localStorage.setItem('ping_pong_active', String(active));
         } catch (error) {
           console.error('Lỗi khi lấy trạng thái ping pong:', error);
+        } finally {
+          setIsPingPongInitialized(true);
         }
       };
       void fetchStatus();
     }
-  }, [isAdminMenuOpen, canAccessAdminUi]);
+  }, [canAccessAdminUi]);
 
   const handleTogglePingPong = async () => {
+    if (isPingPongLoading) return;
+
+    const prevState = isPingPongActive;
+    const nextState = !prevState;
+
+    // Optimistic UI Update
+    setIsPingPongActive(nextState);
+    localStorage.setItem('ping_pong_active', String(nextState));
     setIsPingPongLoading(true);
-    const nextState = !isPingPongActive;
+
     const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8010/api';
     let absoluteUrl = apiBase;
     if (apiBase.startsWith('/')) {
@@ -66,9 +92,14 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
         active: nextState,
         url: pingUrl,
       });
-      setIsPingPongActive(Boolean(data.active));
+      const active = Boolean(data.active);
+      setIsPingPongActive(active);
+      localStorage.setItem('ping_pong_active', String(active));
     } catch (error) {
       console.error('Lỗi khi bật/tắt ping pong:', error);
+      // Revert state on error
+      setIsPingPongActive(prevState);
+      localStorage.setItem('ping_pong_active', String(prevState));
       alert('Không thể thay đổi trạng thái ping pong giữ server.');
     } finally {
       setIsPingPongLoading(false);
@@ -177,36 +208,49 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                       <div className="flex items-center justify-between rounded-[18px] px-3 py-2.5 transition hover:bg-white/4">
                         <div className="flex items-start gap-3">
                           <div className={`rounded-2xl border p-2 transition-colors ${
-                            isPingPongActive
+                            isPingPongActive && isPingPongInitialized
                               ? 'border-cyan-300/30 bg-cyan-300/10 text-cyan-300'
                               : 'border-white/10 bg-white/5 text-slate-400'
                           }`}>
-                            <Activity size={16} className={isPingPongActive ? 'animate-pulse' : ''} />
+                            <Activity 
+                              size={16} 
+                              className={isPingPongActive && isPingPongInitialized ? 'animate-pulse' : ''} 
+                            />
                           </div>
                           <div className="min-w-0">
                             <p className="text-xs font-semibold text-white">
                               Duy trì 24/7
                             </p>
                             <p className="mt-0.5 text-[9px] text-slate-400 truncate max-w-[120px]">
-                              {isPingPongActive ? 'Đang tự động ping' : 'Tự động ping giữ server'}
+                              {!isPingPongInitialized 
+                                ? 'Đang đồng bộ...' 
+                                : isPingPongActive 
+                                  ? 'Đang tự động ping' 
+                                  : 'Tự động ping giữ server'}
                             </p>
                           </div>
                         </div>
-                        <button
-                          type="button"
-                          onClick={handleTogglePingPong}
-                          disabled={isPingPongLoading}
-                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                            isPingPongActive ? 'bg-cyan-400' : 'bg-slate-700'
-                          } ${isPingPongLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                          aria-label="Bật/Tắt duy trì hoạt động 24/7"
-                        >
-                          <span
-                            className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                              isPingPongActive ? 'translate-x-4' : 'translate-x-0'
-                            }`}
-                          />
-                        </button>
+                        {!isPingPongInitialized ? (
+                          <div className="flex h-5 w-9 items-center justify-center">
+                            <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-cyan-400 border-t-transparent" />
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={handleTogglePingPong}
+                            disabled={isPingPongLoading}
+                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                              isPingPongActive ? 'bg-cyan-400' : 'bg-slate-700'
+                            } ${isPingPongLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            aria-label="Bật/Tắt duy trì hoạt động 24/7"
+                          >
+                            <span
+                              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                isPingPongActive ? 'translate-x-4' : 'translate-x-0'
+                              }`}
+                            />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
