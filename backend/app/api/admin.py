@@ -1067,7 +1067,7 @@ def get_admin_article_detail(
 
 
 @router.get("/ping-pong/status", response_model=AdminPingPongStatusResponse)
-def get_ping_pong_status(
+async def get_ping_pong_status(
     admin_user: User = Depends(get_current_admin),
 ) -> AdminPingPongStatusResponse:
     del admin_user
@@ -1088,7 +1088,7 @@ def get_ping_pong_status(
 
 
 @router.post("/ping-pong/toggle", response_model=AdminPingPongToggleResponse)
-def toggle_ping_pong(
+async def toggle_ping_pong(
     payload: AdminPingPongToggleRequest,
     admin_user: User = Depends(get_current_admin),
 ) -> AdminPingPongToggleResponse:
