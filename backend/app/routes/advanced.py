@@ -43,9 +43,22 @@ from app.models.user import User
 
 router = APIRouter()
 
-def verify_rate_limit(
-    user_id: str = Depends(get_current_user),
-    db: Session = Depends(get_db),
+ACTION_LABELS = {
+    "structure": "Tạo gợi ý bố cục",
+    "titles": "Gợi ý tiêu đề chương",
+    "briefs": "Gợi ý tóm tắt chương",
+    "guides": "Gợi ý định hướng viết chương",
+    "sources": "Tìm kiếm nguồn tài liệu học thuật",
+    "generate_chapter": "Sinh nội dung chi tiết chương",
+    "generate_article": "Sinh bài viết hoàn chỉnh",
+}
+
+def check_and_set_cooldown(
+    user_id: str,
+    db: Session,
+    action: str,
+    chapter_number: int | None = None,
+    session_id: str | None = None,
 ):
     user = db.query(User).filter(User.id == UUID(user_id)).first()
     if not user:
@@ -55,12 +68,22 @@ def verify_rate_limit(
         try:
             cache = RedisCache()
             redis_client = cache.client
-            key = f"rate_limit:{user_id}:cooldown"
+            
+            key_parts = ["rate_limit", user_id]
+            if session_id:
+                key_parts.append(session_id)
+            if chapter_number is not None:
+                key_parts.append(str(chapter_number))
+            key_parts.append(action)
+            
+            key = ":".join(key_parts)
+            
             ttl = redis_client.ttl(key)
             if ttl > 0:
+                action_label = ACTION_LABELS.get(action, action)
                 raise HTTPException(
                     status_code=429,
-                    detail=f"Tài khoản Free cần đợi 2 phút giữa các lần thao tác tạo sinh. Vui lòng thử lại sau {ttl} giây."
+                    detail=f"Tài khoản Free cần đợi 2 phút giữa mỗi lần thực hiện '{action_label}'. Vui lòng thử lại sau {ttl} giây."
                 )
             redis_client.setex(key, 120, "1")
         except HTTPException:
@@ -81,8 +104,15 @@ async def get_report_types(db: Session = Depends(get_db)) -> dict[str, list[str]
 )
 async def recommend_structure(
     payload: AdvancedStructureRequest,
-    rate_limit: None = Depends(verify_rate_limit),
+    user_id: str = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> AdvancedStructureResponse:
+    check_and_set_cooldown(
+        user_id=user_id,
+        db=db,
+        action="structure",
+        session_id=payload.session_id or "new_session",
+    )
     try:
         service = AdvancedStructureService()
         return service.recommend_structure(payload)
@@ -211,8 +241,14 @@ async def generate_chapter(
     chapter_number: int,
     user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db),
-    rate_limit: None = Depends(verify_rate_limit),
 ) -> GenerateChapterResponse:
+    check_and_set_cooldown(
+        user_id=user_id,
+        db=db,
+        action="generate_chapter",
+        chapter_number=chapter_number,
+        session_id=str(article_id),
+    )
     try:
         service = AdvancedGenerationService(db=db, user_id=user_id)
         payload = service.generate_chapter(article_id=article_id, chapter_number=chapter_number)
@@ -240,8 +276,13 @@ async def generate_article(
     article_id: UUID,
     user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db),
-    rate_limit: None = Depends(verify_rate_limit),
 ) -> GenerateArticleResponse:
+    check_and_set_cooldown(
+        user_id=user_id,
+        db=db,
+        action="generate_article",
+        session_id=str(article_id),
+    )
     try:
         service = AdvancedGenerationService(db=db, user_id=user_id)
         payload = service.generate_article(article_id)
@@ -367,8 +408,16 @@ async def get_manual_override_cache(
 )
 async def recommend_chapter_titles(
     payload: ChapterTitleRecommendationRequest,
-    rate_limit: None = Depends(verify_rate_limit),
+    user_id: str = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> ChapterTitleRecommendationResponse:
+    check_and_set_cooldown(
+        user_id=user_id,
+        db=db,
+        action="titles",
+        chapter_number=payload.chapter_number,
+        session_id=payload.session_id,
+    )
     try:
         service = AdvancedChapterRecommendationService()
         return service.recommend_titles(payload)
@@ -388,8 +437,16 @@ async def recommend_chapter_titles(
 )
 async def recommend_chapter_briefs(
     payload: ChapterBriefRecommendationRequest,
-    rate_limit: None = Depends(verify_rate_limit),
+    user_id: str = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> ChapterBriefRecommendationResponse:
+    check_and_set_cooldown(
+        user_id=user_id,
+        db=db,
+        action="briefs",
+        chapter_number=payload.chapter_number,
+        session_id=payload.session_id,
+    )
     try:
         service = AdvancedChapterRecommendationService()
         return service.recommend_briefs(payload)
@@ -409,8 +466,16 @@ async def recommend_chapter_briefs(
 )
 async def recommend_chapter_guides(
     payload: ChapterGuideRecommendationRequest,
-    rate_limit: None = Depends(verify_rate_limit),
+    user_id: str = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> ChapterGuideRecommendationResponse:
+    check_and_set_cooldown(
+        user_id=user_id,
+        db=db,
+        action="guides",
+        chapter_number=payload.chapter_number,
+        session_id=payload.session_id,
+    )
     try:
         service = AdvancedChapterRecommendationService()
         return service.recommend_guides(payload)
@@ -430,8 +495,16 @@ async def recommend_chapter_guides(
 )
 async def recommend_chapter_sources(
     payload: ChapterSourceRecommendationRequest,
-    rate_limit: None = Depends(verify_rate_limit),
+    user_id: str = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> ChapterSourceRecommendationResponse:
+    check_and_set_cooldown(
+        user_id=user_id,
+        db=db,
+        action="sources",
+        chapter_number=payload.chapter_number,
+        session_id=payload.session_id,
+    )
     try:
         service = AdvancedChapterRecommendationService()
         return await service.recommend_sources(payload)
