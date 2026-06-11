@@ -53,11 +53,10 @@ ACTION_LABELS = {
     "generate_article": "Sinh bài viết hoàn chỉnh",
 }
 
-def check_and_set_cooldown(
+def check_cooldown(
     user_id: str,
     db: Session,
     action: str,
-    cooldown_seconds: int,
     chapter_number: int | None = None,
     session_id: str | None = None,
 ):
@@ -69,6 +68,8 @@ def check_and_set_cooldown(
         try:
             cache = RedisCache()
             redis_client = cache.client
+            if not redis_client:
+                return
             
             # 1. Kiểm tra khóa toàn cục (Global Cooldown - 5 giây)
             global_key = f"rate_limit:{user_id}:global"
@@ -96,14 +97,47 @@ def check_and_set_cooldown(
                     status_code=429,
                     detail=f"Tài khoản Free cần đợi thêm {ttl} giây trước khi thực hiện lại '{action_label}'."
                 )
-            
-            # 3. Thiết lập các khóa cooldown nếu hợp lệ
-            redis_client.setex(global_key, 5, "1")
-            redis_client.setex(key, cooldown_seconds, "1")
         except HTTPException:
             raise
         except Exception as exc:
             logger.warning("Lỗi kiểm tra rate limit bằng Redis: %s", exc)
+
+
+def set_cooldown(
+    user_id: str,
+    db: Session,
+    action: str,
+    cooldown_seconds: int,
+    chapter_number: int | None = None,
+    session_id: str | None = None,
+):
+    user = db.query(User).filter(User.id == UUID(user_id)).first()
+    if not user or user.tier != "free":
+        return
+
+    try:
+        cache = RedisCache()
+        redis_client = cache.client
+        if not redis_client:
+            return
+        
+        global_key = f"rate_limit:{user_id}:global"
+        
+        key_parts = ["rate_limit", user_id]
+        if session_id:
+            key_parts.append(session_id)
+        if chapter_number is not None:
+            key_parts.append(str(chapter_number))
+        key_parts.append(action)
+        
+        key = ":".join(key_parts)
+        
+        # Thiết lập các khóa cooldown
+        redis_client.setex(global_key, 5, "1")
+        redis_client.setex(key, cooldown_seconds, "1")
+    except Exception as exc:
+        logger.warning("Lỗi thiết lập rate limit bằng Redis: %s", exc)
+
 
 
 @router.get("/report-types", status_code=status.HTTP_200_OK)
@@ -121,16 +155,23 @@ async def recommend_structure(
     user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> AdvancedStructureResponse:
-    check_and_set_cooldown(
+    check_cooldown(
         user_id=user_id,
         db=db,
         action="structure",
-        cooldown_seconds=180,
         session_id=payload.session_id or "new_session",
     )
     try:
         service = AdvancedStructureService()
-        return service.recommend_structure(payload)
+        res = service.recommend_structure(payload)
+        set_cooldown(
+            user_id=user_id,
+            db=db,
+            action="structure",
+            cooldown_seconds=180,
+            session_id=payload.session_id or "new_session",
+        )
+        return res
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)) from exc
     except Exception as exc:
@@ -257,18 +298,26 @@ async def generate_chapter(
     user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> GenerateChapterResponse:
-    check_and_set_cooldown(
+    check_cooldown(
         user_id=user_id,
         db=db,
         action="generate_chapter",
-        cooldown_seconds=120,
         chapter_number=chapter_number,
         session_id=str(article_id),
     )
     try:
         service = AdvancedGenerationService(db=db, user_id=user_id)
         payload = service.generate_chapter(article_id=article_id, chapter_number=chapter_number)
-        return GenerateChapterResponse(**payload)
+        res = GenerateChapterResponse(**payload)
+        set_cooldown(
+            user_id=user_id,
+            db=db,
+            action="generate_chapter",
+            cooldown_seconds=120,
+            chapter_number=chapter_number,
+            session_id=str(article_id),
+        )
+        return res
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     except Exception as exc:
@@ -293,17 +342,24 @@ async def generate_article(
     user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> GenerateArticleResponse:
-    check_and_set_cooldown(
+    check_cooldown(
         user_id=user_id,
         db=db,
         action="generate_article",
-        cooldown_seconds=180,
         session_id=str(article_id),
     )
     try:
         service = AdvancedGenerationService(db=db, user_id=user_id)
         payload = service.generate_article(article_id)
-        return GenerateArticleResponse(**payload)
+        res = GenerateArticleResponse(**payload)
+        set_cooldown(
+            user_id=user_id,
+            db=db,
+            action="generate_article",
+            cooldown_seconds=180,
+            session_id=str(article_id),
+        )
+        return res
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     except Exception as exc:
@@ -428,17 +484,25 @@ async def recommend_chapter_titles(
     user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ChapterTitleRecommendationResponse:
-    check_and_set_cooldown(
+    check_cooldown(
         user_id=user_id,
         db=db,
         action="titles",
-        cooldown_seconds=60,
         chapter_number=payload.chapter_number,
         session_id=payload.session_id,
     )
     try:
         service = AdvancedChapterRecommendationService()
-        return service.recommend_titles(payload)
+        res = service.recommend_titles(payload)
+        set_cooldown(
+            user_id=user_id,
+            db=db,
+            action="titles",
+            cooldown_seconds=60,
+            chapter_number=payload.chapter_number,
+            session_id=payload.session_id,
+        )
+        return res
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     except Exception as exc:
@@ -458,17 +522,25 @@ async def recommend_chapter_briefs(
     user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ChapterBriefRecommendationResponse:
-    check_and_set_cooldown(
+    check_cooldown(
         user_id=user_id,
         db=db,
         action="briefs",
-        cooldown_seconds=60,
         chapter_number=payload.chapter_number,
         session_id=payload.session_id,
     )
     try:
         service = AdvancedChapterRecommendationService()
-        return service.recommend_briefs(payload)
+        res = service.recommend_briefs(payload)
+        set_cooldown(
+            user_id=user_id,
+            db=db,
+            action="briefs",
+            cooldown_seconds=60,
+            chapter_number=payload.chapter_number,
+            session_id=payload.session_id,
+        )
+        return res
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     except Exception as exc:
@@ -488,17 +560,25 @@ async def recommend_chapter_guides(
     user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ChapterGuideRecommendationResponse:
-    check_and_set_cooldown(
+    check_cooldown(
         user_id=user_id,
         db=db,
         action="guides",
-        cooldown_seconds=60,
         chapter_number=payload.chapter_number,
         session_id=payload.session_id,
     )
     try:
         service = AdvancedChapterRecommendationService()
-        return service.recommend_guides(payload)
+        res = service.recommend_guides(payload)
+        set_cooldown(
+            user_id=user_id,
+            db=db,
+            action="guides",
+            cooldown_seconds=60,
+            chapter_number=payload.chapter_number,
+            session_id=payload.session_id,
+        )
+        return res
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     except Exception as exc:
@@ -518,17 +598,25 @@ async def recommend_chapter_sources(
     user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ChapterSourceRecommendationResponse:
-    check_and_set_cooldown(
+    check_cooldown(
         user_id=user_id,
         db=db,
         action="sources",
-        cooldown_seconds=60,
         chapter_number=payload.chapter_number,
         session_id=payload.session_id,
     )
     try:
         service = AdvancedChapterRecommendationService()
-        return await service.recommend_sources(payload)
+        res = await service.recommend_sources(payload)
+        set_cooldown(
+            user_id=user_id,
+            db=db,
+            action="sources",
+            cooldown_seconds=60,
+            chapter_number=payload.chapter_number,
+            session_id=payload.session_id,
+        )
+        return res
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     except Exception as exc:
