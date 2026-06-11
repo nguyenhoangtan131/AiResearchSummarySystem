@@ -57,6 +57,7 @@ def check_and_set_cooldown(
     user_id: str,
     db: Session,
     action: str,
+    cooldown_seconds: int,
     chapter_number: int | None = None,
     session_id: str | None = None,
 ):
@@ -69,6 +70,16 @@ def check_and_set_cooldown(
             cache = RedisCache()
             redis_client = cache.client
             
+            # 1. Kiểm tra khóa toàn cục (Global Cooldown - 5 giây)
+            global_key = f"rate_limit:{user_id}:global"
+            global_ttl = redis_client.ttl(global_key)
+            if global_ttl > 0:
+                raise HTTPException(
+                    status_code=429,
+                    detail=f"Vui lòng đợi {global_ttl} giây giữa các thao tác tạo sinh."
+                )
+            
+            # 2. Kiểm tra khóa chi tiết (Granular Cooldown)
             key_parts = ["rate_limit", user_id]
             if session_id:
                 key_parts.append(session_id)
@@ -83,9 +94,12 @@ def check_and_set_cooldown(
                 action_label = ACTION_LABELS.get(action, action)
                 raise HTTPException(
                     status_code=429,
-                    detail=f"Tài khoản Free cần đợi 2 phút giữa mỗi lần thực hiện '{action_label}'. Vui lòng thử lại sau {ttl} giây."
+                    detail=f"Tài khoản Free cần đợi thêm {ttl} giây trước khi thực hiện lại '{action_label}'."
                 )
-            redis_client.setex(key, 120, "1")
+            
+            # 3. Thiết lập các khóa cooldown nếu hợp lệ
+            redis_client.setex(global_key, 5, "1")
+            redis_client.setex(key, cooldown_seconds, "1")
         except HTTPException:
             raise
         except Exception as exc:
@@ -111,6 +125,7 @@ async def recommend_structure(
         user_id=user_id,
         db=db,
         action="structure",
+        cooldown_seconds=180,
         session_id=payload.session_id or "new_session",
     )
     try:
@@ -246,6 +261,7 @@ async def generate_chapter(
         user_id=user_id,
         db=db,
         action="generate_chapter",
+        cooldown_seconds=120,
         chapter_number=chapter_number,
         session_id=str(article_id),
     )
@@ -281,6 +297,7 @@ async def generate_article(
         user_id=user_id,
         db=db,
         action="generate_article",
+        cooldown_seconds=180,
         session_id=str(article_id),
     )
     try:
@@ -415,6 +432,7 @@ async def recommend_chapter_titles(
         user_id=user_id,
         db=db,
         action="titles",
+        cooldown_seconds=60,
         chapter_number=payload.chapter_number,
         session_id=payload.session_id,
     )
@@ -444,6 +462,7 @@ async def recommend_chapter_briefs(
         user_id=user_id,
         db=db,
         action="briefs",
+        cooldown_seconds=60,
         chapter_number=payload.chapter_number,
         session_id=payload.session_id,
     )
@@ -473,6 +492,7 @@ async def recommend_chapter_guides(
         user_id=user_id,
         db=db,
         action="guides",
+        cooldown_seconds=60,
         chapter_number=payload.chapter_number,
         session_id=payload.session_id,
     )
@@ -502,6 +522,7 @@ async def recommend_chapter_sources(
         user_id=user_id,
         db=db,
         action="sources",
+        cooldown_seconds=60,
         chapter_number=payload.chapter_number,
         session_id=payload.session_id,
     )
