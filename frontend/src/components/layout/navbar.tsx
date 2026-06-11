@@ -79,14 +79,14 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
     <nav className="sticky top-0 z-[100] border-b border-slate-800 bg-slate-950/95 text-white shadow-[0_16px_40px_rgba(15,23,42,0.35)] backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
         <div
-          className="group inline-flex cursor-pointer items-center gap-3 rounded-full border border-white/10 bg-white/5 px-4 py-2 transition duration-300 hover:-translate-y-0.5 hover:border-cyan-300/40 hover:bg-white/10 hover:shadow-[rgba(0,0,0,0.3)_0px_19px_38px,rgba(0,0,0,0.22)_0px_15px_12px]"
+          className="group inline-flex cursor-pointer items-center gap-1.5 md:gap-3 rounded-full border border-white/10 bg-white/5 px-2.5 py-1.5 md:px-4 md:py-2 transition duration-300 hover:-translate-y-0.5 hover:border-cyan-300/40 hover:bg-white/10 hover:shadow-[rgba(0,0,0,0.3)_0px_19px_38px,rgba(0,0,0,0.22)_0px_15px_12px]"
           onClick={() => navigate('/home')}
         >
-          <span className="text-lg">🔬</span>
-          <span className="text-xl font-bold tracking-tight text-white transition duration-300 group-hover:text-cyan-300 group-hover:[text-shadow:0_0_6px_rgba(34,211,238,0.72),0_0_16px_rgba(34,211,238,0.42),0_0_28px_rgba(34,211,238,0.24)]">
+          <span className="text-base md:text-lg">🔬</span>
+          <span className="text-base md:text-xl font-bold tracking-tight text-white transition duration-300 group-hover:text-cyan-300 group-hover:[text-shadow:0_0_6px_rgba(34,211,238,0.72),0_0_16px_rgba(34,211,238,0.42),0_0_28px_rgba(34,211,238,0.24)]">
             AI RESEARCH
           </span>
-          <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_18px_rgba(103,232,249,0.9)] transition duration-300 group-hover:scale-125 group-hover:shadow-[0_0_28px_rgba(34,211,238,0.95)]" />
+          <span className="hidden sm:inline-block h-1.5 w-1.5 md:h-2 md:w-2 rounded-full bg-cyan-300 shadow-[0_0_18px_rgba(103,232,249,0.9)] transition duration-300 group-hover:scale-125 group-hover:shadow-[0_0_28px_rgba(34,211,238,0.95)]" />
         </div>
 
         <div className="flex items-center gap-4">
@@ -113,12 +113,12 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
             </Link>
           </div>
 
-          <div className="ml-2 flex min-w-37.5 items-center justify-end gap-2">
-            <div className="flex items-center gap-3 rounded-full border border-white/10 bg-white/6 py-1.5 px-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-              <span className="max-w-30 truncate text-sm font-semibold text-white">
+          <div className="ml-2 flex min-w-0 md:min-w-37.5 items-center justify-end gap-2">
+            <div className="flex items-center gap-1 md:gap-3 rounded-full border border-white/10 bg-white/6 py-1 px-2.5 md:py-1.5 md:px-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+              <span className="hidden md:inline max-w-30 truncate text-sm font-semibold text-white">
                 {user.full_name}
               </span>
-              <div className="h-4 w-px bg-white/15"></div>
+              <div className="hidden md:block h-4 w-px bg-white/15"></div>
               <button
                 onClick={() => void onLogout()}
                 className="cursor-pointer rounded-full px-2 py-1 text-xs font-bold uppercase tracking-wider text-cyan-300 transition duration-200 hover:-translate-y-0.5 hover:bg-white/10 hover:text-cyan-300 hover:[text-shadow:0_0_6px_rgba(34,211,238,0.72),0_0_16px_rgba(34,211,238,0.42),0_0_28px_rgba(34,211,238,0.24)] hover:shadow-[rgba(0,0,0,0.3)_0px_19px_38px,rgba(0,0,0,0.22)_0px_15px_12px]"
@@ -132,7 +132,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                 <button
                   type="button"
                   onClick={() => setIsAdminMenuOpen((current) => !current)}
-                  className={`inline-flex cursor-pointer items-center justify-center rounded-full border px-3 py-2 transition duration-200 ${
+                  className={`inline-flex cursor-pointer items-center justify-center rounded-full border px-2.5 py-1.5 md:px-3 md:py-2 transition duration-200 ${
                     location.pathname.startsWith('/admin') || isAdminMenuOpen
                       ? 'border-cyan-300/40 bg-cyan-300/10 text-cyan-300 shadow-[0_0_0_1px_rgba(34,211,238,0.16)]'
                       : 'border-white/10 bg-white/6 text-slate-200 hover:-translate-y-0.5 hover:border-cyan-300/40 hover:bg-white/10 hover:text-cyan-300'
@@ -141,7 +141,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                   aria-haspopup="menu"
                   aria-expanded={isAdminMenuOpen}
                 >
-                  <Settings size={18} />
+                  <Settings size={16} className="md:w-[18px] md:h-[18px]" />
                 </button>
 
                 {isAdminMenuOpen && (

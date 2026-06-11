@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { Download } from "lucide-react";
 import { advancedApi, researchApi } from "../services/api";
 const renderContentWithCitations = (content: string, sources: any[]) => {
   if (!content) return null;
@@ -92,9 +93,11 @@ export default function ResearchResult() {
       window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
       console.error("PDF export failed", error);
-      setExportError(
-        "Chưa xuất được PDF. Hãy thử lại sau khi backend đã nạp bản cập nhật mới.",
-      );
+      const errMsg = "Chưa xuất được PDF. Hãy thử lại sau khi backend đã nạp bản cập nhật mới.";
+      setExportError(errMsg);
+      if (window.innerWidth < 1280) {
+        alert(errMsg);
+      }
     } finally {
       setIsExporting(false);
     }
@@ -164,7 +167,7 @@ export default function ResearchResult() {
             </div>
           </div>
 
-          <aside className="h-fit xl:sticky xl:top-28">
+          <aside className="hidden xl:block h-fit xl:sticky xl:top-28">
             <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">
                 Tác vụ bài viết
@@ -204,6 +207,25 @@ export default function ResearchResult() {
               )}
             </div>
           </aside>
+
+          {/* Floating download button for mobile */}
+          <div className="fixed bottom-6 right-6 z-50 xl:hidden">
+            <button
+              type="button"
+              onClick={() => void handleExportPdf()}
+              disabled={isExporting}
+              className={`flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-slate-900/80 text-white shadow-lg backdrop-blur transition duration-300 hover:bg-slate-950 focus:outline-none ${
+                isExporting ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
+              }`}
+              title="Xuất file PDF"
+            >
+              {isExporting ? (
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-cyan-400 border-t-transparent" />
+              ) : (
+                <Download size={24} className="text-cyan-300" />
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>

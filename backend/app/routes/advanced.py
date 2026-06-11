@@ -53,6 +53,16 @@ ACTION_LABELS = {
     "generate_article": "Sinh bài viết hoàn chỉnh",
 }
 
+ACTION_COOLDOWNS = {
+    "structure": 180,
+    "titles": 60,
+    "briefs": 60,
+    "guides": 60,
+    "sources": 60,
+    "generate_chapter": 120,
+    "generate_article": 180,
+}
+
 def check_cooldown(
     user_id: str,
     db: Session,
@@ -90,13 +100,21 @@ def check_cooldown(
             
             key = ":".join(key_parts)
             
-            ttl = redis_client.ttl(key)
-            if ttl > 0:
-                action_label = ACTION_LABELS.get(action, action)
-                raise HTTPException(
-                    status_code=429,
-                    detail=f"Tài khoản Free cần đợi thêm {ttl} giây trước khi thực hiện lại '{action_label}'."
-                )
+            current_val = redis_client.get(key)
+            if current_val is not None:
+                try:
+                    count = int(current_val)
+                except ValueError:
+                    count = 1
+                
+                if count >= 3:
+                    ttl = redis_client.ttl(key)
+                    action_label = ACTION_LABELS.get(action, action)
+                    cooldown_seconds = ACTION_COOLDOWNS.get(action, 60)
+                    raise HTTPException(
+                        status_code=429,
+                        detail=f"Tài khoản Free đã đạt giới hạn 3 lần thực hiện '{action_label}' trong vòng {cooldown_seconds} giây. Hãy sử dụng kết quả đã tạo ở panel bên phải hoặc đợi thêm {ttl} giây."
+                    )
         except HTTPException:
             raise
         except Exception as exc:
@@ -132,9 +150,15 @@ def set_cooldown(
         
         key = ":".join(key_parts)
         
-        # Thiết lập các khóa cooldown
+        # Thiết lập Global Cooldown (5 giây)
         redis_client.setex(global_key, 5, "1")
-        redis_client.setex(key, cooldown_seconds, "1")
+        
+        # Thiết lập hoặc tăng Granular Cooldown
+        current_val = redis_client.get(key)
+        if current_val is None:
+            redis_client.setex(key, cooldown_seconds, "1")
+        else:
+            redis_client.incr(key)
     except Exception as exc:
         logger.warning("Lỗi thiết lập rate limit bằng Redis: %s", exc)
 

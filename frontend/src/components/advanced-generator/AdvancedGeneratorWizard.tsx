@@ -413,11 +413,38 @@ export default function AdvancedGeneratorWizard() {
   const [isGeneratingArticle, setIsGeneratingArticle] = useState(false);
   const [isPublishingArticle, setIsPublishingArticle] = useState(false);
   const [chapterActionError, setChapterActionError] = useState('');
+  const [errorModalMsg, setErrorModalMsg] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [panelMode, setPanelMode] = useState<PanelMode>('hidden');
   const [isTypeMenuOpen, setIsTypeMenuOpen] = useState(false);
   const [showBlueprintDetails, setShowBlueprintDetails] = useState(false);
   const typeMenuRef = useRef<HTMLDivElement | null>(null);
+  const aiPanelRef = useRef<HTMLDivElement | null>(null);
+  const mainContentRef = useRef<HTMLElement | null>(null);
+
+  const scrollToAiPanel = () => {
+    if (window.innerWidth < 1280 && aiPanelRef.current) {
+      aiPanelRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const scrollToMainContent = () => {
+    if (window.innerWidth < 1280 && mainContentRef.current) {
+      mainContentRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  useEffect(() => {
+    setTitleRecommendations([]);
+    setBriefRecommendations([]);
+    setGuideRecommendations([]);
+    setSourceRecommendations([]);
+    setSourceQuery('');
+    setSourceQueryCandidates([]);
+    setChapterActionError('');
+    setPanelMode('hidden');
+    scrollToMainContent();
+  }, [activeIndex]);
 
   const resetWizardState = () => {
     setArticleTitle('');
@@ -978,6 +1005,7 @@ export default function AdvancedGeneratorWizard() {
       setSourceRecommendations([]);
       setIsLoadingSourceOptions(false);
     }
+    setTimeout(scrollToAiPanel, 150);
   };
 
   const ensurePersistedArticle = async () => {
@@ -1297,7 +1325,6 @@ export default function AdvancedGeneratorWizard() {
     try {
       const liveContext = await ensureLiveStructureContext();
       if (!liveContext) {
-        updateCurrent('aiTitle', null);
         setTitleRecommendations([]);
         setPanelMode('hidden');
         setChapterActionError('Không thể tải gợi ý tiêu đề chương lúc này. Hãy chọn lại bố cục hoặc thử lại sau.');
@@ -1328,16 +1355,32 @@ export default function AdvancedGeneratorWizard() {
       if (data.options.length > 0) {
         setTitleRecommendations(data.options);
       } else {
-        updateCurrent('aiTitle', null);
         setTitleRecommendations([]);
         setPanelMode('hidden');
         setChapterActionError('AI chưa tạo được tiêu đề chương phù hợp. Cần chỉnh prompt hoặc bố cục chương.');
       }
     } catch (error) {
-      updateCurrent('aiTitle', null);
+      const errorMsg = getErrorMessage(error, 'Không tải được gợi ý tiêu đề chương. Hãy thử lại sau.');
+      setErrorModalMsg(errorMsg);
+      try {
+        const liveContext = await ensureLiveStructureContext();
+        if (liveContext) {
+          const cached = await loadCachedRecommendations(
+            'titles',
+            liveContext.sessionId,
+            chapterNumber,
+          );
+          if (cached && cached.length > 0) {
+            setTitleRecommendations(cached as TitleOption[]);
+            setPanelMode('title');
+            return;
+          }
+        }
+      } catch (cacheErr) {
+        console.error('Lỗi khôi phục cache tiêu đề:', cacheErr);
+      }
       setTitleRecommendations([]);
       setPanelMode('hidden');
-      setChapterActionError(getErrorMessage(error, 'Không tải được gợi ý tiêu đề chương. Hãy thử lại sau.'));
     } finally {
       setIsLoadingTitleOptions(false);
     }
@@ -1363,7 +1406,6 @@ export default function AdvancedGeneratorWizard() {
     try {
       const liveContext = await ensureLiveStructureContext();
       if (!liveContext) {
-        updateCurrent('aiBrief', null);
         setBriefRecommendations([]);
         setPanelMode('hidden');
         setChapterActionError('Không thể tải gợi ý tóm tắt chương lúc này. Hãy chọn lại bố cục hoặc thử lại sau.');
@@ -1398,16 +1440,32 @@ export default function AdvancedGeneratorWizard() {
       if (data.options.length > 0) {
         setBriefRecommendations(data.options);
       } else {
-        updateCurrent('aiBrief', null);
         setBriefRecommendations([]);
         setPanelMode('hidden');
         setChapterActionError('AI chưa tạo được tóm tắt chương phù hợp. Cần chỉnh lại tiêu đề hoặc prompt.');
       }
     } catch (error) {
-      updateCurrent('aiBrief', null);
+      const errorMsg = getErrorMessage(error, 'Không tải được gợi ý tóm tắt chương. Hãy thử lại sau.');
+      setErrorModalMsg(errorMsg);
+      try {
+        const liveContext = await ensureLiveStructureContext();
+        if (liveContext) {
+          const cached = await loadCachedRecommendations(
+            'briefs',
+            liveContext.sessionId,
+            chapterNumber,
+          );
+          if (cached && cached.length > 0) {
+            setBriefRecommendations(cached as BriefOption[]);
+            setPanelMode('brief');
+            return;
+          }
+        }
+      } catch (cacheErr) {
+        console.error('Lỗi khôi phục cache tóm tắt:', cacheErr);
+      }
       setBriefRecommendations([]);
       setPanelMode('hidden');
-      setChapterActionError(getErrorMessage(error, 'Không tải được gợi ý tóm tắt chương. Hãy thử lại sau.'));
     } finally {
       setIsLoadingBriefOptions(false);
     }
@@ -1470,9 +1528,27 @@ export default function AdvancedGeneratorWizard() {
         setChapterActionError('AI chưa tạo được hướng dẫn viết phù hợp cho chương này.');
       }
     } catch (error) {
+      const errorMsg = getErrorMessage(error, 'Không tải được gợi ý hướng dẫn viết. Hãy thử lại sau.');
+      setErrorModalMsg(errorMsg);
+      try {
+        const liveContext = await ensureLiveStructureContext();
+        if (liveContext) {
+          const cached = await loadCachedRecommendations(
+            'guides',
+            liveContext.sessionId,
+            chapterNumber,
+          );
+          if (cached && cached.length > 0) {
+            setGuideRecommendations(cached as GuideOption[]);
+            setPanelMode('guide');
+            return;
+          }
+        }
+      } catch (cacheErr) {
+        console.error('Lỗi khôi phục cache hướng dẫn:', cacheErr);
+      }
       setGuideRecommendations([]);
       setPanelMode('hidden');
-      setChapterActionError(getErrorMessage(error, 'Không tải được gợi ý hướng dẫn viết. Hãy thử lại sau.'));
     } finally {
       setIsLoadingGuideOptions(false);
     }
@@ -1572,11 +1648,29 @@ export default function AdvancedGeneratorWizard() {
         setChapterActionError('Chưa tìm được nguồn phù hợp cho chương này. Hãy điều chỉnh title, tóm tắt hoặc guide rồi thử lại.');
       }
     } catch (error) {
+      const errorMsg = getErrorMessage(error, 'Không tải được gợi ý nguồn. Hãy thử lại sau.');
+      setErrorModalMsg(errorMsg);
+      try {
+        const liveContext = await ensureLiveStructureContext();
+        if (liveContext) {
+          const cached = await loadCachedRecommendations(
+            'sources',
+            liveContext.sessionId,
+            chapterNumber,
+          );
+          if (cached && cached.length > 0) {
+            setSourceRecommendations(cached as SourceRecommendationOption[]);
+            setPanelMode('source');
+            return;
+          }
+        }
+      } catch (cacheErr) {
+        console.error('Lỗi khôi phục cache nguồn:', cacheErr);
+      }
       setSourceRecommendations([]);
       setSourceQuery('');
       setSourceQueryCandidates([]);
       setPanelMode('hidden');
-      setChapterActionError(getErrorMessage(error, 'Không tải được gợi ý nguồn. Hãy thử lại sau.'));
     } finally {
       setIsLoadingSourceOptions(false);
     }
@@ -1603,7 +1697,7 @@ export default function AdvancedGeneratorWizard() {
         </section>
 
         <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.75fr)] xl:items-start">
-          <main className="space-y-6">
+          <main ref={mainContentRef} className="space-y-6">
             <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_55px_rgba(15,23,42,0.08)]">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
@@ -2133,7 +2227,7 @@ export default function AdvancedGeneratorWizard() {
             )}
           </main>
 
-          <aside className={`self-start rounded-[28px] border border-slate-200 bg-white/92 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur transition-all duration-300 xl:sticky xl:top-28 ${isCompactAiPanel ? 'xl:max-h-[220px]' : 'xl:max-h-[calc(100vh-7rem)] xl:overflow-y-auto'}`}>
+          <aside ref={aiPanelRef} className={`self-start rounded-[28px] border border-slate-200 bg-white/92 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur transition-all duration-300 xl:sticky xl:top-28 ${isCompactAiPanel ? 'xl:max-h-[220px]' : 'xl:max-h-[calc(100vh-7rem)] xl:overflow-y-auto'}`}>
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-700">Khu gợi ý AI</p>
@@ -2186,10 +2280,81 @@ export default function AdvancedGeneratorWizard() {
                     : 'Chọn tiêu đề bài và loại nghiên cứu để AI hiển thị các phương án bố cục tại đây.'}
                 </div>
               )}
-              {panelMode === 'title' && <div className="space-y-3">{suggestedTitles.map((item, index) => <button key={item.title} type="button" onClick={() => chooseTitleOption(item)} className="w-full cursor-pointer rounded-[22px] border border-slate-200 bg-slate-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50 hover:shadow-md"><div className="flex items-center justify-between gap-3"><p className="font-semibold text-slate-900">{item.display_title_vi || item.title}</p><span className="whitespace-nowrap rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Phương án {index + 1}</span></div><p className="mt-2 text-sm leading-6 text-slate-600">{item.display_description_vi || item.description}</p></button>)}</div>}
-              {panelMode === 'brief' && <div className="space-y-3">{suggestedBriefs.map((item, index) => <button key={item.title} type="button" onClick={() => chooseBriefOption(item)} className="w-full cursor-pointer rounded-[22px] border border-slate-200 bg-slate-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-cyan-300 hover:bg-cyan-50 hover:shadow-md"><div className="flex items-center justify-between gap-3"><p className="font-semibold text-slate-900">{item.display_title_vi || item.title}</p><span className="whitespace-nowrap rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold text-cyan-700">Phương án {index + 1}</span></div><p className="mt-2 text-sm leading-6 text-slate-600">{item.display_description_vi || item.description}</p></button>)}</div>}
-              {panelMode === 'guide' && <div className="space-y-3">{suggestedGuides.map((item, index) => <button key={item.id} type="button" onClick={() => chooseGuideOption(item)} className="w-full cursor-pointer rounded-[22px] border border-slate-200 bg-slate-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-amber-300 hover:bg-amber-50 hover:shadow-md"><div className="flex items-center justify-between gap-3"><p className="font-semibold text-slate-900">{item.display_title_vi || item.title}</p><span className="whitespace-nowrap rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">Guide {index + 1}</span></div><p className="mt-2 text-sm leading-6 text-slate-600">{item.display_body_vi || item.body}</p></button>)}</div>}
-              {panelMode === 'source' && <div className="space-y-3">{suggestedSources.map((item, index) => { const selected = isSourceSelected(item); return <button key={item.id} type="button" onClick={() => toggleSourceSelection(item)} className={`w-full cursor-pointer rounded-[22px] border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${selected ? 'border-violet-400 bg-violet-100 shadow-sm' : 'border-slate-200 bg-slate-50 hover:border-violet-300 hover:bg-violet-50'}`}><div className="flex items-center justify-between gap-3"><p className="break-words font-semibold text-slate-900">{item.display_title_vi || item.title}</p><span className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold ${selected ? 'bg-violet-600 text-white' : 'bg-violet-100 text-violet-700'}`}>{selected ? 'Đã chọn' : `Nguồn ${index + 1}`}</span></div><p className="mt-2 break-words text-sm leading-6 text-slate-600">{item.display_snippet_vi || item.snippet}</p><p className="mt-2 text-sm text-slate-500">{item.display_publication_vi || item.provider} • {item.year}</p><p className="mt-1 break-all text-xs text-violet-700">{item.link}</p></button>; })}</div>}
+              {panelMode === 'title' && (
+                <div className="space-y-3">
+                  {isLoadingTitleOptions && (
+                    <div className="rounded-[22px] border border-dashed border-emerald-200 bg-white px-4 py-6 text-sm leading-6 text-slate-500 flex flex-col items-center justify-center gap-3">
+                      <div className="h-6 w-6 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent"></div>
+                      <span className="text-slate-600 font-medium">Gemini đang tạo gợi ý tiêu đề chương...</span>
+                    </div>
+                  )}
+                  {!isLoadingTitleOptions && suggestedTitles.length === 0 && (
+                    <div className="rounded-[22px] border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-500">
+                      Không có phương án gợi ý tiêu đề nào. Vui lòng bấm "Gợi ý tiêu đề" ở cột bên trái để tải lại.
+                    </div>
+                  )}
+                  {suggestedTitles.map((item, index) => (
+                    <button key={item.title} type="button" onClick={() => chooseTitleOption(item)} className="w-full cursor-pointer rounded-[22px] border border-slate-200 bg-slate-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50 hover:shadow-md"><div className="flex items-center justify-between gap-3"><p className="font-semibold text-slate-900">{item.display_title_vi || item.title}</p><span className="whitespace-nowrap rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Phương án {index + 1}</span></div><p className="mt-2 text-sm leading-6 text-slate-600">{item.display_description_vi || item.description}</p></button>
+                  ))}
+                </div>
+              )}
+              {panelMode === 'brief' && (
+                <div className="space-y-3">
+                  {isLoadingBriefOptions && (
+                    <div className="rounded-[22px] border border-dashed border-cyan-200 bg-white px-4 py-6 text-sm leading-6 text-slate-500 flex flex-col items-center justify-center gap-3">
+                      <div className="h-6 w-6 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent"></div>
+                      <span className="text-slate-600 font-medium">Gemini đang tạo gợi ý tóm tắt chương...</span>
+                    </div>
+                  )}
+                  {!isLoadingBriefOptions && suggestedBriefs.length === 0 && (
+                    <div className="rounded-[22px] border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-500">
+                      Không có phương án gợi ý tóm tắt nào. Vui lòng bấm "Gợi ý tóm tắt" ở cột bên trái để tải lại.
+                    </div>
+                  )}
+                  {suggestedBriefs.map((item, index) => (
+                    <button key={item.title} type="button" onClick={() => chooseBriefOption(item)} className="w-full cursor-pointer rounded-[22px] border border-slate-200 bg-slate-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-cyan-300 hover:bg-cyan-50 hover:shadow-md"><div className="flex items-center justify-between gap-3"><p className="font-semibold text-slate-900">{item.display_title_vi || item.title}</p><span className="whitespace-nowrap rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold text-cyan-700">Phương án {index + 1}</span></div><p className="mt-2 text-sm leading-6 text-slate-600">{item.display_description_vi || item.description}</p></button>
+                  ))}
+                </div>
+              )}
+              {panelMode === 'guide' && (
+                <div className="space-y-3">
+                  {isLoadingGuideOptions && (
+                    <div className="rounded-[22px] border border-dashed border-amber-200 bg-white px-4 py-6 text-sm leading-6 text-slate-500 flex flex-col items-center justify-center gap-3">
+                      <div className="h-6 w-6 animate-spin rounded-full border-2 border-amber-500 border-t-transparent"></div>
+                      <span className="text-slate-600 font-medium">Gemini đang tạo gợi ý hướng dẫn viết...</span>
+                    </div>
+                  )}
+                  {!isLoadingGuideOptions && suggestedGuides.length === 0 && (
+                    <div className="rounded-[22px] border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-500">
+                      Không có gợi ý hướng dẫn nào. Vui lòng bấm "Gợi ý hướng dẫn" ở cột bên trái để tải lại.
+                    </div>
+                  )}
+                  {suggestedGuides.map((item, index) => (
+                    <button key={item.id} type="button" onClick={() => chooseGuideOption(item)} className="w-full cursor-pointer rounded-[22px] border border-slate-200 bg-slate-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-amber-300 hover:bg-amber-50 hover:shadow-md"><div className="flex items-center justify-between gap-3"><p className="font-semibold text-slate-900">{item.display_title_vi || item.title}</p><span className="whitespace-nowrap rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">Guide {index + 1}</span></div><p className="mt-2 text-sm leading-6 text-slate-600">{item.display_body_vi || item.body}</p></button>
+                  ))}
+                </div>
+              )}
+              {panelMode === 'source' && (
+                <div className="space-y-3">
+                  {isLoadingSourceOptions && (
+                    <div className="rounded-[22px] border border-dashed border-violet-200 bg-white px-4 py-6 text-sm leading-6 text-slate-500 flex flex-col items-center justify-center gap-3">
+                      <div className="h-6 w-6 animate-spin rounded-full border-2 border-violet-500 border-t-transparent"></div>
+                      <span className="text-slate-600 font-medium">Gemini đang tìm kiếm nguồn học thuật...</span>
+                    </div>
+                  )}
+                  {!isLoadingSourceOptions && suggestedSources.length === 0 && (
+                    <div className="rounded-[22px] border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-500">
+                      Không tìm thấy nguồn gợi ý nào. Vui lòng bấm "Tìm nguồn" ở cột bên trái để thử lại.
+                    </div>
+                  )}
+                  {suggestedSources.map((item, index) => {
+                    const selected = isSourceSelected(item);
+                    return (
+                      <button key={item.id} type="button" onClick={() => toggleSourceSelection(item)} className={`w-full cursor-pointer rounded-[22px] border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${selected ? 'border-violet-400 bg-violet-100 shadow-sm' : 'border-slate-200 bg-slate-50 hover:border-violet-300 hover:bg-violet-50'}`}><div className="flex items-center justify-between gap-3"><p className="break-words font-semibold text-slate-900">{item.display_title_vi || item.title}</p><span className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold ${selected ? 'bg-violet-600 text-white' : 'bg-violet-100 text-violet-700'}`}>{selected ? 'Đã chọn' : `Nguồn ${index + 1}`}</span></div><p className="mt-2 break-words text-sm leading-6 text-slate-600">{item.display_snippet_vi || item.snippet}</p><p className="mt-2 text-sm text-slate-500">{item.display_publication_vi || item.provider} • {item.year}</p><p className="mt-1 break-all text-xs text-violet-700">{item.link}</p></button>
+                    );
+                  })}
+                </div>
+              )}
               {!shouldRenderPanel && panelMode !== 'hidden' && (
                 <div className="rounded-[22px] border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-500">
                   {selectedStructure
@@ -2201,6 +2366,29 @@ export default function AdvancedGeneratorWizard() {
           </aside>
         </div>
       </div>
+      
+      {errorModalMsg && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm transition-all duration-300">
+          <div className="w-full max-w-md overflow-hidden rounded-[28px] border border-slate-800 bg-slate-900 p-6 text-white shadow-2xl transition-all scale-100">
+            <div className="flex items-center gap-3 border-b border-white/10 pb-4">
+              <span className="text-2xl text-amber-400">⚠️</span>
+              <h3 className="text-lg font-bold text-cyan-300 font-sans">Giới hạn tạo sinh</h3>
+            </div>
+            <p className="mt-4 text-sm leading-6 text-slate-300 font-sans">
+              {errorModalMsg}
+            </p>
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setErrorModalMsg(null)}
+                className="cursor-pointer rounded-full border border-cyan-400/30 bg-cyan-400/10 px-6 py-2 text-sm font-semibold text-cyan-300 transition hover:bg-cyan-400/20 hover:shadow-md"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
