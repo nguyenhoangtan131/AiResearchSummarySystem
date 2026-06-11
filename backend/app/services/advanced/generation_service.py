@@ -33,7 +33,8 @@ class AdvancedGenerationService:
         self.db = db
         self.user_id = UUID(user_id)
         self.client = genai.Client(api_key=api_key)
-        self.model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-3-flash-preview")
+        from app.services.api_key_vault import get_active_gemini_model_name
+        self.model_name = get_active_gemini_model_name()
         self.store = AdvancedRedisStore()
         self._generated_cache_available: bool = True
 

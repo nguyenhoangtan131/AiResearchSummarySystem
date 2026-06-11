@@ -72,3 +72,16 @@ def get_active_api_key(provider: str, db: Session | None = None) -> str:
     finally:
         if owns_session:
             session.close()
+
+
+def get_active_gemini_model_name() -> str:
+    try:
+        from app.core.cache import RedisCache
+        cache = RedisCache()
+        val = cache.client.get("admin:gemini_model_name")
+        if val and val.strip():
+            return val.strip()
+    except Exception:
+        pass
+    return os.getenv("GEMINI_MODEL_NAME", "gemini-3-flash-preview")
+

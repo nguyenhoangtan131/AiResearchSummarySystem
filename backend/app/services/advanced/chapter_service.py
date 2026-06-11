@@ -45,7 +45,8 @@ class AdvancedChapterRecommendationService:
 
         self.client = genai.Client(api_key=api_key)
         self.store = AdvancedRedisStore()
-        self.model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-3-flash-preview")
+        from app.services.api_key_vault import get_active_gemini_model_name
+        self.model_name = get_active_gemini_model_name()
         self.serper_api_key = get_active_api_key("serper")
 
     def get_cached_step(

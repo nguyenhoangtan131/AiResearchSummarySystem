@@ -54,6 +54,8 @@ from app.schemas.admin import (
     AdminUserDetailResponse,
 )
 from app.services.report_type_service import seed_default_report_types
+from app.core.cache import RedisCache
+from app.core.logging import logger
 
 router = APIRouter()
 
@@ -64,6 +66,16 @@ ENV_FILE_PATH = BACKEND_ROOT / ".env"
 DEFAULT_GEMINI_MODEL = "gemini-3-flash-preview"
 GEMINI_MODEL_ENV = "GEMINI_MODEL_NAME"
 GEMINI_MODELS_ENV = "GEMINI_MODELS_JSON"
+
+REDIS_MODELS_KEY = "admin:gemini_models_json"
+REDIS_ACTIVE_MODEL_KEY = "admin:gemini_model_name"
+
+def _get_redis_client():
+    try:
+        return RedisCache().client
+    except Exception as exc:
+        logger.warning("Failed to initialize Redis client in admin API: %s", exc)
+        return None
 API_KEY_GROUPS = {
     "gemini": {
         "label": "Gemini API key",
@@ -301,6 +313,17 @@ def _get_active_gemini_api_key() -> str:
 
 
 def _read_gemini_model_dict(values: dict[str, str] | None = None) -> dict[str, dict[str, object]]:
+    redis_client = _get_redis_client()
+    if redis_client:
+        try:
+            val = redis_client.get(REDIS_MODELS_KEY)
+            if val:
+                models = _parse_model_dict(val)
+                if models:
+                    return models
+        except Exception as exc:
+            logger.warning("Failed to read models from Redis: %s", exc)
+
     env_values = values or _read_env_values()
     models = _parse_model_dict(env_values.get(GEMINI_MODELS_ENV) or os.getenv(GEMINI_MODELS_ENV))
     models.setdefault(
@@ -317,7 +340,17 @@ def _read_gemini_model_dict(values: dict[str, str] | None = None) -> dict[str, d
 
 def _build_gemini_model_settings(values: dict[str, str] | None = None) -> AdminGeminiModelSettingsResponse:
     env_values = values or _read_env_values()
-    active_model = env_values.get(GEMINI_MODEL_ENV) or os.getenv(GEMINI_MODEL_ENV, DEFAULT_GEMINI_MODEL)
+    active_model = None
+    redis_client = _get_redis_client()
+    if redis_client:
+        try:
+            active_model = redis_client.get(REDIS_ACTIVE_MODEL_KEY)
+        except Exception as exc:
+            logger.warning("Failed to read active model from Redis: %s", exc)
+            
+    if not active_model:
+        active_model = env_values.get(GEMINI_MODEL_ENV) or os.getenv(GEMINI_MODEL_ENV, DEFAULT_GEMINI_MODEL)
+        
     models = _read_gemini_model_dict(env_values)
     items = [
         AdminGeminiModelStatus(
@@ -339,13 +372,32 @@ def _build_gemini_model_settings(values: dict[str, str] | None = None) -> AdminG
 
 
 def _get_active_gemini_model_name(values: dict[str, str] | None = None) -> str:
+    redis_client = _get_redis_client()
+    if redis_client:
+        try:
+            val = redis_client.get(REDIS_ACTIVE_MODEL_KEY)
+            if val and val.strip():
+                return val.strip()
+        except Exception as exc:
+            logger.warning("Failed to read active model from Redis: %s", exc)
+            
     env_values = values or _read_env_values()
     return env_values.get(GEMINI_MODEL_ENV) or os.getenv(GEMINI_MODEL_ENV, DEFAULT_GEMINI_MODEL)
 
 
 def _persist_gemini_models(models: dict[str, dict[str, object]], active_model: str | None = None) -> dict[str, str]:
+    models_json = json.dumps(models, ensure_ascii=False)
+    redis_client = _get_redis_client()
+    if redis_client:
+        try:
+            redis_client.set(REDIS_MODELS_KEY, models_json)
+            if active_model:
+                redis_client.set(REDIS_ACTIVE_MODEL_KEY, active_model)
+        except Exception as exc:
+            logger.warning("Failed to persist models to Redis: %s", exc)
+
     updates = {
-        GEMINI_MODELS_ENV: json.dumps(models, ensure_ascii=False),
+        GEMINI_MODELS_ENV: models_json,
     }
     if active_model:
         updates[GEMINI_MODEL_ENV] = active_model
@@ -404,7 +456,15 @@ def _refresh_gemini_models() -> dict[str, str]:
             meta["reason"] = _model_failure_reason(exc)
         meta["lastCheckedAt"] = checked_at
 
-    active_model = os.getenv(GEMINI_MODEL_ENV, DEFAULT_GEMINI_MODEL)
+    active_model = None
+    redis_client = _get_redis_client()
+    if redis_client:
+        try:
+            active_model = redis_client.get(REDIS_ACTIVE_MODEL_KEY)
+        except Exception:
+            pass
+    if not active_model:
+        active_model = os.getenv(GEMINI_MODEL_ENV, DEFAULT_GEMINI_MODEL)
     if active_model not in discovered:
         active_model = DEFAULT_GEMINI_MODEL
     return _persist_gemini_models(discovered, active_model)
@@ -761,6 +821,13 @@ def apply_admin_gemini_model(
             defaultModel=settings.defaultModel,
             models=settings.models,
         )
+
+    redis_client = _get_redis_client()
+    if redis_client:
+        try:
+            redis_client.set(REDIS_ACTIVE_MODEL_KEY, model_name)
+        except Exception as exc:
+            logger.warning("Failed to persist active model name to Redis: %s", exc)
 
     values = _write_env_values({GEMINI_MODEL_ENV: model_name})
     settings = _build_gemini_model_settings(values)
