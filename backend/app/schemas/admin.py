@@ -161,3 +161,21 @@ class AdminReportTypeOperationResponse(BaseModel):
     message: str
     ok: bool
     reportTypes: list[AdminReportTypeItem]
+
+
+class AdminPingPongStatusResponse(BaseModel):
+    active: bool
+    url: Optional[str] = None
+
+
+class AdminPingPongToggleRequest(BaseModel):
+    active: bool
+    url: Optional[str] = None
+
+
+class AdminPingPongToggleResponse(BaseModel):
+    message: str
+    ok: bool
+    active: bool
+    url: Optional[str] = None
+

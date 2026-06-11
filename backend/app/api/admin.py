@@ -52,6 +52,9 @@ from app.schemas.admin import (
     AdminDashboardUserItem,
     AdminUserArticleItem,
     AdminUserDetailResponse,
+    AdminPingPongStatusResponse,
+    AdminPingPongToggleRequest,
+    AdminPingPongToggleResponse,
 )
 from app.services.report_type_service import seed_default_report_types
 from app.core.cache import RedisCache
@@ -1061,3 +1064,69 @@ def get_admin_article_detail(
         modelLabels=model_labels,
         steps=steps,
     )
+
+
+@router.get("/ping-pong/status", response_model=AdminPingPongStatusResponse)
+def get_ping_pong_status(
+    admin_user: User = Depends(get_current_admin),
+) -> AdminPingPongStatusResponse:
+    del admin_user
+    from app.core.ping_pong import REDIS_PING_PONG_ACTIVE, REDIS_PING_PONG_URL
+    redis_client = _get_redis_client()
+    active = False
+    url = None
+    if redis_client:
+        try:
+            val = redis_client.get(REDIS_PING_PONG_ACTIVE)
+            active = val == "true" or val == b"true"
+            url_val = redis_client.get(REDIS_PING_PONG_URL)
+            if url_val:
+                url = url_val.decode("utf-8") if isinstance(url_val, bytes) else str(url_val)
+        except Exception as exc:
+            logger.warning("Lỗi đọc trạng thái ping-pong từ Redis: %s", exc)
+    return AdminPingPongStatusResponse(active=active, url=url)
+
+
+@router.post("/ping-pong/toggle", response_model=AdminPingPongToggleResponse)
+def toggle_ping_pong(
+    payload: AdminPingPongToggleRequest,
+    admin_user: User = Depends(get_current_admin),
+) -> AdminPingPongToggleResponse:
+    del admin_user
+    from app.core.ping_pong import (
+        REDIS_PING_PONG_ACTIVE,
+        REDIS_PING_PONG_URL,
+        start_ping_pong,
+        stop_ping_pong,
+    )
+    redis_client = _get_redis_client()
+    if not redis_client:
+        raise HTTPException(status_code=500, detail="Không kết nối được Redis")
+
+    active_val = "true" if payload.active else "false"
+    url_val = payload.url.strip() if payload.url else ""
+
+    try:
+        redis_client.set(REDIS_PING_PONG_ACTIVE, active_val)
+        if payload.active:
+            if not url_val:
+                raise HTTPException(status_code=400, detail="Vui lòng cung cấp URL backend để ping.")
+            redis_client.set(REDIS_PING_PONG_URL, url_val)
+            start_ping_pong()
+            msg = f"Đã bật tính năng ping-pong tự động giữ server tại: {url_val}"
+        else:
+            stop_ping_pong()
+            msg = "Đã tắt tính năng ping-pong giữ server."
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Lỗi thay đổi trạng thái ping-pong")
+        raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {exc}")
+
+    return AdminPingPongToggleResponse(
+        message=msg,
+        ok=True,
+        active=payload.active,
+        url=url_val or None,
+    )
+

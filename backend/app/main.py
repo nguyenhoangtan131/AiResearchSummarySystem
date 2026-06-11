@@ -27,6 +27,16 @@ app=FastAPI(
     version="1.0.0"
 )
 
+@app.on_event("startup")
+async def startup_event():
+    from app.core.ping_pong import start_ping_pong
+    start_ping_pong()
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    from app.core.ping_pong import stop_ping_pong
+    stop_ping_pong()
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,

@@ -183,4 +183,9 @@ export const adminApi = {
     apiInstance.put(`/admin/report-types/${reportTypeId}`, payload),
   deleteReportType: (reportTypeId: string) =>
     apiInstance.delete(`/admin/report-types/${reportTypeId}`),
+  getPingPongStatus: () =>
+    apiInstance.get('/admin/ping-pong/status'),
+  togglePingPong: (payload: { active: boolean; url: string }) =>
+    apiInstance.post('/admin/ping-pong/toggle', payload),
 };
+
