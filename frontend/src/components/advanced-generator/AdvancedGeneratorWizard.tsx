@@ -73,23 +73,8 @@ type Chapter = {
   done: boolean;
 };
 
-const defaultReportTypes = [
-  { value: 'Tổng quan tài liệu', label: 'Tổng quan tài liệu' },
-  { value: 'Tổng quan hệ thống', label: 'Tổng quan hệ thống' },
-  { value: 'Tổng quan phạm vi', label: 'Tổng quan phạm vi' },
-  { value: 'Tổng quan tường thuật', label: 'Tổng quan tường thuật' },
-  { value: 'Phân tích gộp', label: 'Phân tích gộp' },
-  { value: 'Báo cáo nghiên cứu', label: 'Báo cáo nghiên cứu' },
-  { value: 'Báo cáo chính sách', label: 'Báo cáo chính sách' },
-  { value: 'Báo cáo nghiên cứu tình huống', label: 'Báo cáo nghiên cứu tình huống' },
-  { value: 'Báo cáo kỹ thuật', label: 'Báo cáo kỹ thuật' },
-  { value: 'Tiểu luận học thuật', label: 'Tiểu luận học thuật' },
-  { value: 'Bài báo hội thảo', label: 'Bài báo hội thảo' },
-  { value: 'Bài báo tạp chí', label: 'Bài báo tạp chí' },
-  { value: 'Chương luận văn', label: 'Chương luận văn' },
-  { value: 'Đề cương luận án', label: 'Đề cương luận án' },
-  { value: 'Đề xuất xin tài trợ', label: 'Đề xuất xin tài trợ' },
-] as const;
+const defaultReportTypes: Array<{ value: string; label: string }> = [];
+
 const titleOptions: Record<string, TitleOption[]> = {
   'Tổng quan tài liệu': [
     { title: 'Research context and problem framing', description: 'Define the topic background, explain why the review matters, and position the problem clearly.', display_title_vi: 'Bối cảnh nghiên cứu và định khung vấn đề', display_description_vi: 'Làm rõ bối cảnh chủ đề, giải thích vì sao bài tổng quan quan trọng và đặt lại vấn đề một cách mạch lạc.' },
