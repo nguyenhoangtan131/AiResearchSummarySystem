@@ -38,7 +38,35 @@ from app.services.advanced.chapter_service import AdvancedChapterRecommendationS
 from app.services.advanced.generation_service import AdvancedGenerationService
 from app.services.advanced.structure_service import AdvancedStructureService
 
+from app.core.cache import RedisCache
+from app.models.user import User
+
 router = APIRouter()
+
+def verify_rate_limit(
+    user_id: str = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    user = db.query(User).filter(User.id == UUID(user_id)).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Không tìm thấy người dùng")
+
+    if user.tier == "free":
+        try:
+            cache = RedisCache()
+            redis_client = cache.client
+            key = f"rate_limit:{user_id}:cooldown"
+            ttl = redis_client.ttl(key)
+            if ttl > 0:
+                raise HTTPException(
+                    status_code=429,
+                    detail=f"Tài khoản Free cần đợi 2 phút giữa các lần thao tác tạo sinh. Vui lòng thử lại sau {ttl} giây."
+                )
+            redis_client.setex(key, 120, "1")
+        except HTTPException:
+            raise
+        except Exception as exc:
+            logger.warning("Lỗi kiểm tra rate limit bằng Redis: %s", exc)
 
 
 @router.get("/report-types", status_code=status.HTTP_200_OK)
@@ -53,6 +81,7 @@ async def get_report_types(db: Session = Depends(get_db)) -> dict[str, list[str]
 )
 async def recommend_structure(
     payload: AdvancedStructureRequest,
+    rate_limit: None = Depends(verify_rate_limit),
 ) -> AdvancedStructureResponse:
     try:
         service = AdvancedStructureService()
@@ -182,6 +211,7 @@ async def generate_chapter(
     chapter_number: int,
     user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db),
+    rate_limit: None = Depends(verify_rate_limit),
 ) -> GenerateChapterResponse:
     try:
         service = AdvancedGenerationService(db=db, user_id=user_id)
@@ -210,6 +240,7 @@ async def generate_article(
     article_id: UUID,
     user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db),
+    rate_limit: None = Depends(verify_rate_limit),
 ) -> GenerateArticleResponse:
     try:
         service = AdvancedGenerationService(db=db, user_id=user_id)
@@ -336,6 +367,7 @@ async def get_manual_override_cache(
 )
 async def recommend_chapter_titles(
     payload: ChapterTitleRecommendationRequest,
+    rate_limit: None = Depends(verify_rate_limit),
 ) -> ChapterTitleRecommendationResponse:
     try:
         service = AdvancedChapterRecommendationService()
@@ -356,6 +388,7 @@ async def recommend_chapter_titles(
 )
 async def recommend_chapter_briefs(
     payload: ChapterBriefRecommendationRequest,
+    rate_limit: None = Depends(verify_rate_limit),
 ) -> ChapterBriefRecommendationResponse:
     try:
         service = AdvancedChapterRecommendationService()
@@ -376,6 +409,7 @@ async def recommend_chapter_briefs(
 )
 async def recommend_chapter_guides(
     payload: ChapterGuideRecommendationRequest,
+    rate_limit: None = Depends(verify_rate_limit),
 ) -> ChapterGuideRecommendationResponse:
     try:
         service = AdvancedChapterRecommendationService()
@@ -396,6 +430,7 @@ async def recommend_chapter_guides(
 )
 async def recommend_chapter_sources(
     payload: ChapterSourceRecommendationRequest,
+    rate_limit: None = Depends(verify_rate_limit),
 ) -> ChapterSourceRecommendationResponse:
     try:
         service = AdvancedChapterRecommendationService()
