@@ -1,5 +1,5 @@
 import React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Settings, Shield, Activity } from 'lucide-react';
 import { canShowAdminUiDuringBootstrap } from '../../utils/adminAccess';
@@ -18,10 +18,24 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const canAccessAdminUi = canShowAdminUiDuringBootstrap(user);
+  const adminMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setIsAdminMenuOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (adminMenuRef.current && !adminMenuRef.current.contains(event.target as Node)) {
+        setIsAdminMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     if (isAdminMenuOpen && canAccessAdminUi) {
@@ -114,7 +128,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
             </div>
 
             {canAccessAdminUi && (
-              <div className="relative z-[130]">
+              <div ref={adminMenuRef} className="relative z-[130]">
                 <button
                   type="button"
                   onClick={() => setIsAdminMenuOpen((current) => !current)}
