@@ -40,17 +40,17 @@ def google_auth(request: GoogleAuthRequest, response: Response, db: Session = De
         value=data["access_token"],
         httponly=True,
         max_age=3600 * 24,
-        samesite="lax",
-        secure=False
+        samesite="none",
+        secure=True
     )
     response.set_cookie(
         key="refresh_token",
         value=data["refresh_token"],
         httponly=True,
         max_age=3600 * 24 * 30,
-        samesite="lax",
+        samesite="none",
         path="/auth/refresh",
-        secure=False
+        secure=True
     )
 
     return {
@@ -86,14 +86,15 @@ async def logout(response: Response):
     response.delete_cookie(
         key="access_token",
         httponly=True,
-        samesite="lax",
-        secure=False
+        samesite="none",
+        secure=True
     )
 
     response.delete_cookie(
         key="refresh_token",
         httponly=True,
-        samesite="lax",
-        path="/auth/refresh"
+        samesite="none",
+        path="/auth/refresh",
+        secure=True
     )
     return {"message": "Đăng xuất thành công"}
